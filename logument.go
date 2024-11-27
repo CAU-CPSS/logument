@@ -9,7 +9,7 @@ import (
 type Logument struct {
 	CurrentSnapshot Snapshot // 현재 Snapshot
 	Patches         []Patch  // Patch들의 배열
-	
+
 }
 
 // NewLogument TODO: initial data 를 json 으로 변경
@@ -67,3 +67,7 @@ func (l *Logument) MergePatches() {
 	atomic.AddUint64(&l.CurrentSnapshot.Version, 1)
 	l.CurrentSnapshot.Timestamp = time.Now()
 }
+
+// timestamp 와 version을 같이 관리해야할 것 같음
+// 논문 Proposed method 이후에 perspective 혹은 vision이 들어가야할 듯
+// 내부적으로는 sqlite 같이 가벼운 DB를 사용해서 구현해보면 좋을 듯

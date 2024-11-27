@@ -30,3 +30,6 @@ func (s *Snapshot) FromJSON(jsonString string) error {
 	}
 	return nil
 }
+
+// Cache
+// getTime leaf node이냐 아니냐에 따라 timestamp를 return
