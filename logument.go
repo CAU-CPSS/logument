@@ -7,9 +7,16 @@ import (
 
 // Logument 구조체
 type Logument struct {
-	CurrentSnapshot Snapshot // 현재 Snapshot
-	Patches         []Patch  // Patch들의 배열
+	CurrentSnapshot Snapshot         // 현재 Snapshot
+	Snapshots       []Snapshot       // 만들었던 Shanpshot 들의 배열
+	Patches         []Patch          // Patch 들의 배열
+	Version         []VersionManager // Version 정보 관리
+}
 
+type VersionManager struct {
+	Version   uint64
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 // NewLogument TODO: initial data 를 json 으로 변경

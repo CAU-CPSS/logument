@@ -22,3 +22,8 @@ func TestLogument(t *testing.T) {
 	log.MergePatches()
 	t.Log("Snapshot after merging patches:", log.CreateSnapshot())
 }
+
+func TestLogument_base(t *testing.T) {
+	a := make([]int, 10)
+	t.Log(a[len(a)-1])
+}
