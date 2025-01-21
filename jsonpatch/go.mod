@@ -1,3 +1,3 @@
-module jsonpatch_plus
+module github.com/karu-rress/jsonpatch
 
-go 1.23.4
+go 1.23.0
