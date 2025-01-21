@@ -1,12 +1,15 @@
-package jsonpatch
+package mainrr
 
 import (
 	"fmt"
 	"reflect"
 	"strings"
 
-	"github.com/karu-rress/jsonpatch/jsonr"
+	"github.com/CAU-CPSS/logument/internal/jsonr"
+	"github.com/CAU-CPSS/logument/internal/logument"
 )
+
+type Patch = logument.Patch
 
 // CreatePatch creates a JSON patch from the given JSON-R documents.
 func CreatePatch(original, modified jsonr.JsonR) (Patch, error) {

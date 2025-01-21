@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var errBadJSONDoc = fmt.Errorf("Invalid JSON Document")
+var errBadJSONDoc = fmt.Errorf("invalid JSON Document")
 
 // Represents the kind of JSON patch operations.
 type OperationType = string
