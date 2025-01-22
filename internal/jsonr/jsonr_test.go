@@ -1,3 +1,9 @@
+/**
+ * jsonr_test.go
+ *
+ * Testing codes for jsonr package
+*/
+
 package jsonr
 
 import (
