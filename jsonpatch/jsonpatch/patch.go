@@ -1,3 +1,5 @@
+/*
+
 package jsonpatch
 
 import (
@@ -425,3 +427,5 @@ func applyPatchRecursive(doc jsonr.JsonR, patch Patch, path string) (jsonr.JsonR
 	}
 	return doc, nil
 }
+
+*/

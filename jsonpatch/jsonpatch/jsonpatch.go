@@ -60,8 +60,8 @@ func (a ByPath) Len() int           { return len(a) }
 func (a ByPath) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByPath) Less(i, j int) bool { return a[i].Path < a[j].Path }
 
-func NewPatch(operation, path string, value interface{}) JsonPatchOperation {
-	return JsonPatchOperation{Op: operation, Path: path, Value: value}
+func NewPatch(operation, path string, value any, timestamp int64) JsonPatchOperation {
+	return JsonPatchOperation{Op: operation, Path: path, Value: value, Timestamp: timestamp}
 }
 
 // CreatePatch creates a patch as specified in http://jsonpatch.com/
@@ -71,15 +71,17 @@ func NewPatch(operation, path string, value interface{}) JsonPatchOperation {
 //
 // An error will be returned if any of the two documents are invalid.
 func CreatePatch(a, b []byte) ([]JsonPatchOperation, error) {
-	var aI interface{}
-	var bI interface{}
+	if bytes.Equal(a, b) {
+		return []JsonPatchOperation{}, nil
+	}
 
-	err := json.Unmarshal(a, &aI)
-	if err != nil {
+	var aI any
+	var bI any
+
+	if err := json.Unmarshal(a, &aI); err != nil {
 		return nil, errBadJSONDoc
 	}
-	err = json.Unmarshal(b, &bI)
-	if err != nil {
+	if err := json.Unmarshal(b, &bI); err != nil {
 		return nil, errBadJSONDoc
 	}
 
@@ -89,7 +91,7 @@ func CreatePatch(a, b []byte) ([]JsonPatchOperation, error) {
 // Returns true if the values matches (must be json types)
 // The types of the values must match, otherwise it will always return false
 // If two map[string]interface{} are given, all elements must match.
-func matchesValue(av, bv interface{}) bool {
+func matchesValue(av, bv any) bool {
 	if reflect.TypeOf(av) != reflect.TypeOf(bv) {
 		return false
 	}

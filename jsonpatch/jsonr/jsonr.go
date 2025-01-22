@@ -46,6 +46,44 @@ import (
 	"fmt"
 )
 
+// LeafValue is a type that can be used as a value of JSON-R leaf.
+type LeafValue interface {
+	~string | ~float64 | ~bool
+}
+
+// Leaf stores the value and timestamp of a JSON-R leaf.
+type Leaf[T LeafValue] struct {
+	Value     T     `json:"Value"`     // number, string, boolean
+	Timestamp int64 `json:"Timestamp"` // Unix timestamp
+}
+
+// Value stores the value and timestamp of a JSON-R value.
+type Value interface {
+	isValue()
+}
+
+func (Leaf[T]) isValue() {
+}
+
+// Object stores an object of JSON-R.
+type Object map[string]Value
+
+func (Object) isValue() {
+}
+
+// Array stores an array of JSON-R.
+type Array []Value
+
+func (Array) isValue() {
+}
+
+// JSON-R type
+type JsonR Value
+
+//////////////////////////////////
+///////// PARSER
+//////////////////////////////////
+
 // Parse parses the JSON-R data and returns the result.
 func Parse(data []byte) (JsonR, error) {
 	var raw any
