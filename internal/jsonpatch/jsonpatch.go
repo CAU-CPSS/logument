@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	. "github.com/CAU-CPSS/logument/internal/jsonr"
 )
 
 var errBadJSONDoc = fmt.Errorf("invalid JSON Document")
@@ -90,29 +92,29 @@ func CreatePatch(a, b []byte) ([]JsonPatchOperation, error) {
 
 // Returns true if the values matches (must be json types)
 // The types of the values must match, otherwise it will always return false
-// If two map[string]interface{} are given, all elements must match.
+// If two map[string]any are given, all elements must match.
 func matchesValue(av, bv any) bool {
 	if reflect.TypeOf(av) != reflect.TypeOf(bv) {
 		return false
 	}
 	switch at := av.(type) {
-	case string:
-		bt := bv.(string)
-		if bt == at {
+	case Leaf[string]:
+		bt := bv.(Leaf[string]).Value
+		if bt == at.Value {
 			return true
 		}
-	case float64:
-		bt := bv.(float64)
-		if bt == at {
+	case Leaf[float64]:
+		bt := bv.(Leaf[float64]).Value
+		if bt == at.Value {
 			return true
 		}
-	case bool:
-		bt := bv.(bool)
-		if bt == at {
+	case Leaf[bool]:
+		bt := bv.(Leaf[bool]).Value
+		if bt == at.Value {
 			return true
 		}
-	case map[string]interface{}:
-		bt := bv.(map[string]interface{})
+	case Object:
+		bt := bv.(Object)
 		for key := range at {
 			if !matchesValue(at[key], bt[key]) {
 				return false
@@ -124,8 +126,8 @@ func matchesValue(av, bv any) bool {
 			}
 		}
 		return true
-	case []interface{}:
-		bt := bv.([]interface{})
+	case Array:
+		bt := bv.(Array)
 		if len(bt) != len(at) {
 			return false
 		}
@@ -155,7 +157,7 @@ func matchesValue(av, bv any) bool {
 
 var rfc6901Encoder = strings.NewReplacer("~", "~0", "/", "~1")
 
-func makePath(path string, newPart interface{}) string {
+func makePath(path string, newPart any) string {
 	key := rfc6901Encoder.Replace(fmt.Sprintf("%v", newPart))
 	if path == "" {
 		return "/" + key
@@ -167,18 +169,20 @@ func makePath(path string, newPart interface{}) string {
 }
 
 // diff returns the (recursive) difference between a and b as an array of JsonPatchOperations.
-func diff(a, b map[string]interface{}, path string, patch []JsonPatchOperation) ([]JsonPatchOperation, error) {
+func diff(a, b map[string]any, path string, patch []JsonPatchOperation) ([]JsonPatchOperation, error) {
 	for key, bv := range b {
 		p := makePath(path, key)
 		av, ok := a[key]
 		// value was added
 		if !ok {
-			patch = append(patch, NewPatch("add", p, bv))
+			bm, _ := bv.(map[string]any) // TODO: this is Leaf[any]....
+			patch = append(patch, NewPatch("add", p, bm["Value"], bm["Timestamp"].(int64)))
 			continue
 		}
 		// If types have changed, replace completely
 		if reflect.TypeOf(av) != reflect.TypeOf(bv) {
-			patch = append(patch, NewPatch("replace", p, bv))
+			bm, _ := bv.(map[string]any)
+			patch = append(patch, NewPatch("replace", p, bm["Value"], bm["Timestamp"].(int64)))
 			continue
 		}
 		// Types are the same, compare values
@@ -194,13 +198,14 @@ func diff(a, b map[string]interface{}, path string, patch []JsonPatchOperation) 
 		if !found {
 			p := makePath(path, key)
 
-			patch = append(patch, NewPatch("remove", p, nil))
+			am, _ := a[key].(map[string]any)
+			patch = append(patch, NewPatch("remove", p, nil, am["Timestamp"].(int64)))
 		}
 	}
 	return patch, nil
 }
 
-func handleValues(av, bv interface{}, p string, patch []JsonPatchOperation) ([]JsonPatchOperation, error) {
+func handleValues(av, bv any, p string, patch []JsonPatchOperation) ([]JsonPatchOperation, error) {
 	var err error
 	switch at := av.(type) {
 	case map[string]interface{}:
@@ -209,15 +214,23 @@ func handleValues(av, bv interface{}, p string, patch []JsonPatchOperation) ([]J
 		if err != nil {
 			return nil, err
 		}
-	case string, float64, bool:
+	case Leaf[string]:
 		if !matchesValue(av, bv) {
-			patch = append(patch, NewPatch("replace", p, bv))
+			patch = append(patch, NewPatch("replace", p, bv.(Leaf[string]).Value, bv.(Leaf[string]).Timestamp))
+		}
+	case Leaf[float64]:
+		if !matchesValue(av, bv) {
+			patch = append(patch, NewPatch("replace", p, bv.(Leaf[float64]).Value, bv.(Leaf[float64]).Timestamp))
+		}
+	case Leaf[bool]:
+		if !matchesValue(av, bv) {
+			patch = append(patch, NewPatch("replace", p, bv.(Leaf[bool]).Value, bv.(Leaf[bool]).Timestamp))
 		}
 	case []interface{}:
 		bt, ok := bv.([]interface{})
 		if !ok {
 			// array replaced by non-array
-			patch = append(patch, NewPatch("replace", p, bv))
+			patch = append(patch, NewPatch("replace", p, bv.(map[string]any)["Value"], bv.(map[string]any)["Timestamp"].(int64)))
 		} else if len(at) != len(bt) {
 			// arrays are not the same length
 			patch = append(patch, compareArray(at, bt, p)...)
@@ -235,7 +248,8 @@ func handleValues(av, bv interface{}, p string, patch []JsonPatchOperation) ([]J
 		case nil:
 			// Both nil, fine.
 		default:
-			patch = append(patch, NewPatch("add", p, bv))
+			// Replace nil with value
+			patch = append(patch, NewPatch("add", p, bv.(map[string]any)["Value"], bv.(map[string]any)["Timestamp"].(int64)))
 		}
 	default:
 		panic(fmt.Sprintf("Unknown type:%T ", av))
@@ -249,7 +263,7 @@ func compareArray(av, bv []interface{}, p string) []JsonPatchOperation {
 
 	// Find elements that need to be removed
 	processArray(av, bv, func(i int, value interface{}) {
-		retval = append(retval, NewPatch("remove", makePath(p, i), nil))
+		retval = append(retval, NewPatch("remove", makePath(p, i), nil, -1))
 	})
 	reversed := make([]JsonPatchOperation, len(retval))
 	for i := 0; i < len(retval); i++ {
@@ -259,7 +273,7 @@ func compareArray(av, bv []interface{}, p string) []JsonPatchOperation {
 	// Find elements that need to be added.
 	// NOTE we pass in `bv` then `av` so that processArray can find the missing elements.
 	processArray(bv, av, func(i int, value interface{}) {
-		retval = append(retval, NewPatch("add", makePath(p, i), value))
+		retval = append(retval, NewPatch("add", makePath(p, i), value.(map[string]any)["Value"], value.(map[string]any)["Timestamp"].(int64)))
 	})
 
 	return retval
