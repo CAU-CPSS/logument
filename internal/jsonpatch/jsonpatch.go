@@ -77,14 +77,15 @@ func CreatePatch(a, b []byte) ([]JsonPatchOperation, error) {
 		return []JsonPatchOperation{}, nil
 	}
 
-	var aI any
-	var bI any
+	var aI JsonR
+	var bI JsonR
+	var err error
 
-	if err := json.Unmarshal(a, &aI); err != nil {
-		return nil, errBadJSONDoc
+	if aI, err = Parse(a); err != nil {
+		return nil, err
 	}
-	if err := json.Unmarshal(b, &bI); err != nil {
-		return nil, errBadJSONDoc
+	if bI, err = Parse(b); err != nil {
+		return nil, err
 	}
 
 	return handleValues(aI, bI, "", []JsonPatchOperation{})
@@ -169,20 +170,42 @@ func makePath(path string, newPart any) string {
 }
 
 // diff returns the (recursive) difference between a and b as an array of JsonPatchOperations.
-func diff(a, b map[string]any, path string, patch []JsonPatchOperation) ([]JsonPatchOperation, error) {
+func diff(a, b Object, path string, patch []JsonPatchOperation) ([]JsonPatchOperation, error) {
 	for key, bv := range b {
 		p := makePath(path, key)
 		av, ok := a[key]
 		// value was added
 		if !ok {
-			bm, _ := bv.(map[string]any) // TODO: this is Leaf[any]....
-			patch = append(patch, NewPatch("add", p, bm["Value"], bm["Timestamp"].(int64)))
+			switch bv.(type) {
+			case Leaf[string]:
+				bm, _ := bv.(Leaf[string])
+				patch = append(patch, NewPatch("add", p, bm.Value, bm.Timestamp))
+			case Leaf[float64]:
+				bm, _ := bv.(Leaf[float64])
+				patch = append(patch, NewPatch("add", p, bm.Value, bm.Timestamp))
+			case Leaf[bool]:
+				bm, _ := bv.(Leaf[bool])
+				patch = append(patch, NewPatch("add", p, bm.Value, bm.Timestamp))
+			default:
+				panic(fmt.Sprintf("diff(): Unknown type %T for bv", bv))
+			}
 			continue
 		}
 		// If types have changed, replace completely
 		if reflect.TypeOf(av) != reflect.TypeOf(bv) {
-			bm, _ := bv.(map[string]any)
-			patch = append(patch, NewPatch("replace", p, bm["Value"], bm["Timestamp"].(int64)))
+			switch bv.(type) {
+			case Leaf[string]:
+				bm, _ := bv.(Leaf[string])
+				patch = append(patch, NewPatch("replace", p, bm.Value, bm.Timestamp))
+			case Leaf[float64]:
+				bm, _ := bv.(Leaf[float64])
+				patch = append(patch, NewPatch("replace", p, bm.Value, bm.Timestamp))
+			case Leaf[bool]:
+				bm, _ := bv.(Leaf[bool])
+				patch = append(patch, NewPatch("replace", p, bm.Value, bm.Timestamp))
+			default:
+				panic(fmt.Sprintf("diff(): Unknown type %T for bv", bv))
+			}
 			continue
 		}
 		// Types are the same, compare values
@@ -198,8 +221,17 @@ func diff(a, b map[string]any, path string, patch []JsonPatchOperation) ([]JsonP
 		if !found {
 			p := makePath(path, key)
 
-			am, _ := a[key].(map[string]any)
-			patch = append(patch, NewPatch("remove", p, nil, am["Timestamp"].(int64)))
+			am, _ := a[key]
+			switch am.(type) {
+			case Leaf[string]:
+				patch = append(patch, NewPatch("remove", p, nil, am.(Leaf[string]).Timestamp))
+			case Leaf[float64]:
+				patch = append(patch, NewPatch("remove", p, nil, am.(Leaf[float64]).Timestamp))
+			case Leaf[bool]:
+				patch = append(patch, NewPatch("remove", p, nil, am.(Leaf[bool]).Timestamp))
+			default:
+				panic(fmt.Sprintf("diff(): Unknown type %T for am", am))
+			}
 		}
 	}
 	return patch, nil
@@ -208,12 +240,6 @@ func diff(a, b map[string]any, path string, patch []JsonPatchOperation) ([]JsonP
 func handleValues(av, bv any, p string, patch []JsonPatchOperation) ([]JsonPatchOperation, error) {
 	var err error
 	switch at := av.(type) {
-	case map[string]interface{}:
-		bt := bv.(map[string]interface{})
-		patch, err = diff(at, bt, p, patch)
-		if err != nil {
-			return nil, err
-		}
 	case Leaf[string]:
 		if !matchesValue(av, bv) {
 			patch = append(patch, NewPatch("replace", p, bv.(Leaf[string]).Value, bv.(Leaf[string]).Timestamp))
@@ -226,8 +252,14 @@ func handleValues(av, bv any, p string, patch []JsonPatchOperation) ([]JsonPatch
 		if !matchesValue(av, bv) {
 			patch = append(patch, NewPatch("replace", p, bv.(Leaf[bool]).Value, bv.(Leaf[bool]).Timestamp))
 		}
-	case []interface{}:
-		bt, ok := bv.([]interface{})
+	case Object:
+		bt := bv.(Object)
+		patch, err = diff(at, bt, p, patch)
+		if err != nil {
+			return nil, err
+		}
+	case Array:
+		bt, ok := bv.(Array)
 		if !ok {
 			// array replaced by non-array
 			patch = append(patch, NewPatch("replace", p, bv.(map[string]any)["Value"], bv.(map[string]any)["Timestamp"].(int64)))
@@ -252,13 +284,13 @@ func handleValues(av, bv any, p string, patch []JsonPatchOperation) ([]JsonPatch
 			patch = append(patch, NewPatch("add", p, bv.(map[string]any)["Value"], bv.(map[string]any)["Timestamp"].(int64)))
 		}
 	default:
-		panic(fmt.Sprintf("Unknown type:%T ", av))
+		panic(fmt.Sprintf("handleValues(): Unknown type %T for av", av))
 	}
 	return patch, nil
 }
 
 // compareArray generates remove and add operations for `av` and `bv`.
-func compareArray(av, bv []interface{}, p string) []JsonPatchOperation {
+func compareArray(av, bv Array, p string) []JsonPatchOperation {
 	retval := []JsonPatchOperation{}
 
 	// Find elements that need to be removed
@@ -281,7 +313,7 @@ func compareArray(av, bv []interface{}, p string) []JsonPatchOperation {
 
 // processArray processes `av` and `bv` calling `applyOp` whenever a value is absent.
 // It keeps track of which indexes have already had `applyOp` called for and automatically skips them so you can process duplicate objects correctly.
-func processArray(av, bv []interface{}, applyOp func(i int, value interface{})) {
+func processArray(av, bv Array, applyOp func(i int, value interface{})) {
 	foundIndexes := make(map[int]struct{}, len(av))
 	reverseFoundIndexes := make(map[int]struct{}, len(av))
 	for i, v := range av {
