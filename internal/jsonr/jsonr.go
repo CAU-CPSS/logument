@@ -42,6 +42,7 @@
 package jsonr
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 )
@@ -84,9 +85,27 @@ func Get(j JsonR, key string) Value {
 	return j.(Object)[key]
 }
 
+func ToByteArray(j JsonR) []byte {
+	data, _ := json.Marshal(j)
+	return data
+}
+
+func Equal(j1, j2 JsonR) bool {
+	b1 := ToByteArray(j1)
+	b2 := ToByteArray(j2)
+	if bytes.Equal(b1, b2) {
+		return true
+	}
+	return false
+}
+
 //////////////////////////////////
 ///////// PARSER
 //////////////////////////////////
+
+func NewJsonR(jsonr string) (JsonR, error) {
+	return Parse([]byte(jsonr))
+}
 
 // Parse parses the JSON-R data and returns the result.
 func Parse(data []byte) (JsonR, error) {

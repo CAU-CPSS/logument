@@ -72,7 +72,7 @@ var testJsonR2 = `
 			"Value": "sleeping",
 			"Timestamp": 1888888888
 		},
-		{
+				{
 			"Value": "hiking",
 			"Timestamp": 1678886400
 		}
@@ -99,10 +99,10 @@ func TestPrintJsonR(t *testing.T) {
 */
 
 func TestCreatePatch(t *testing.T) {
-	patch, err := CreatePatch([]byte(testJsonR1), []byte(testJsonR2))
+	patch, err := GeneratePatch(parsedJsonR1, parsedJsonR2)
 	assert.Equal(t, nil, err)
 
 	for _, operation := range patch {
-		t.Logf("%s\n", operation.Json())
+		t.Logf("%s\n", operation.ToString())
 	}
 }

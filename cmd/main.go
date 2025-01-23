@@ -64,7 +64,7 @@ func run_jpatch() error {
 	}`)
 
 	// JSON Patch 생성
-	patch, err := jsonpatch.CreatePatch(original, modified)
+	patch, err := jsonpatch.GeneratePatch(original, modified)
 	if err != nil {
 		log.Fatalf("Error creating patch: %v", err)
 	}
