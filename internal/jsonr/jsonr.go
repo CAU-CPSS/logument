@@ -80,6 +80,10 @@ func (Array) isValue() {
 // JSON-R type
 type JsonR Value
 
+func Get(j JsonR, key string) Value {
+	return j.(Object)[key]
+}
+
 //////////////////////////////////
 ///////// PARSER
 //////////////////////////////////
@@ -93,6 +97,14 @@ func Parse(data []byte) (JsonR, error) {
 
 	return parseValue(raw)
 }
+
+// Converts JSON-R to a string.
+func ToString(j JsonR) string {
+	data, _ := json.Marshal(j)
+	return string(data)
+}
+
+// TODO: formatJSON-R
 
 func parseValue(raw any) (JsonR, error) {
 	switch v := raw.(type) {

@@ -2,13 +2,15 @@
  * jsonr_test.go
  *
  * Testing codes for jsonr package
-*/
+ */
 
 package jsonr
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParse(t *testing.T) {
@@ -103,4 +105,35 @@ func TestParse(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParsedData(t *testing.T) {
+	stringJsonR := `{
+				"name": {"Value": "John Doe", "Timestamp": 1678886400},
+				"age": {"Value": 30, "Timestamp": 1678886400},
+				"is-married": {"Value": true, "Timestamp": 1678886400},
+				"address": {
+					"street": {"Value": "123 Main St", "Timestamp": 1678886400},
+					"city": {"Value": "Anytown", "Timestamp": 1678886400}
+				},
+				"hobbies": [
+					{"Value": "reading", "Timestamp": 1678886400},
+					{"Value": "hiking", "Timestamp": 1678886400}
+				]
+			}`
+
+	parsedJsonR, err := Parse([]byte(stringJsonR))
+	if err != nil {
+		t.Errorf("Parse() error = %v", err)
+		return
+	}
+
+	t.Log(reflect.TypeOf(parsedJsonR))
+	t.Log(parsedJsonR)
+
+	t.Log(reflect.TypeOf(Get(parsedJsonR, "address")))
+	t.Log(Get(parsedJsonR, "address"))
+
+	assert.Equal(t, reflect.TypeOf(Get(Get(parsedJsonR, "address"), "city")).String(), "jsonr.Leaf[string]")
+	t.Log(Get(Get(parsedJsonR, "address"), "city"))
 }
