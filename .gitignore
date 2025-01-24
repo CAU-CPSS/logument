@@ -172,3 +172,6 @@ Temporary Items
 *.icloud
 
 # End of https://www.toptal.com/developers/gitignore/api/goland,macos,go
+
+# JSON dataset
+dataset/
