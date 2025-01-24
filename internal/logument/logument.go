@@ -11,9 +11,10 @@ import (
 type Ss = jsonr.JsonR
 type Pp = jsonpatch.PatchOperation
 
+
 // Logument 구조체
 type Logument struct {
-	CurrentSnapshot Ss         // 현재 Snapshot
+	CurrentSnapshot Snapshot         // 현재 Snapshot
 	Snapshots       []Snapshot       // 만들었던 Shanpshot 들의 배열
 	Patches         []Patch          // Patch 들의 배열
 	Version         []VersionManager // Version 정보 관리
@@ -26,8 +27,7 @@ type VersionManager struct {
 }
 
 // NewLogument TODO: initial data 를 json 으로 변경
-// Logument 생성
-// Create a new Logument with the given initial data.
+// Create a new Logument document with the given initial data.
 func NewLogument(initialData map[string]any) *Logument {
 	return &Logument{
 		CurrentSnapshot: Snapshot{
@@ -39,15 +39,9 @@ func NewLogument(initialData map[string]any) *Logument {
 	}
 }
 
-// CreateSnapshot Snapshot 생성
-func (l *Logument) CreateSnapshot(targetVer uint64) Snapshot {
-	updatedSnapshot := l.CurrentSnapshot
-
-	return updatedSnapshot
-}
-
-// AddPatch Patch 추가
-func (l *Logument) AddPatch(newPatch any) {
+// AppendPatch data를 받아 logument에 patches에 patch를 추가
+// TODO: Psuedo 구현임 실제 구현 필요
+func (l *Logument) AppendPatch(newPatch any) {
 	switch p := newPatch.(type) {
 	case Patch:
 		p.VersionCnt = atomic.LoadUint64(&l.CurrentSnapshot.Version) + 1
@@ -62,8 +56,18 @@ func (l *Logument) AddPatch(newPatch any) {
 	}
 }
 
-// MergePatches Snapshot과 Patch 병합
-func (l *Logument) MergePatches() {
+
+// Snapshot Snapshot 생성
+func (l *Logument) Snapshot(targetVer uint64) Snapshot {
+	updatedSnapshot := l.CurrentSnapshot
+
+	return updatedSnapshot
+}
+
+
+
+// Apply Snapshot과 Patch 병합
+func (l *Logument) Apply() {
 	for _, patch := range l.Patches {
 		switch patch.Op {
 		case "replace":
