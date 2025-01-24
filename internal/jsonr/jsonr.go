@@ -1,4 +1,7 @@
 /**
+ *
+ * JSON-R (jsonr.go)
+ *
  * Defines JSON-R, which consist of Value and Timestamp.
  *
  *
@@ -42,9 +45,9 @@
 package jsonr
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 )
 
 // LeafValue is a type that can be used as a value of JSON-R leaf.
@@ -52,57 +55,106 @@ type LeafValue interface {
 	~string | ~float64 | ~bool
 }
 
-// Leaf stores the value and timestamp of a JSON-R leaf.
+// Leaf[T] stores the value and timestamp of a JSON-R leaf.
 type Leaf[T LeafValue] struct {
 	Value     T     `json:"Value"`     // number, string, boolean
 	Timestamp int64 `json:"Timestamp"` // Unix timestamp
 }
 
-// Value stores the value and timestamp of a JSON-R value.
-type Value interface {
-	isValue()
+// isValue is a method that marks Leaf[T] as a Value.
+func (Leaf[T]) isValue() {
+	// This method is intentionally left empty.
 }
 
-func (Leaf[T]) isValue() {
+// Value represents a JSON-R value, including Object and Array.
+type Value interface {
+	isValue()
 }
 
 // Object stores an object of JSON-R.
 type Object map[string]Value
 
+// isValue is a method that marks Object as a Value.
 func (Object) isValue() {
 }
 
 // Array stores an array of JSON-R.
 type Array []Value
 
+// isValue is a method that marks Array as a Value.
 func (Array) isValue() {
 }
 
 // JSON-R type
 type JsonR Value
 
-func Get(j JsonR, key string) Value {
-	return j.(Object)[key]
-}
-
-func ToByteArray(j JsonR) []byte {
-	data, _ := json.Marshal(j)
-	return data
-}
-
-func Equal(j1, j2 JsonR) bool {
-	b1 := ToByteArray(j1)
-	b2 := ToByteArray(j2)
-	if bytes.Equal(b1, b2) {
-		return true
+// GetValueFromKey returns the value of the given key from the JSON-R object.
+func GetValueFromKey(j JsonR, key string) (Value, error) {
+	obj, ok := j.(Object)
+	if !ok {
+		return nil, fmt.Errorf("%v is not an jsonr.Object", j)
 	}
-	return false
+	return obj[key], nil
+}
+
+// Marshal converts the JSON-R to a byte slice.
+func Marshal(j JsonR) ([]byte, error) {
+	return json.Marshal(j)
+}
+
+// Equal checks if two JSON-Rs are equal.
+func Equal(j1, j2 JsonR) (bool, error) {
+	var o1, o2 any
+	b1, _ := Marshal(j1)
+	b2, _ := Marshal(j2)
+
+	if err := json.Unmarshal(b1, &o1); err != nil {
+		return false, err
+	}
+	if err := json.Unmarshal(b2, &o2); err != nil {
+		return false, err
+	}
+
+	return reflect.DeepEqual(o1, o2), nil
+}
+
+// GetLatestTimestamp returns the latest timestamp of the given JSON-R.
+func GetLatestTimestamp(j JsonR) int64 {
+	switch v := j.(type) {
+	case Leaf[string]:
+		return v.Timestamp
+	case Leaf[float64]:
+		return v.Timestamp
+	case Leaf[bool]:
+		return v.Timestamp
+	case Object:
+		var max int64
+		for _, value := range v {
+			timestamp := GetLatestTimestamp(value)
+			if timestamp > max {
+				max = timestamp
+			}
+		}
+		return max
+	case Array:
+		var max int64
+		for _, value := range v {
+			timestamp := GetLatestTimestamp(value)
+			if timestamp > max {
+				max = timestamp
+			}
+		}
+		return max
+	default:
+		panic(fmt.Sprintf("GetTimestamp: invalid type %T for JSON-R", j))
+	}
 }
 
 //////////////////////////////////
 ///////// PARSER
 //////////////////////////////////
 
+// NewJsonR creates a new JSON-R from the given JSON-R string.
 func NewJsonR(jsonr string) (JsonR, error) {
 	return Parse([]byte(jsonr))
 }
@@ -119,7 +171,10 @@ func Parse(data []byte) (JsonR, error) {
 
 // Converts JSON-R to a string.
 func ToString(j JsonR) string {
-	data, _ := json.Marshal(j)
+	data, err := json.Marshal(j)
+	if err != nil {
+		panic(fmt.Sprintf("failed to marshal JSON-R: %v", err))
+	}
 	return string(data)
 }
 
@@ -127,15 +182,16 @@ func ToString(j JsonR) string {
 
 func parseValue(raw any) (JsonR, error) {
 	switch v := raw.(type) {
-	case map[string]any: // type is Object
+	case map[string]any: // type is a JSON-R object
 		if isLeaf(v) {
 			return parseLeaf(v)
 		} else {
 			return parseObject(v)
 		}
-	case []any: // type is Array
+	case []any: // type is a JSON-R array
 		return parseArray(v)
-	default: // type is Leaf
+	// TODO: make case string, float64, bool and raise panic when default
+	default: // type is a JSON-R leaf
 		return parseLeaf(v)
 	}
 }

@@ -50,31 +50,25 @@ var testJsonR2 = `
 		"Timestamp": 1678886400
 	},
 	"age": {
-		"Value": 30,
+		"Value": 10,
 		"Timestamp": 1678886400
 	},
 	"is-married": {
 		"Value": true,
 		"Timestamp": 1678886400
 	},
-	"address": {
-		"street": {
-			"Value": "123 Main St",
-			"Timestamp": 1888888888
-		},
-		"city": {
-			"Value": "Anytown",
-			"Timestamp": 1678886400
-		}
-	},
 	"hobbies": [
 		{
-			"Value": "sleeping",
-			"Timestamp": 1888888888
+			"Value": "reading",
+			"Timestamp": 1678886400
 		},
-				{
+		{
 			"Value": "hiking",
 			"Timestamp": 1678886400
+		},
+		{
+			"Value": "swimming",
+			"Timestamp": 2000000000
 		}
 	]
 }`

@@ -8,6 +8,7 @@ import (
 
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/logument"
+	"github.com/CAU-CPSS/logument/internal/jsonr"
 )
 
 func main() {
@@ -16,7 +17,7 @@ func main() {
 	// 	os.Exit(1)
 	// }
 	if err := run_logument(); err != nil {
-		fmt.Println("Application error: %v", err)
+		fmt.Printf("Application error: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -43,7 +44,7 @@ func run_logument() error {
 
 func run_jpatch() error {
 	// 원본 JSON 문서
-	original := []byte(`{
+	original, _ := jsonr.NewJsonR(`{
 		"name": "Alice",
 		"age": 25,
 		"address": {
@@ -53,7 +54,7 @@ func run_jpatch() error {
 	}`)
 
 	// 변경된 JSON
-	modified := []byte(`{
+	modified, _ := jsonr.NewJsonR(`{
 		"name": "Alice",
 		"age": 26,
 		"address": {

@@ -13,6 +13,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var stringJsonR = `{ 
+	"name": {"Value": "John Doe", "Timestamp": 1678886400},
+	"age": {"Value": 30, "Timestamp": 1678886400},
+	"is-married": {"Value": true, "Timestamp": 1678886400},
+	"address": {
+		"street": {"Value": "123 Main St", "Timestamp": 1678886400},
+		"city": {"Value": "Anytown", "Timestamp": 1678886400}
+	},
+	"hobbies": [
+		{"Value": "reading", "Timestamp": 1678886400},
+		{"Value": "hiking", "Timestamp": 2078886400}
+	]
+}`
+
 func TestParse(t *testing.T) {
 	testCases := []struct {
 		name    string
@@ -108,20 +122,6 @@ func TestParse(t *testing.T) {
 }
 
 func TestParsedData(t *testing.T) {
-	stringJsonR := `{
-				"name": {"Value": "John Doe", "Timestamp": 1678886400},
-				"age": {"Value": 30, "Timestamp": 1678886400},
-				"is-married": {"Value": true, "Timestamp": 1678886400},
-				"address": {
-					"street": {"Value": "123 Main St", "Timestamp": 1678886400},
-					"city": {"Value": "Anytown", "Timestamp": 1678886400}
-				},
-				"hobbies": [
-					{"Value": "reading", "Timestamp": 1678886400},
-					{"Value": "hiking", "Timestamp": 1678886400}
-				]
-			}`
-
 	parsedJsonR, err := Parse([]byte(stringJsonR))
 	if err != nil {
 		t.Errorf("Parse() error = %v", err)
@@ -131,9 +131,25 @@ func TestParsedData(t *testing.T) {
 	t.Log(reflect.TypeOf(parsedJsonR))
 	t.Log(parsedJsonR)
 
-	t.Log(reflect.TypeOf(Get(parsedJsonR, "address")))
-	t.Log(Get(parsedJsonR, "address"))
+	value, _ := GetValueFromKey(parsedJsonR, "address")
+	t.Log(reflect.TypeOf(value))
+	t.Log(GetValueFromKey(parsedJsonR, "address"))
 
-	assert.Equal(t, reflect.TypeOf(Get(Get(parsedJsonR, "address"), "city")).String(), "jsonr.Leaf[string]")
-	t.Log(Get(Get(parsedJsonR, "address"), "city"))
+	value, _ = GetValueFromKey(parsedJsonR, "address")
+	value, _ = GetValueFromKey(value, "city")
+	assert.Equal(t, reflect.TypeOf(value).String(), "jsonr.Leaf[string]")
+
+	value, _ = GetValueFromKey(parsedJsonR, "address")
+	t.Log(GetValueFromKey(value, "city"))
+}
+
+func TestGetTimestamp(t *testing.T) {
+	parsedJsonR, err := Parse([]byte(stringJsonR))
+	if err != nil {
+		t.Errorf("Parse() error = %v", err)
+		return
+	}
+
+	timestamp := GetLatestTimestamp(parsedJsonR)
+	t.Logf("Max timestamp: %d", timestamp)
 }

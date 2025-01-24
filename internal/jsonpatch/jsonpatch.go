@@ -62,7 +62,7 @@ func NewPatchOperation(operation OpType, path string, value any, timestamp int64
 // GeneratePatch generates a JSON patch from two JSON-R documents
 func GeneratePatch(origin, modified jsonr.JsonR) ([]PatchOperation, error) {
 	// If the two JSON-R documents are equal, return an empty patch
-	if jsonr.Equal(origin, modified) {
+	if eq, err := jsonr.Equal(origin, modified); err != nil && eq {
 		return []PatchOperation{}, nil
 	}
 
@@ -76,6 +76,7 @@ func matchesValue(origin, modified jsonr.Value) bool {
 	if reflect.TypeOf(origin) != reflect.TypeOf(modified) {
 		return false
 	}
+
 	switch at := origin.(type) {
 	case jsonr.Leaf[string]:
 		if modified.(jsonr.Leaf[string]).Value == at.Value {
@@ -151,15 +152,12 @@ func diff(a, b jsonr.Object, path string, patch []PatchOperation) ([]PatchOperat
 		av, ok := a[key]
 		// value was added
 		if !ok {
-			switch bv.(type) {
+			switch bm := bv.(type) {
 			case jsonr.Leaf[string]:
-				bm, _ := bv.(jsonr.Leaf[string])
 				patch = append(patch, NewPatchOperation(OpAdd, p, bm.Value, bm.Timestamp))
 			case jsonr.Leaf[float64]:
-				bm, _ := bv.(jsonr.Leaf[float64])
 				patch = append(patch, NewPatchOperation(OpAdd, p, bm.Value, bm.Timestamp))
 			case jsonr.Leaf[bool]:
-				bm, _ := bv.(jsonr.Leaf[bool])
 				patch = append(patch, NewPatchOperation(OpAdd, p, bm.Value, bm.Timestamp))
 			default:
 				panic(fmt.Sprintf("diff(): Unknown type %T for bv", bv))
@@ -168,15 +166,12 @@ func diff(a, b jsonr.Object, path string, patch []PatchOperation) ([]PatchOperat
 		}
 		// If types have changed, replace completely
 		if reflect.TypeOf(av) != reflect.TypeOf(bv) {
-			switch bv.(type) {
+			switch bm := bv.(type) {
 			case jsonr.Leaf[string]:
-				bm, _ := bv.(jsonr.Leaf[string])
 				patch = append(patch, NewPatchOperation(OpReplace, p, bm.Value, bm.Timestamp))
 			case jsonr.Leaf[float64]:
-				bm, _ := bv.(jsonr.Leaf[float64])
 				patch = append(patch, NewPatchOperation(OpReplace, p, bm.Value, bm.Timestamp))
 			case jsonr.Leaf[bool]:
-				bm, _ := bv.(jsonr.Leaf[bool])
 				patch = append(patch, NewPatchOperation(OpReplace, p, bm.Value, bm.Timestamp))
 			default:
 				panic(fmt.Sprintf("diff(): Unknown type %T for bv", bv))
@@ -197,13 +192,17 @@ func diff(a, b jsonr.Object, path string, patch []PatchOperation) ([]PatchOperat
 			p := makePath(path, key)
 
 			am, _ := a[key]
-			switch am.(type) {
+			switch leaf := am.(type) {
 			case jsonr.Leaf[string]:
-				patch = append(patch, NewPatchOperation(OpRemove, p, nil, am.(jsonr.Leaf[string]).Timestamp))
+				patch = append(patch, NewPatchOperation(OpRemove, p, nil, leaf.Timestamp))
 			case jsonr.Leaf[float64]:
-				patch = append(patch, NewPatchOperation(OpRemove, p, nil, am.(jsonr.Leaf[float64]).Timestamp))
+				patch = append(patch, NewPatchOperation(OpRemove, p, nil, leaf.Timestamp))
 			case jsonr.Leaf[bool]:
-				patch = append(patch, NewPatchOperation(OpRemove, p, nil, am.(jsonr.Leaf[bool]).Timestamp))
+				patch = append(patch, NewPatchOperation(OpRemove, p, nil, leaf.Timestamp))
+			case jsonr.Object:
+				patch = append(patch, NewPatchOperation(OpRemove, p, nil, -1))
+			case jsonr.Array:
+				patch = append(patch, NewPatchOperation(OpRemove, p, nil, -1))
 			default:
 				panic(fmt.Sprintf("diff(): Unknown type %T for am", am))
 			}
@@ -271,7 +270,7 @@ func compareArray(av, bv jsonr.Array, p string) []PatchOperation {
 	retval := []PatchOperation{}
 
 	// Find elements that need to be removed
-	processArray(av, bv, func(i int, value interface{}) {
+	processArray(av, bv, func(i int, value any) {
 		retval = append(retval, NewPatchOperation(OpRemove, makePath(p, i), nil, -1))
 	})
 	reversed := make([]PatchOperation, len(retval))
@@ -281,8 +280,20 @@ func compareArray(av, bv jsonr.Array, p string) []PatchOperation {
 	retval = reversed
 	// Find elements that need to be added.
 	// NOTE we pass in `bv` then `av` so that processArray can find the missing elements.
-	processArray(bv, av, func(i int, value interface{}) {
-		retval = append(retval, NewPatchOperation(OpAdd, makePath(p, i), value.(map[string]any)["Value"], value.(map[string]any)["Timestamp"].(int64)))
+	processArray(bv, av, func(i int, value any) {
+		switch leaf := value.(type) {
+		case jsonr.Leaf[string]:
+			retval = append(retval, NewPatchOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
+
+		case jsonr.Leaf[float64]:
+			retval = append(retval, NewPatchOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
+
+		case jsonr.Leaf[bool]:
+			retval = append(retval, NewPatchOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
+
+		default:
+			panic(fmt.Sprintf("compareArray(): Unknown type %T for value", value))
+		}
 	})
 
 	return retval
@@ -290,7 +301,7 @@ func compareArray(av, bv jsonr.Array, p string) []PatchOperation {
 
 // processArray processes `av` and `bv` calling `applyOp` whenever a value is absent.
 // It keeps track of which indexes have already had `applyOp` called for and automatically skips them so you can process duplicate jsonr.Objects correctly.
-func processArray(av, bv jsonr.Array, applyOp func(i int, value interface{})) {
+func processArray(av, bv jsonr.Array, applyOp func(i int, value any)) {
 	foundIndexes := make(map[int]struct{}, len(av))
 	reverseFoundIndexes := make(map[int]struct{}, len(av))
 	for i, v := range av {

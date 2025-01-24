@@ -3,11 +3,17 @@ package logument
 import (
 	"sync/atomic"
 	"time"
+
+	"github.com/CAU-CPSS/logument/internal/jsonr"
+	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 )
+
+type Ss = jsonr.JsonR
+type Pp = jsonpatch.PatchOperation
 
 // Logument 구조체
 type Logument struct {
-	CurrentSnapshot Snapshot         // 현재 Snapshot
+	CurrentSnapshot Ss         // 현재 Snapshot
 	Snapshots       []Snapshot       // 만들었던 Shanpshot 들의 배열
 	Patches         []Patch          // Patch 들의 배열
 	Version         []VersionManager // Version 정보 관리
@@ -21,6 +27,7 @@ type VersionManager struct {
 
 // NewLogument TODO: initial data 를 json 으로 변경
 // Logument 생성
+// Create a new Logument with the given initial data.
 func NewLogument(initialData map[string]any) *Logument {
 	return &Logument{
 		CurrentSnapshot: Snapshot{
