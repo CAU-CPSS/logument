@@ -1,3 +1,11 @@
+//
+// jsonpatch.go
+//
+// A JSON patch libary for JSON-R documents.
+//
+// Author: Karu (karu-rress)
+//
+
 package jsonpatch
 
 import (
@@ -5,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/CAU-CPSS/logument/internal/jsonr"
@@ -23,104 +32,201 @@ const (
 	OpTest    OpType = "test"
 )
 
-// Represents a single JSON patch operation.
-type PatchOperation struct {
+// Patch represents a JSON patch document.
+type Patch []Operation
+
+// String converts the Patch to a JSON string, with formatting.
+func (p *Patch) String() string {
+	lines := make([]string, len(*p))
+	for i, op := range *p {
+		lines[i] = "    " + op.String()
+	}
+	return fmt.Sprintf("[\n%s\n]", strings.Join(lines, ",\n"))
+}
+
+func ParsePatch(b []byte) (Patch, error) {
+	var patch Patch
+	if err := json.Unmarshal(b, &patch); err != nil {
+		return nil, err
+	}
+	return patch, nil
+}
+
+// Operation represents a single JSON patch operation.
+type Operation struct {
 	Op        OpType `json:"op"`
 	Path      string `json:"path"`
 	Value     any    `json:"value,omitempty"`
 	Timestamp int64  `json:"timestamp"`
 }
 
-// ToString converts the PatchOperation to a JSON string.
-func (p *PatchOperation) ToString() string {
-	// NOTE: Using vanila JSON here
+// String converts the Operation to a JSON string.
+func (p *Operation) String() (s string) {
+	// Using vanila JSON here
 	b, _ := json.Marshal(p)
-	return string(b)
+
+	// Format the JSON string
+	s = strings.ReplaceAll(string(b), "{", "{ ")
+	s = strings.ReplaceAll(s, ",", ", ")
+	s = strings.ReplaceAll(s, "}", " }")
+	return s
 }
 
-// Marshal converts the PatchOperation to a JSON byte Array.
-func (p *PatchOperation) Marshal() ([]byte, error) {
-	var b bytes.Buffer
-	b.WriteString(fmt.Sprintf(`{ "op":"%s", "path":"%s"`, p.Op, p.Path))
+// Marshal converts the Operation to a JSON byte Array.
+func (p *Operation) Marshal() ([]byte, error) {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, `{"op":"%s","path":"%s"`, p.Op, p.Path)
 	if p.Value != nil || p.Op == OpReplace || p.Op == OpAdd || p.Op == OpTest {
-		v, err := json.Marshal(p.Value)
-		if err != nil {
+		if v, err := json.Marshal(p.Value); err != nil {
 			return nil, err
+		} else {
+			fmt.Fprintf(&buf, `,"value":%s`, v)
 		}
-		b.WriteString(`,"value":`)
-		b.Write(v)
 	}
-	b.WriteString(fmt.Sprintf(`,"timestamp":%d }`, p.Timestamp))
-	return b.Bytes(), nil
+	fmt.Fprintf(&buf, `,"timestamp":%d}`, p.Timestamp)
+	return buf.Bytes(), nil
 }
 
-// NewPatchOperation creates a new PatchOperation instance.
-func NewPatchOperation(operation OpType, path string, value any, timestamp int64) PatchOperation {
-	return PatchOperation{operation, path, value, timestamp}
+// NewOperation creates a new Operation instance.
+func NewOperation(op OpType, path string, value any, timestamp int64) Operation {
+	return Operation{op, path, value, timestamp}
 }
 
 // GeneratePatch generates a JSON patch from two JSON-R documents
-func GeneratePatch(origin, modified jsonr.JsonR) ([]PatchOperation, error) {
+func GeneratePatch(origin, modified jsonr.JsonR) (Patch, error) {
 	// If the two JSON-R documents are equal, return an empty patch
 	if eq, err := jsonr.Equal(origin, modified); err != nil && eq {
-		return []PatchOperation{}, nil
+		return Patch{}, nil
 	}
 
-	return handleValues(origin, modified, "", []PatchOperation{})
+	return handleValues(origin, modified, "", Patch{})
 }
 
-// Returns true if the values matches (must be json types)
-// The types of the values must match, otherwise it will always return false
-// If two map[string]any are given, all elements must match.
-func matchesValue(origin, modified jsonr.Value) bool {
-	if reflect.TypeOf(origin) != reflect.TypeOf(modified) {
-		return false
+// ApplyPatch applies a JSON patch to a JSON-R document
+func ApplyPatch(doc jsonr.JsonR, patch Patch) (jsonr.JsonR, error) {
+	for _, op := range patch {
+		var err error
+		doc, err = applyOperation(doc, op)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return doc, nil
+}
+
+func applyOperation(doc jsonr.JsonR, op Operation) (jsonr.JsonR, error) {
+	path := rfc6901Decoder.Replace(op.Path)
+
+	// Split the path into parts
+	parts := strings.Split(path, "/")[1:]
+
+	// Traverse the JSON-R document
+	var err error
+	if doc, err = applyTraverse(doc, parts, op); err != nil {
+		return nil, err
+	}
+	return doc, nil
+}
+
+func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (jsonr.JsonR, error) {
+	// If the path is empty, return the document
+	if len(parts) == 0 {
+		return doc, nil
 	}
 
-	switch at := origin.(type) {
-	case jsonr.Leaf[string]:
-		if modified.(jsonr.Leaf[string]).Value == at.Value {
-			return true
-		}
-	case jsonr.Leaf[float64]:
-		if modified.(jsonr.Leaf[float64]).Value == at.Value {
-			return true
-		}
-	case jsonr.Leaf[bool]:
-		if modified.(jsonr.Leaf[bool]).Value == at.Value {
-			return true
-		}
-	case jsonr.Object:
-		bt := modified.(jsonr.Object)
-		for key := range at {
-			if !matchesValue(at[key], bt[key]) {
-				return false
-			}
-		}
-		for key := range bt {
-			if !matchesValue(at[key], bt[key]) {
-				return false
-			}
-		}
-		return true
-	case jsonr.Array:
-		bt := modified.(jsonr.Array)
-		if len(bt) != len(at) {
-			return false
-		}
-		for key := range at {
-			if !matchesValue(at[key], bt[key]) {
-				return false
-			}
-		}
-		for key := range bt {
-			if !matchesValue(at[key], bt[key]) {
-				return false
-			}
-		}
-		return true
+	// If doc is a leaf node, return the document
+	switch doc.(type) {
+	case jsonr.Leaf[string], jsonr.Leaf[float64], jsonr.Leaf[bool]:
+		return doc, nil
 	}
-	return false
+
+	part := parts[0]
+	switch json := doc.(type) {
+	case jsonr.Object:
+		// Only a single part of path
+		if len(parts) == 1 {
+			// switch by operation type
+			switch op.Op {
+			case OpAdd, OpReplace:
+				// switch by operation value's datatype
+				switch leaf := op.Value.(type) {
+				case jsonr.Leaf[string]:
+					json[part] = jsonr.Leaf[string]{Value: leaf.Value, Timestamp: leaf.Timestamp}
+				case jsonr.Leaf[float64]:
+					json[part] = jsonr.Leaf[float64]{Value: leaf.Value, Timestamp: leaf.Timestamp}
+				case jsonr.Leaf[bool]:
+					json[part] = jsonr.Leaf[bool]{Value: leaf.Value, Timestamp: leaf.Timestamp}
+				default:
+					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for op.Value", op.Value)
+				}
+
+			case OpRemove:
+				delete(json, part)
+			// case OpMove, OpCopy, OpTest:
+			// 	  Not implemented
+			default:
+				return nil, fmt.Errorf("applyTraverse(): Unknown operation %s", op.Op)
+			}
+			return json, nil
+		}
+
+		// Recursively traverse the JSON-R document
+		switch value := json[part].(type) {
+		// TODO: when value is leaf? But it should not be leaf here.
+		case jsonr.Object:
+			var err error
+			json[part], err = applyTraverse(value, parts[1:], op)
+			if err != nil {
+				return nil, err
+			}
+		case jsonr.Array:
+			idx, err := getIndex(parts[1])
+			if err != nil {
+				return nil, err
+			}
+
+			switch op.Op {
+			case OpAdd, OpReplace:
+
+				switch elem := value[idx].(type) {
+				// If leaf
+				case jsonr.Leaf[string]:
+					value[idx] = jsonr.Leaf[string]{Value: op.Value.(string), Timestamp: op.Timestamp}
+				case jsonr.Leaf[float64]:
+					value[idx] = jsonr.Leaf[float64]{Value: op.Value.(float64), Timestamp: op.Timestamp}
+				case jsonr.Leaf[bool]:
+					value[idx] = jsonr.Leaf[bool]{Value: op.Value.(bool), Timestamp: op.Timestamp}
+				case jsonr.Object, jsonr.Array:
+					json[part], err = applyTraverse(value[idx], parts[1:], op)
+					if err != nil {
+						return nil, err
+					}
+				default:
+					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for elem", elem)
+				}
+			case OpRemove:
+				value = append(value[:idx], value[idx+1:]...)
+
+			default:
+				return nil, fmt.Errorf("applyTraverse(): Unknown operation %s", op.Op)
+			}
+
+		default:
+			return nil, fmt.Errorf("traverse(): Unknown type %T for value", value)
+		}
+
+		return json, nil
+	// case jsonr.Array:
+	default:
+		return nil, fmt.Errorf("applyTraverse(): Unknown type %T for doc", doc)
+	}
+}
+
+func getIndex(part string) (idx int, err error) {
+	if idx, err = strconv.Atoi(part); err != nil {
+		return -1, fmt.Errorf("getIndex(): Invalid index %s", part)
+	}
+	return idx, nil
 }
 
 // From http://tools.ietf.org/html/rfc6901#section-4 :
@@ -129,10 +235,11 @@ func matchesValue(origin, modified jsonr.Value) bool {
 // character sequence.  This is performed by first transforming any
 // occurrence of the sequence '~1' to '/', and then transforming any
 // occurrence of the sequence '~0' to '~'.
-//   TODO decode support:
-//   var rfc6901Decoder = strings.NewReplacer("~1", "/", "~0", "~")
 
-var rfc6901Encoder = strings.NewReplacer("~", "~0", "/", "~1")
+var (
+	rfc6901Encoder = strings.NewReplacer("~", "~0", "/", "~1")
+	rfc6901Decoder = strings.NewReplacer("~1", "/", "~0", "~")
+)
 
 func makePath(path string, newPart any) string {
 	key := rfc6901Encoder.Replace(fmt.Sprintf("%v", newPart))
@@ -145,180 +252,246 @@ func makePath(path string, newPart any) string {
 	return path + "/" + key
 }
 
-// diff returns the (recursive) difference between a and b as an jsonr.Array of JsonPatchOperations.
-func diff(a, b jsonr.Object, path string, patch []PatchOperation) ([]PatchOperation, error) {
-	for key, bv := range b {
+// diff returns the (recursive) difference between a and b.
+func diff(origin, modified jsonr.Object, path string, patch Patch) (Patch, error) {
+	for key, modValue := range modified {
 		p := makePath(path, key)
-		av, ok := a[key]
-		// value was added
+		origValue, ok := origin[key]
+		// "add": Only exists in 'modified'
 		if !ok {
-			switch bm := bv.(type) {
+			switch modLeaf := modValue.(type) {
 			case jsonr.Leaf[string]:
-				patch = append(patch, NewPatchOperation(OpAdd, p, bm.Value, bm.Timestamp))
+				patch = append(patch, NewOperation(OpAdd, p, modLeaf.Value, modLeaf.Timestamp))
 			case jsonr.Leaf[float64]:
-				patch = append(patch, NewPatchOperation(OpAdd, p, bm.Value, bm.Timestamp))
+				patch = append(patch, NewOperation(OpAdd, p, modLeaf.Value, modLeaf.Timestamp))
 			case jsonr.Leaf[bool]:
-				patch = append(patch, NewPatchOperation(OpAdd, p, bm.Value, bm.Timestamp))
+				patch = append(patch, NewOperation(OpAdd, p, modLeaf.Value, modLeaf.Timestamp))
 			default:
-				panic(fmt.Sprintf("diff(): Unknown type %T for bv", bv))
+				return nil, fmt.Errorf("diff(): Unknown type %T for modValue", modValue)
 			}
 			continue
 		}
-		// If types have changed, replace completely
-		if reflect.TypeOf(av) != reflect.TypeOf(bv) {
-			switch bm := bv.(type) {
+		// "replace": Type has changed
+		if reflect.TypeOf(origValue) != reflect.TypeOf(modValue) {
+			switch modLeaf := modValue.(type) {
 			case jsonr.Leaf[string]:
-				patch = append(patch, NewPatchOperation(OpReplace, p, bm.Value, bm.Timestamp))
+				patch = append(patch, NewOperation(OpReplace, p, modLeaf.Value, modLeaf.Timestamp))
 			case jsonr.Leaf[float64]:
-				patch = append(patch, NewPatchOperation(OpReplace, p, bm.Value, bm.Timestamp))
+				patch = append(patch, NewOperation(OpReplace, p, modLeaf.Value, modLeaf.Timestamp))
 			case jsonr.Leaf[bool]:
-				patch = append(patch, NewPatchOperation(OpReplace, p, bm.Value, bm.Timestamp))
+				patch = append(patch, NewOperation(OpReplace, p, modLeaf.Value, modLeaf.Timestamp))
 			default:
-				panic(fmt.Sprintf("diff(): Unknown type %T for bv", bv))
+				return nil, fmt.Errorf("diff(): Unknown type %T for modValue", modValue)
 			}
 			continue
 		}
 		// Types are the same, compare values
 		var err error
-		patch, err = handleValues(av, bv, p, patch)
+		patch, err = handleValues(origValue, modValue, p, patch)
 		if err != nil {
 			return nil, err
 		}
 	}
-	// Now add all deleted values as nil
-	for key := range a {
-		_, found := b[key]
+	// "remove": Only exists in 'origin'
+	for key := range origin {
+		_, found := modified[key]
 		if !found {
 			p := makePath(path, key)
-
-			am, _ := a[key]
-			switch leaf := am.(type) {
+			origValue := origin[key]
+			switch origLeaf := origValue.(type) {
 			case jsonr.Leaf[string]:
-				patch = append(patch, NewPatchOperation(OpRemove, p, nil, leaf.Timestamp))
+				patch = append(patch, NewOperation(OpRemove, p, nil, origLeaf.Timestamp))
 			case jsonr.Leaf[float64]:
-				patch = append(patch, NewPatchOperation(OpRemove, p, nil, leaf.Timestamp))
+				patch = append(patch, NewOperation(OpRemove, p, nil, origLeaf.Timestamp))
 			case jsonr.Leaf[bool]:
-				patch = append(patch, NewPatchOperation(OpRemove, p, nil, leaf.Timestamp))
+				patch = append(patch, NewOperation(OpRemove, p, nil, origLeaf.Timestamp))
 			case jsonr.Object:
-				patch = append(patch, NewPatchOperation(OpRemove, p, nil, -1))
+				// TODO: is there a way to calculate the timestamp?
+				patch = append(patch, NewOperation(OpRemove, p, nil, -1))
 			case jsonr.Array:
-				patch = append(patch, NewPatchOperation(OpRemove, p, nil, -1))
+				patch = append(patch, NewOperation(OpRemove, p, nil, -1))
 			default:
-				panic(fmt.Sprintf("diff(): Unknown type %T for am", am))
+				panic(fmt.Sprintf("diff(): Unknown type %T for origValue", origValue))
 			}
 		}
 	}
 	return patch, nil
 }
 
-func handleValues(av, bv jsonr.JsonR, p string, patch []PatchOperation) ([]PatchOperation, error) {
+func handleValues(origValue, modValue jsonr.Value, path string, patch Patch) (Patch, error) {
 	var err error
-	switch at := av.(type) {
+	switch origin := origValue.(type) {
 	case jsonr.Leaf[string]:
-		if !matchesValue(av, bv) {
-			patch = append(patch, NewPatchOperation(OpReplace, p, bv.(jsonr.Leaf[string]).Value, bv.(jsonr.Leaf[string]).Timestamp))
+		if !matchesValue(origValue, modValue) {
+			modified := modValue.(jsonr.Leaf[string])
+			patch = append(patch, NewOperation(OpReplace, path, modified.Value, modified.Timestamp))
 		}
 	case jsonr.Leaf[float64]:
-		if !matchesValue(av, bv) {
-			patch = append(patch, NewPatchOperation(OpReplace, p, bv.(jsonr.Leaf[float64]).Value, bv.(jsonr.Leaf[float64]).Timestamp))
+		if !matchesValue(origValue, modValue) {
+			modified := modValue.(jsonr.Leaf[float64])
+			patch = append(patch, NewOperation(OpReplace, path, modified.Value, modified.Timestamp))
 		}
 	case jsonr.Leaf[bool]:
-		if !matchesValue(av, bv) {
-			patch = append(patch, NewPatchOperation(OpReplace, p, bv.(jsonr.Leaf[bool]).Value, bv.(jsonr.Leaf[bool]).Timestamp))
+		if !matchesValue(origValue, modValue) {
+			modified := modValue.(jsonr.Leaf[bool])
+			patch = append(patch, NewOperation(OpReplace, path, modified.Value, modified.Timestamp))
 		}
 	case jsonr.Object:
-		bt := bv.(jsonr.Object)
-		patch, err = diff(at, bt, p, patch)
-		if err != nil {
+		modified := modValue.(jsonr.Object)
+		if patch, err = diff(origin, modified, path, patch); err != nil {
 			return nil, err
 		}
 	case jsonr.Array:
-		bt, ok := bv.(jsonr.Array)
-		if !ok {
-			var bk any = bv
-			// jsonr.Array replaced by non-jsonr.Array
-			patch = append(patch, NewPatchOperation(OpReplace, p, bk.(map[string]any)["Value"], bk.(map[string]any)["Timestamp"].(int64)))
-		} else if len(at) != len(bt) {
-			// jsonr.Arrays are not the same length
-			patch = append(patch, compareArray(at, bt, p)...)
-
-		} else {
-			for i := range bt {
-				patch, err = handleValues(at[i], bt[i], makePath(p, i), patch)
+		modified, ok := modValue.(jsonr.Array)
+		if !ok { // jsonr.Array replaced by non-Array
+			var mod any = modValue
+			switch modLeaf := mod.(type) {
+			case jsonr.Leaf[string]:
+				patch = append(patch, NewOperation(OpReplace, path, modLeaf.Value, modLeaf.Timestamp))
+			case jsonr.Leaf[float64]:
+				patch = append(patch, NewOperation(OpReplace, path, modLeaf.Value, modLeaf.Timestamp))
+			case jsonr.Leaf[bool]:
+				patch = append(patch, NewOperation(OpReplace, path, modLeaf.Value, modLeaf.Timestamp))
+			default:
+				return nil, fmt.Errorf("handleValues(): Unknown type %T for modValue", modValue)
+			}
+		} else if len(origin) != len(modified) { // Different array lengths
+			patch = append(patch, compareArray(origin, modified, path)...)
+		} else { // Same length, compare elements
+			for i := range modified {
+				patch, err = handleValues(origin[i], modified[i], makePath(path, i), patch)
 				if err != nil {
 					return nil, err
 				}
 			}
 		}
 	case nil:
-		switch bv.(type) {
+		switch modValue.(type) {
 		case nil:
 			// Both nil, fine.
 		default:
 			// Replace nil with value
-			var bk any = bv
-			patch = append(patch, NewPatchOperation(OpAdd, p, bk.(map[string]any)["Value"], bk.(map[string]any)["Timestamp"].(int64)))
+			var mod any = modValue
+			switch modLeaf := mod.(type) {
+			case jsonr.Leaf[string]:
+				patch = append(patch, NewOperation(OpAdd, path, modLeaf.Value, modLeaf.Timestamp))
+			case jsonr.Leaf[float64]:
+				patch = append(patch, NewOperation(OpAdd, path, modLeaf.Value, modLeaf.Timestamp))
+			case jsonr.Leaf[bool]:
+				patch = append(patch, NewOperation(OpAdd, path, modLeaf.Value, modLeaf.Timestamp))
+			default:
+				return nil, fmt.Errorf("handleValues(): Unknown type %T for modValue", modValue)
+			}
 		}
 	default:
-		panic(fmt.Sprintf("handleValues(): Unknown type %T for av", av))
+		return nil, fmt.Errorf("handleValues(): Unknown type %T for origValue", origValue)
 	}
 	return patch, nil
 }
 
-// compareArray generates remove and add operations for `av` and `bv`.
-func compareArray(av, bv jsonr.Array, p string) []PatchOperation {
-	retval := []PatchOperation{}
-
-	// Find elements that need to be removed
-	processArray(av, bv, func(i int, value any) {
-		retval = append(retval, NewPatchOperation(OpRemove, makePath(p, i), nil, -1))
-	})
-	reversed := make([]PatchOperation, len(retval))
-	for i := 0; i < len(retval); i++ {
-		reversed[len(retval)-1-i] = retval[i]
+// Compares two JSON-R values and returns true if they are equal.
+func matchesValue(origin, modified jsonr.Value) bool {
+	if reflect.TypeOf(origin) != reflect.TypeOf(modified) {
+		return false
 	}
-	retval = reversed
+
+	switch org := origin.(type) {
+	case jsonr.Leaf[string]:
+		if modified.(jsonr.Leaf[string]).Value == org.Value {
+			return true
+		}
+	case jsonr.Leaf[float64]:
+		if modified.(jsonr.Leaf[float64]).Value == org.Value {
+			return true
+		}
+	case jsonr.Leaf[bool]:
+		if modified.(jsonr.Leaf[bool]).Value == org.Value {
+			return true
+		}
+	case jsonr.Object:
+		modObj := modified.(jsonr.Object)
+		for key := range org {
+			if !matchesValue(org[key], modObj[key]) {
+				return false
+			}
+		}
+		for key := range modObj {
+			if !matchesValue(org[key], modObj[key]) {
+				return false
+			}
+		}
+		return true
+	case jsonr.Array:
+		modArray := modified.(jsonr.Array)
+		if len(modArray) != len(org) {
+			return false
+		}
+		for key := range org {
+			if !matchesValue(org[key], modArray[key]) {
+				return false
+			}
+		}
+		for key := range modArray {
+			if !matchesValue(org[key], modArray[key]) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
+// compareArray generates remove and add operations
+func compareArray(origArr, modArr jsonr.Array, p string) (patch Patch) {
+	// Find elements that need to be removed
+	processArray(origArr, modArr, func(i int, _ any) {
+		// TODO: is there a way to calculate the timestamp?
+		patch = append(patch, NewOperation(OpRemove, makePath(p, i), nil, -1))
+	})
+
+	reversed := make(Patch, len(patch))
+	for i := 0; i < len(patch); i++ {
+		reversed[len(patch)-1-i] = patch[i]
+	}
+	patch = reversed
+
 	// Find elements that need to be added.
-	// NOTE we pass in `bv` then `av` so that processArray can find the missing elements.
-	processArray(bv, av, func(i int, value any) {
+	processArray(modArr, origArr, func(i int, value any) {
 		switch leaf := value.(type) {
 		case jsonr.Leaf[string]:
-			retval = append(retval, NewPatchOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
-
+			patch = append(patch, NewOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
 		case jsonr.Leaf[float64]:
-			retval = append(retval, NewPatchOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
-
+			patch = append(patch, NewOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
 		case jsonr.Leaf[bool]:
-			retval = append(retval, NewPatchOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
-
+			patch = append(patch, NewOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
 		default:
 			panic(fmt.Sprintf("compareArray(): Unknown type %T for value", value))
 		}
 	})
-
-	return retval
+	return patch
 }
 
-// processArray processes `av` and `bv` calling `applyOp` whenever a value is absent.
-// It keeps track of which indexes have already had `applyOp` called for and automatically skips them so you can process duplicate jsonr.Objects correctly.
-func processArray(av, bv jsonr.Array, applyOp func(i int, value any)) {
-	foundIndexes := make(map[int]struct{}, len(av))
-	reverseFoundIndexes := make(map[int]struct{}, len(av))
-	for i, v := range av {
-		for i2, v2 := range bv {
-			if _, ok := reverseFoundIndexes[i2]; ok {
-				// We already found this index.
+// processArray processes two arrays calling applyOp whenever a value is absent.
+func processArray(origArr, modArr jsonr.Array, applyOp func(i int, value any)) {
+	// Note: map[T]struct{} is used to simulate a set.
+	foundIndexes := make(map[int]struct{}, len(origArr))
+	reverseFoundIndexes := make(map[int]struct{}, len(origArr))
+
+	for idx1, value1 := range origArr {
+		for idx2, value2 := range modArr {
+			if _, ok := reverseFoundIndexes[idx2]; ok {
+				// This one is already found.
 				continue
 			}
-			if reflect.DeepEqual(v, v2) {
-				// Mark this index as found since it matches exactly.
-				foundIndexes[i] = struct{}{}
-				reverseFoundIndexes[i2] = struct{}{}
+			if reflect.DeepEqual(value1, value2) {
+				// Mark this as found
+				foundIndexes[idx1] = struct{}{}
+				reverseFoundIndexes[idx2] = struct{}{}
 				break
 			}
 		}
-		if _, ok := foundIndexes[i]; !ok {
-			applyOp(i, v)
+		if _, ok := foundIndexes[idx1]; !ok {
+			applyOp(idx1, value1)
 		}
 	}
 }

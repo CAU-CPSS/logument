@@ -50,6 +50,11 @@ import (
 	"reflect"
 )
 
+// Value represents a JSON-R value, including Object and Array.
+type Value interface {
+	isValue()
+}
+
 // LeafValue is a type that can be used as a value of JSON-R leaf.
 type LeafValue interface {
 	~string | ~float64 | ~bool
@@ -64,11 +69,6 @@ type Leaf[T LeafValue] struct {
 // isValue is a method that marks Leaf[T] as a Value.
 func (Leaf[T]) isValue() {
 	// This method is intentionally left empty.
-}
-
-// Value represents a JSON-R value, including Object and Array.
-type Value interface {
-	isValue()
 }
 
 // Object stores an object of JSON-R.
@@ -88,7 +88,9 @@ func (Array) isValue() {
 }
 
 // The JSON-R type
-type JsonR Value
+type JsonR interface {
+	Value // type JsonR Value
+}
 
 // GetValueFromKey returns the value of the given key from the JSON-R object.
 func GetValueFromKey(j JsonR, key string) (v Value, err error) {
@@ -171,7 +173,7 @@ func NewJsonR(jsonr string) (JsonR, error) {
 	return j, err
 }
 
-// Unmarshal parses the JSON-R data and returns the result.
+// Unmarshal parses the JSON-R data and stores the result.
 func Unmarshal(data []byte, j *JsonR) (err error) {
 	var raw any
 	if err = json.Unmarshal(data, &raw); err != nil {
@@ -182,13 +184,18 @@ func Unmarshal(data []byte, j *JsonR) (err error) {
 	return err
 }
 
-// ToString converts JSON-R to a string.
-func ToString(j JsonR) string {
-	data, err := json.Marshal(j)
+// String converts JSON-R to a string.
+func String(j JsonR) string {
+	data, err := json.MarshalIndent(j, "", "    ")
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal JSON-R: %v", err))
 	}
 	return string(data)
+}
+
+// Any returns the given JSON-R as any(interface{}) type.
+func Any(j JsonR) any {
+	return j
 }
 
 //////////////////////////////////
