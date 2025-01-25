@@ -4,13 +4,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/CAU-CPSS/logument/internal/jsonr"
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
+	"github.com/CAU-CPSS/logument/internal/jsonr"
 )
 
 type Ss = jsonr.JsonR
-type Pp = jsonpatch.PatchOperation
-
+type Pp = jsonpatch.Operation
 
 // Logument 구조체
 type Logument struct {
@@ -56,15 +55,12 @@ func (l *Logument) AppendPatch(newPatch any) {
 	}
 }
 
-
 // Snapshot Snapshot 생성
 func (l *Logument) Snapshot(targetVer uint64) Snapshot {
 	updatedSnapshot := l.CurrentSnapshot
 
 	return updatedSnapshot
 }
-
-
 
 // Apply Snapshot과 Patch 병합
 func (l *Logument) Apply() {

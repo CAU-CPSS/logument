@@ -1,7 +1,7 @@
 //
 // vss.go
 //
-// JSON / JSON patch generator
+// A JSON / JSON patch generator
 // for VSS(Vehicle Signal Specification) JSON files.
 //
 //
@@ -18,20 +18,17 @@ import (
 
 	"math/rand"
 
-	"github.com/appscode/jsonpatch"
+	"github.com/CAU-CPSS/logument/internal/jsonpatch"
+	"github.com/CAU-CPSS/logument/internal/jsonr"
 )
 
+// If true, metadata will be saved in each JSON file
 const SAVE_METADATA = false
-
-type (
-	Json      = map[string]interface{}
-	JsonArray = []interface{}
-)
 
 // VSS JSON manager struct
 type VssJson struct {
 	initialized bool
-	data        interface{}
+	data        any
 }
 
 // NewVssJson creates a new VssJson
@@ -56,10 +53,10 @@ func (vss *VssJson) removeKeys(keys ...string) {
 	}
 
 	// Recursive (DFS) function to remove keys from JSON data
-	var remove func(data Json, keysToRemove ...string)
-	remove = func(data Json, keysToRemove ...string) {
+	var remove func(data map[string]any, keysToRemove ...string)
+	remove = func(data map[string]any, keysToRemove ...string) {
 		for _, value := range data {
-			if nested, ok := value.(Json); ok {
+			if nested, ok := value.(map[string]any); ok {
 				remove(nested, keysToRemove...)
 			} else {
 				for _, key := range keysToRemove {
@@ -69,7 +66,7 @@ func (vss *VssJson) removeKeys(keys ...string) {
 		}
 	}
 
-	remove(vss.data.(Json), keys...)
+	remove(vss.data.(map[string]any), keys...)
 }
 
 // Print JSON data
@@ -90,22 +87,22 @@ func (vss VssJson) PrintWithIndex() {
 
 // Get leaf nodes of the JSON data.
 // If JSON patch is passed, nil is returned
-func (vss VssJson) LeafNodes() []Json {
-	var leaf func(d interface{}, parent string) []Json
-	leaf = func(d interface{}, parent string) (r []Json) {
+func (vss VssJson) LeafNodes() []map[string]any {
+	var leaf func(d any, parent string) []map[string]any
+	leaf = func(d any, parent string) (r []map[string]any) {
 		if d == nil {
 			d = vss.data
 		}
 
-		_, isParent := d.(Json)
+		_, isParent := d.(map[string]any)
 		isJsonRLeaf := false
 
 		if isParent {
-			_, isJsonRLeaf = d.(Json)["timestamp"]
+			_, isJsonRLeaf = d.(map[string]any)["timestamp"]
 		}
 
 		if !isJsonRLeaf {
-			for key, value := range d.(Json) {
+			for key, value := range d.(map[string]any) {
 				fullKey := key
 				if parent != "" && key != "children" {
 					fullKey = parent + "." + key
@@ -113,20 +110,20 @@ func (vss VssJson) LeafNodes() []Json {
 					fullKey = parent
 				}
 
-				if _, ok := value.(Json); !ok {
-					r = append(r, Json{fullKey: value})
+				if _, ok := value.(map[string]any); !ok {
+					r = append(r, map[string]any{fullKey: value})
 				} else {
 					r = append(r, leaf(value, fullKey)...)
 				}
 			}
 		} else {
-			r = append(r, Json{parent: d})
+			r = append(r, map[string]any{parent: d})
 		}
 
 		return
 	}
 
-	if _, ok := vss.data.(Json); ok {
+	if _, ok := vss.data.(map[string]any); ok {
 		return leaf(nil, "")
 	}
 	return nil
@@ -135,14 +132,14 @@ func (vss VssJson) LeafNodes() []Json {
 // Generate an initial random dataset based on the JSON schema
 func (vss VssJson) Generate(datasetSize float64, id int) *VssJson {
 	timestamp := time.Now().UnixNano()
-	result := make(Json)
-	leafs := make(map[string]Json)
+	result := make(map[string]any)
+	leafs := make(map[string]map[string]any)
 
 	for _, leafNode := range vss.LeafNodes() {
 		for key, val := range leafNode {
 			idx := strings.LastIndex(key, ".")
 			if _, ok := leafs[key[:idx]]; !ok {
-				leafs[key[:idx]] = make(Json)
+				leafs[key[:idx]] = make(map[string]any)
 			}
 			leafs[key[:idx]][key[idx+1:]] = val
 		}
@@ -161,12 +158,12 @@ func (vss VssJson) Generate(datasetSize float64, id int) *VssJson {
 			idx++
 			// If node does not exist, create it
 			if _, ok := new[node]; !ok {
-				new[node] = make(Json)
+				new[node] = make(map[string]any)
 				if idx <= strings.Count(parent, ".") {
-					new = new[node].(Json)
+					new = new[node].(map[string]any)
 				}
 			} else {
-				new = new[node].(Json)
+				new = new[node].(map[string]any)
 			}
 		}
 
@@ -192,7 +189,7 @@ func (vss VssJson) Generate(datasetSize float64, id int) *VssJson {
 				}
 			}
 		case allowed_ok:
-			array := metadata["allowed"].(JsonArray)
+			array := metadata["allowed"].([]any)
 			new[node] = map[string]any{
 				"value":     array[rand.Intn(len(array))],
 				"timestamp": timestamp,
@@ -203,13 +200,12 @@ func (vss VssJson) Generate(datasetSize float64, id int) *VssJson {
 				"timestamp": timestamp,
 			}
 		case dtype == "float[]":
-			arr := make(JsonArray, 0)
+			new[node] = make([]any, 0)
 			for i := 0; i < rand.Intn(5)+1; i++ {
-				arr = append(arr, rand.Float64()*100)
-			}
-			new[node] = map[string]any{
-				"value":     arr,
-				"timestamp": timestamp,
+				new[node] = append(new[node].([]any), map[string]any{
+					"value":     rand.Float64() * 100,
+					"timestamp": timestamp,
+				})
 			}
 		case dtype == "int8" || dtype == "int16" || dtype == "int32":
 			new[node] = map[string]any{
@@ -222,13 +218,12 @@ func (vss VssJson) Generate(datasetSize float64, id int) *VssJson {
 				"timestamp": timestamp,
 			}
 		case dtype == "string[]":
-			arr := make(JsonArray, 0)
+			new[node] = make([]any, 0)
 			for i := 0; i < rand.Intn(5)+1; i++ {
-				arr = append(arr, genRandomString(15))
-			}
-			new[node] = map[string]any{
-				"value":     arr,
-				"timestamp": timestamp,
+				new[node] = append(new[node].([]any), map[string]any{
+					"value":     genRandomString(15),
+					"timestamp": timestamp,
+				})
 			}
 		case dtype == "uint8" || dtype == "uint16" || dtype == "uint32":
 			new[node] = map[string]any{
@@ -236,13 +231,12 @@ func (vss VssJson) Generate(datasetSize float64, id int) *VssJson {
 				"timestamp": timestamp,
 			}
 		case dtype == "uint8[]":
-			arr := make(JsonArray, 0)
+			new[node] = make([]any, 0)
 			for i := 0; i < rand.Intn(5)+1; i++ {
-				arr = append(arr, rand.Intn(101))
-			}
-			new[node] = map[string]any{
-				"value":     arr,
-				"timestamp": timestamp,
+				new[node] = append(new[node].([]any), map[string]any{
+					"value":     rand.Intn(101),
+					"timestamp": timestamp,
+				})
 			}
 		case dtype == nil:
 			new[node] = map[string]any{
@@ -253,7 +247,7 @@ func (vss VssJson) Generate(datasetSize float64, id int) *VssJson {
 	}
 
 	if SAVE_METADATA {
-		result["Metadata"] = Json{
+		result["Metadata"] = map[string]any{
 			"CarId":  id,
 			"FileNo": 1,
 			"Time":   timestamp,
@@ -269,7 +263,7 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 	}
 
 	timestamp := time.Now().UnixNano()
-	result := make(Json)
+	result := make(map[string]any)
 	leafs := vss.LeafNodes()
 
 	for _, leafNode := range leafs {
@@ -282,19 +276,22 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 				idx++
 				// If node does not exist, create it
 				if _, ok := new[node]; !ok {
-					new[node] = make(Json)
+					new[node] = make(map[string]any)
 					if idx <= strings.Count(path, ".") {
-						new = new[node].(Json)
+						new = new[node].(map[string]any)
 					}
 				} else {
-					new = new[node].(Json)
+					new = new[node].(map[string]any)
 				}
 			}
 
-			if arr, ok := value.(map[string]any)["value"].(JsonArray); ok {
-				new[node] = map[string]any{
-					"value":     arr[:],
-					"timestamp": timestamp,
+			if arr, ok := value.([]any); ok {
+				new[node] = make([]any, 0)
+				for _, item := range arr {
+					new[node] = append(new[node].([]any), map[string]any{
+						"value":     item.(map[string]any)["value"],
+						"timestamp": timestamp,
+					})
 				}
 				continue
 			}
@@ -334,7 +331,7 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 	}
 
 	if SAVE_METADATA {
-		result["Metadata"] = Json{
+		result["Metadata"] = map[string]any{
 			"CarId":  id,
 			"FileNo": fileNo,
 			"Time":   timestamp,
@@ -342,13 +339,21 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 	}
 
 	// Step 1. Create a patch using the current dataset and the new dataset
-	ops, _ := jsonpatch.CreatePatch(mapToJson(vss.data.(Json)), mapToJson(result))
+	var origin, modified jsonr.JsonR
+	if err := jsonr.Unmarshal(mapToJson(vss.data.(map[string]any)), &origin); err != nil {
+		panic(err)
+	}
+	if err := jsonr.Unmarshal(mapToJson(result), &modified); err != nil {
+		panic(err)
+	}
+
+	ops, _ := jsonpatch.GeneratePatch(origin, modified)
 
 	// Step 2. Convert the patch object to a []byte
 	bytes, _ := json.Marshal(ops)
 
 	// Step 3. Unmarshal the []byte to a JSON object
-	var patch interface{}
+	var patch any
 	json.Unmarshal(bytes, &patch)
 
 	// Step 4. Return the new dataset and the patch
@@ -360,19 +365,20 @@ func (vss *VssJson) Save(file string) {
 	var data []byte
 
 	// If vanilla JSON object
-	if _, ok := vss.data.(Json); ok {
+	if _, ok := vss.data.(map[string]any); ok {
 		data, _ = json.MarshalIndent(vss.data, "", "    ")
 	} else { // If JSON patch
 		var lines []string
-		for _, item := range vss.data.(JsonArray) {
+		for _, item := range vss.data.([]any) {
 			jsonLine, _ := json.Marshal(item)
 			strLine := string(jsonLine)
 
 			// Format the JSON line
 			strLine = strings.ReplaceAll(strLine, "{", "{ ")
+			strLine = strings.ReplaceAll(strLine, ":", ": ")
 			strLine = strings.ReplaceAll(strLine, ",", ", ")
 			strLine = strings.ReplaceAll(strLine, "}", " }")
-			lines = append(lines, fmt.Sprintf("    %s", strLine))
+			lines = append(lines, "    "+strLine)
 		}
 
 		// Join all lines with commas and wrap them in square brackets
@@ -386,17 +392,36 @@ func (vss *VssJson) Save(file string) {
 }
 
 // Generate a random string of a given length
-func genRandomString(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-=_+`~,.<>/?[]{};:"
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
-	}
-	return string(b)
+func genRandomString(_ int) string {
+	return testStrings[rand.Intn(len(testStrings))]
 }
 
 // Convert a map to JSON []byte
-func mapToJson(data Json) []byte {
+func mapToJson(data map[string]any) []byte {
 	jsonData, _ := json.Marshal(data)
 	return jsonData
+}
+
+var testStrings = [...]string{
+	"TEST_STRING_VALUE_1",
+	"TEST_STRING_VALUE_2",
+	"TEST_STRING_VALUE_3",
+	"TEST_STRING_VALUE_4",
+	"TEST_STRING_VALUE_5",
+	"TEST_STRING_VALUE_6",
+	"TEST_STRING_VALUE_7",
+	"TEST_STRING_VALUE_8",
+	"TEST_STRING_VALUE_9",
+	"TEST_STRING_VALUE_10",
+
+	"TEST_STRING_VALUE_11",
+	"TEST_STRING_VALUE_12",
+	"TEST_STRING_VALUE_13",
+	"TEST_STRING_VALUE_14",
+	"TEST_STRING_VALUE_15",
+	"TEST_STRING_VALUE_16",
+	"TEST_STRING_VALUE_17",
+	"TEST_STRING_VALUE_18",
+	"TEST_STRING_VALUE_19",
+	"TEST_STRING_VALUE_20",
 }

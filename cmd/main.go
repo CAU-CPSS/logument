@@ -20,7 +20,7 @@ func main() {
 		metadata := map[string]any{
 			"dataset":    "internal/vssgen/vss_rel_4.2.json",
 			"cars":        100,
-			"files":       500,
+			"files":       300,
 			"change_rate": 0.2,
 			"size":        1.0,
 		}

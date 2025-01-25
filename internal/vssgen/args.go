@@ -10,16 +10,20 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-func ParseArgs(defaultDataset string) Json {
-	dataset := flag.String("dataset", defaultDataset, "Path to VSS JSON datset")
-	cars := flag.Int("cars", -1, "[required] Number of cars to generate")
-	files := flag.Int("files", -1, "[required] Number of JSON files per car")
-	changeRate := flag.Float64("change_rate", 0.2, "Change rate for each car")
-	size := flag.Float64("size", 1.0, "Dataset size ratio 0.0-1.0")
+const metadataFile = "metadata.json"
 
-	flag.Parse()
+// ParseArgs parses command line arguments (dataset, cars, files, change_rate, size)
+func ParseArgs(defaultDataset string) (option map[string]any) {
+	var (
+		dataset    = flag.String("dataset", defaultDataset, "Path to VSS JSON datset")
+		cars       = flag.Int("cars", -1, "[required] Number of cars to generate")
+		files      = flag.Int("files", -1, "[required] Number of JSON files per car")
+		changeRate = flag.Float64("change_rate", 0.2, "Change rate for each car")
+		size       = flag.Float64("size", 1.0, "Dataset size ratio 0.0-1.0")
+	)
 
-	if *cars < 0 || *files < 0 {
+	// If required arguments are not provided, print usage and exit
+	if flag.Parse(); *cars < 0 || *files < 0 {
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -31,7 +35,8 @@ func ParseArgs(defaultDataset string) Json {
 	fmt.Println("--change_rate:", *changeRate)
 	fmt.Println("--size:", *size)
 
-	return Json{
+	// Return the parsed arguments in JSON format
+	return map[string]any{
 		"dataset":     *dataset,
 		"cars":        *cars,
 		"files":       *files,
@@ -40,8 +45,10 @@ func ParseArgs(defaultDataset string) Json {
 	}
 }
 
+// PrepareOutputDir checks for existing output directory and removes it if found
 func PrepareOutputDir(outputDir string) {
 	fmt.Print("\nChecking for existing output directory...")
+	// If the output directory exists, remove it
 	if stat, err := os.Stat(outputDir); err == nil && stat.IsDir() {
 		fmt.Print("\nDirectory found. Removing...")
 		if err := os.RemoveAll(outputDir); err != nil {
@@ -55,16 +62,25 @@ func PrepareOutputDir(outputDir string) {
 	os.MkdirAll(outputDir, os.ModePerm)
 }
 
-func SaveMetadata(metadata Json, dataFolder string) {
-	metadataFile := filepath.Join(dataFolder, "metadata.json")
-	metadataData, _ := json.Marshal(metadata)
-	os.WriteFile(metadataFile, metadataData, 0644)
+// SaveMetadata saves the metadata to metadata.json
+func SaveMetadata(metadata map[string]any, dataFolder string) {
+	// Using vanila JSON here
+	metadataData, _ := json.MarshalIndent(metadata, "", "    ")
+	os.WriteFile(filepath.Join(dataFolder, metadataFile), metadataData, 0644)
 }
 
-func Generate(metadata Json, dataFolder string) {
-	dataset, cars, files, changeRate, size := metadata["dataset"].(string), metadata["cars"].(int), metadata["files"].(int), metadata["change_rate"].(float64), metadata["size"].(float64)
+// Generate generates the VSS dataset as JSON-R & JSON patch
+func Generate(metadata map[string]any, dataFolder string) {
+	var (
+		dataset    = metadata["dataset"].(string)
+		cars       = metadata["cars"].(int)
+		files      = metadata["files"].(int)
+		changeRate = metadata["change_rate"].(float64)
+		size       = metadata["size"].(float64)
+	)
 
 	fmt.Printf("Generating %d cars with %d files each...\n", cars, files)
+
 	vss := NewVssJson(dataset)
 	bar := progressbar.Default(int64(cars*files), "Generating JSON & JSON patch...")
 
@@ -73,6 +89,7 @@ func Generate(metadata Json, dataFolder string) {
 		carDir := filepath.Join(dataFolder, fmt.Sprintf("car_%d/json", i))
 		patchDir := filepath.Join(dataFolder, fmt.Sprintf("car_%d/patches", i))
 
+		// Create directories if they don't exist
 		if _, err := os.Stat(carDir); os.IsNotExist(err) {
 			os.MkdirAll(carDir, os.ModePerm)
 		}

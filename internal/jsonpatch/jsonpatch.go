@@ -63,12 +63,14 @@ type Operation struct {
 // String converts the Operation to a JSON string.
 func (p *Operation) String() (s string) {
 	// Using vanila JSON here
-	b, _ := json.Marshal(p)
-
-	// Format the JSON string
-	s = strings.ReplaceAll(string(b), "{", "{ ")
-	s = strings.ReplaceAll(s, ",", ", ")
-	s = strings.ReplaceAll(s, "}", " }")
+	var (
+		op        = p.Op
+		path      = p.Path
+		value, _  = json.Marshal(p.Value)
+		timestamp = p.Timestamp
+		buf       bytes.Buffer
+	)
+	fmt.Fprintf(&buf, `{ "op": "%s", "path": "%s", "value": %s, "timestamp": %d }`, op, path, value, timestamp)
 	return s
 }
 
