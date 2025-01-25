@@ -13,17 +13,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var stringJsonR = `{ 
-	"name": {"Value": "John Doe", "Timestamp": 1678886400},
-	"age": {"Value": 30, "Timestamp": 1678886400},
-	"is-married": {"Value": true, "Timestamp": 1678886400},
+var stringJsonR = `{
+	"name": {"value": "John Doe", "timestamp": 1678886400},
+	"age": {"value": 30, "timestamp": 1678886400},
+	"is-married": {"value": true, "timestamp": 1678886400},
 	"address": {
-		"street": {"Value": "123 Main St", "Timestamp": 1678886400},
-		"city": {"Value": "Anytown", "Timestamp": 1678886400}
+		"street": {"value": "123 Main St", "timestamp": 1678886400},
+		"city": {"value": "Anytown", "timestamp": 1678886400}
 	},
 	"hobbies": [
-		{"Value": "reading", "Timestamp": 1678886400},
-		{"Value": "hiking", "Timestamp": 2078886400}
+		{"value": "reading", "timestamp": 1678886400},
+		{"value": "hiking", "timestamp": 2078886400}
 	]
 }`
 
@@ -39,35 +39,35 @@ func TestParse(t *testing.T) {
 			jsonR: `
 			{
 				"name": {
-					"Value": "John Doe",
-					"Timestamp": 1678886400
+					"value": "John Doe",
+					"timestamp": 1678886400
 				},
 				"age": {
-					"Value": 30,
-					"Timestamp": 1678886400
+					"value": 30,
+					"timestamp": 1678886400
 				},
 				"is-married": {
-					"Value": true,
-					"Timestamp": 1678886400
+					"value": true,
+					"timestamp": 1678886400
 				},
 				"address": {
 					"street": {
-						"Value": "123 Main St",
-						"Timestamp": 1678886400
+						"value": "123 Main St",
+						"timestamp": 1678886400
 					},
 					"city": {
-						"Value": "Anytown",
-						"Timestamp": 1678886400
+						"value": "Anytown",
+						"timestamp": 1678886400
 					}
 				},
 				"hobbies": [
 					{
-						"Value": "reading",
-						"Timestamp": 1678886400
+						"value": "reading",
+						"timestamp": 1678886400
 					},
 					{
-						"Value": "hiking",
-						"Timestamp": 1678886400
+						"value": "hiking",
+						"timestamp": 1678886400
 					}
 				]
 			}`,
@@ -94,13 +94,13 @@ func TestParse(t *testing.T) {
 		},
 		{
 			name:    "Missing Value Key",
-			jsonR:   `{"name": {"Timestamp": 1678886400}}`,
+			jsonR:   `{"name": {"timestamp": 1678886400}}`,
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "Missing Timestamp Key",
-			jsonR:   `{"name": {"Value": "John Doe"}}`,
+			jsonR:   `{"name": {"value": "John Doe"}}`,
 			want:    nil,
 			wantErr: true,
 		},
@@ -109,7 +109,8 @@ func TestParse(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := Parse([]byte(tc.jsonR))
+			var got JsonR
+			err := Unmarshal([]byte(tc.jsonR), &got)
 			if (err != nil) != tc.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tc.wantErr)
 				return
@@ -122,7 +123,8 @@ func TestParse(t *testing.T) {
 }
 
 func TestParsedData(t *testing.T) {
-	parsedJsonR, err := Parse([]byte(stringJsonR))
+	var parsedJsonR JsonR
+	err := Unmarshal([]byte(stringJsonR), &parsedJsonR)
 	if err != nil {
 		t.Errorf("Parse() error = %v", err)
 		return
@@ -144,7 +146,8 @@ func TestParsedData(t *testing.T) {
 }
 
 func TestGetTimestamp(t *testing.T) {
-	parsedJsonR, err := Parse([]byte(stringJsonR))
+	var parsedJsonR JsonR
+	err := Unmarshal([]byte(stringJsonR), &parsedJsonR)
 	if err != nil {
 		t.Errorf("Parse() error = %v", err)
 		return

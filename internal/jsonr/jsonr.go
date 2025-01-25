@@ -8,35 +8,35 @@
  * Example of JSON-R:
 {
   "name": {
-    "Value": "John Doe",
-    "Timestamp": 1678886400
+    "value": "John Doe",
+    "timestamp": 1678886400
   },
   "age": {
-    "Value": 30,
-    "Timestamp": 1678886400
+    "value": 30,
+    "timestamp": 1678886400
   },
   "isMarried": {
-    "Value": true,
-    "Timestamp": 1678886400
+    "value": true,
+    "timestamp": 1678886400
   },
   "address": {
     "street": {
-      "Value": "123 Main St",
-      "Timestamp": 1678886400
+      "value": "123 Main St",
+      "timestamp": 1678886400
     },
     "city": {
-      "Value": "Anytown",
-      "Timestamp": 1678886400
+      "value": "Anytown",
+      "timestamp": 1678886400
     }
   },
   "hobbies": [
     {
-      "Value": "reading",
-      "Timestamp": 1678886400
+      "value": "reading",
+      "timestamp": 1678886400
     },
     {
-      "Value": "hiking",
-      "Timestamp": 1678886400
+      "value": "hiking",
+      "timestamp": 1678886400
     }
   ]
 }
@@ -57,8 +57,8 @@ type LeafValue interface {
 
 // Leaf[T] stores the value and timestamp of a JSON-R leaf.
 type Leaf[T LeafValue] struct {
-	Value     T     `json:"Value"`     // number, string, boolean
-	Timestamp int64 `json:"Timestamp"` // Unix timestamp
+	Value     T     `json:"value"`     // number, string, boolean
+	Timestamp int64 `json:"timestamp"` // Unix timestamp
 }
 
 // isValue is a method that marks Leaf[T] as a Value.
@@ -76,6 +76,7 @@ type Object map[string]Value
 
 // isValue is a method that marks Object as a Value.
 func (Object) isValue() {
+	// This method is intentionally left empty.
 }
 
 // Array stores an array of JSON-R.
@@ -83,35 +84,44 @@ type Array []Value
 
 // isValue is a method that marks Array as a Value.
 func (Array) isValue() {
+	// This method is intentionally left empty.
 }
 
-// JSON-R type
+// The JSON-R type
 type JsonR Value
 
 // GetValueFromKey returns the value of the given key from the JSON-R object.
-func GetValueFromKey(j JsonR, key string) (Value, error) {
-	obj, ok := j.(Object)
-	if !ok {
+func GetValueFromKey(j JsonR, key string) (v Value, err error) {
+	if obj, ok := j.(Object); !ok {
 		return nil, fmt.Errorf("%v is not an jsonr.Object", j)
+	} else {
+		return obj[key], nil
 	}
-	return obj[key], nil
 }
 
 // Marshal converts the JSON-R to a byte slice.
-func Marshal(j JsonR) ([]byte, error) {
+func Marshal(j JsonR) (data []byte, err error) {
 	return json.Marshal(j)
 }
 
-// Equal checks if two JSON-Rs are equal.
-func Equal(j1, j2 JsonR) (bool, error) {
-	var o1, o2 any
-	b1, _ := Marshal(j1)
-	b2, _ := Marshal(j2)
+// MarshalIndent converts the JSON-R to a byte slice with indent.
+func MarshalIndent(j JsonR, prefix, indent string) (data []byte, err error) {
+	return json.MarshalIndent(j, prefix, indent)
+}
 
-	if err := json.Unmarshal(b1, &o1); err != nil {
+// Equal checks if two JSON-Rs are equal.
+func Equal(j1, j2 JsonR) (ret bool, err error) {
+	var (
+		o1, o2 any
+		b1, _  = Marshal(j1)
+		b2, _  = Marshal(j2)
+	)
+
+	// Check if the given JSON-Rs are valid
+	if err = json.Unmarshal(b1, &o1); err != nil {
 		return false, err
 	}
-	if err := json.Unmarshal(b2, &o2); err != nil {
+	if err = json.Unmarshal(b2, &o2); err != nil {
 		return false, err
 	}
 
@@ -120,6 +130,12 @@ func Equal(j1, j2 JsonR) (bool, error) {
 
 // GetLatestTimestamp returns the latest timestamp of the given JSON-R.
 func GetLatestTimestamp(j JsonR) int64 {
+	updateMax := func(max *int64, ts int64) {
+		if ts > *max {
+			*max = ts
+		}
+	}
+
 	switch v := j.(type) {
 	case Leaf[string]:
 		return v.Timestamp
@@ -127,21 +143,15 @@ func GetLatestTimestamp(j JsonR) int64 {
 		return v.Timestamp
 	case Leaf[bool]:
 		return v.Timestamp
-	case Object:
-		var max int64
-		for _, value := range v {
-			timestamp := GetLatestTimestamp(value)
-			if timestamp > max {
-				max = timestamp
+	case Object, Array:
+		max := int64(0)
+		if obj, ok := v.(Object); ok { // v is Object
+			for _, value := range obj {
+				updateMax(&max, GetLatestTimestamp(value))
 			}
-		}
-		return max
-	case Array:
-		var max int64
-		for _, value := range v {
-			timestamp := GetLatestTimestamp(value)
-			if timestamp > max {
-				max = timestamp
+		} else { // v is Array
+			for _, value := range v.(Array) {
+				updateMax(&max, GetLatestTimestamp(value))
 			}
 		}
 		return max
@@ -156,20 +166,23 @@ func GetLatestTimestamp(j JsonR) int64 {
 
 // NewJsonR creates a new JSON-R from the given JSON-R string.
 func NewJsonR(jsonr string) (JsonR, error) {
-	return Parse([]byte(jsonr))
+	var j JsonR
+	err := Unmarshal([]byte(jsonr), &j)
+	return j, err
 }
 
-// Parse parses the JSON-R data and returns the result.
-func Parse(data []byte) (JsonR, error) {
+// Unmarshal parses the JSON-R data and returns the result.
+func Unmarshal(data []byte, j *JsonR) (err error) {
 	var raw any
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, err
+	if err = json.Unmarshal(data, &raw); err != nil {
+		return
 	}
 
-	return parseValue(raw)
+	*j, err = parseValue(raw)
+	return err
 }
 
-// Converts JSON-R to a string.
+// ToString converts JSON-R to a string.
 func ToString(j JsonR) string {
 	data, err := json.Marshal(j)
 	if err != nil {
@@ -178,26 +191,29 @@ func ToString(j JsonR) string {
 	return string(data)
 }
 
-// TODO: formatJSON-R
+//////////////////////////////////
+///////// PRIVATE
+//////////////////////////////////
 
 func parseValue(raw any) (JsonR, error) {
 	switch v := raw.(type) {
-	case map[string]any: // type is a JSON-R object
-		if isLeaf(v) {
+	case nil:
+		return nil, nil
+	case map[string]any:
+		if isLeaf(v) { // type is a JSON-R leaf
 			return parseLeaf(v)
-		} else {
+		} else { // type is a JSON-R object
 			return parseObject(v)
 		}
 	case []any: // type is a JSON-R array
 		return parseArray(v)
-	// TODO: make case string, float64, bool and raise panic when default
-	default: // type is a JSON-R leaf
-		return parseLeaf(v)
+	default:
+		return nil, fmt.Errorf("invalid value type: %v (type: %T)", v, v)
 	}
 }
 
-func parseObject(raw map[string]any) (Object, error) {
-	obj := make(Object)
+func parseObject(raw map[string]any) (obj Object, err error) {
+	obj = make(Object)
 	for key, value := range raw {
 		val, err := parseValue(value)
 		if err != nil {
@@ -208,8 +224,8 @@ func parseObject(raw map[string]any) (Object, error) {
 	return obj, nil
 }
 
-func parseArray(raw []any) (Array, error) {
-	arr := make(Array, len(raw))
+func parseArray(raw []any) (arr Array, err error) {
+	arr = make(Array, len(raw))
 	for i, value := range raw {
 		val, err := parseValue(value)
 		if err != nil {
@@ -220,47 +236,39 @@ func parseArray(raw []any) (Array, error) {
 	return arr, nil
 }
 
-func parseLeaf(raw any) (Value, error) {
-	// Check if raw is map[string]any
-	rawMap, ok := raw.(map[string]any)
-	if !ok {
-		return nil, fmt.Errorf("invalid leaf: %v", raw)
-	}
-
-	// Check if Value and Timestamp keys exist
-	valueRaw, ok := rawMap["Value"]
-	if !ok {
-		return nil, fmt.Errorf("missing Value key: %v", raw)
-	}
-	timestampRaw, ok := rawMap["Timestamp"]
-	if !ok {
-		return nil, fmt.Errorf("missing Timestamp key: %v", raw)
-	}
-
-	// Check if Timestamp is int64
-	timestampF, ok := timestampRaw.(float64)
-	timestamp := int64(timestampF)
-	if !ok {
-		return nil, fmt.Errorf("invalid Timestamp value: %v", timestampRaw)
-	}
+func parseLeaf(raw map[string]any) (Value, error) {
+	// Get value and timestamp
+	// The existence of "value" and "timestamp" is already checked in isLeaf()
+	var (
+		value = raw["value"]
+		ts    = int64(raw["timestamp"].(float64))
+	)
 
 	// Create Leaf with the type of Value
-	switch value := valueRaw.(type) {
+	switch v := value.(type) {
 	case string:
-		return Leaf[string]{Value: value, Timestamp: timestamp}, nil
+		return Leaf[string]{Value: v, Timestamp: ts}, nil
 	case float64:
-		return Leaf[float64]{Value: value, Timestamp: timestamp}, nil
-	case int64:
-		return Leaf[float64]{Value: float64(value), Timestamp: timestamp}, nil
+		return Leaf[float64]{Value: v, Timestamp: ts}, nil
 	case bool:
-		return Leaf[bool]{Value: value, Timestamp: timestamp}, nil
+		return Leaf[bool]{Value: v, Timestamp: ts}, nil
 	default:
-		return nil, fmt.Errorf("invalid Value type: %v", value)
+		return nil, fmt.Errorf("invalid leaf type: %v (type: %T)", v, v)
 	}
 }
 
 func isLeaf(m map[string]any) bool {
-	_, ok1 := m["Value"]
-	_, ok2 := m["Timestamp"]
-	return ok1 && ok2
+	// A JSON-R Object is a Leaf when
+	//  1: it has "value" and "timestamp" keys
+	//  2: no other keys exist
+	_, ok1 := m["value"]
+	ts, ok2 := m["timestamp"]
+	if !ok1 || !ok2 || len(m) != 2 {
+		return false
+	}
+
+	if _, ok := ts.(float64); !ok {
+		panic(fmt.Sprintf("invalid timestamp type: %T (expected float64)", ts))
+	}
+	return true
 }
