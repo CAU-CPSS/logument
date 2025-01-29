@@ -9,8 +9,6 @@ import (
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/jsonr"
 	"github.com/CAU-CPSS/logument/internal/logument"
-
-	"github.com/CAU-CPSS/logument/internal/vssgen"
 )
 
 const ONLY_GENERATE_VSS = true
