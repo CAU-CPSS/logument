@@ -10,3 +10,7 @@ type Patch struct {
 	Timestamp  time.Time // 변경 시간
 	VersionCnt uint64
 }
+
+func (p Patch) RunMe() {
+	panic("Use jsonpatch.Patch instead.")
+}
