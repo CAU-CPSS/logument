@@ -16,24 +16,6 @@ import (
 const ONLY_GENERATE_VSS = true
 
 func main() {
-	if ONLY_GENERATE_VSS {
-		metadata := map[string]any{
-			"dataset":    "internal/vssgen/vss_rel_4.2.json",
-			"cars":        100,
-			"files":       300,
-			"change_rate": 0.2,
-			"size":        1.0,
-		}
-		outputDir := "./dataset"
-
-		vssgen.PrepareOutputDir(outputDir)
-		vssgen.SaveMetadata(metadata, outputDir)
-
-		vssgen.Generate(metadata, outputDir)
-
-		fmt.Printf("Saved to %s! Exiting...\n", outputDir)
-	}
-
 	// if err := run_jpatch(); err != nil {
 	// 	fmt.Println("Application error: %v", err)
 	// 	os.Exit(1)
