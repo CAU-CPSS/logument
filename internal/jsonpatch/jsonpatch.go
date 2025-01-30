@@ -149,6 +149,9 @@ func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (j jsonr.JsonR
 		return doc, nil
 	}
 
+	fmt.Printf("doc: %v\n", doc)
+	fmt.Printf("parts: %v\n", parts)
+
 	switch doc.(type) { // If doc is a leaf node, return
 	case jsonr.Leaf[string], jsonr.Leaf[float64], jsonr.Leaf[bool]:
 		return doc, nil
@@ -181,7 +184,7 @@ func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (j jsonr.JsonR
 
 		switch value := j[part].(type) { // Recursively traverse the JSON-R document
 		case jsonr.Leaf[string], jsonr.Leaf[float64], jsonr.Leaf[bool]:
-			panic(fmt.Sprintf("applyTraverse(): Leaf[T] should not be here"))
+			panic("applyTraverse(): Leaf[T] should not be here")
 		case jsonr.Object:
 			if j[part], err = applyTraverse(value, parts[1:], op); err != nil {
 				return nil, err
@@ -210,7 +213,7 @@ func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (j jsonr.JsonR
 					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for elem", elem)
 				}
 			case OpRemove:
-				value = append(value[:idx], value[idx+1:]...)
+				j[part] = append(value[:idx], value[idx+1:]...)
 			default:
 				return nil, fmt.Errorf("applyTraverse(): Unknown operation %s", op.Op)
 			}
