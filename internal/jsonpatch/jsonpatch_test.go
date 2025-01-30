@@ -1,126 +1,84 @@
+//
+// jsonpatch_test.go
+//
+// Tests for the jsonpatch package.
+//
+// Author: Karu (@karu-rress)
+//
+
 package jsonpatch
 
 import (
+	"os"
 	"testing"
 
 	"github.com/CAU-CPSS/logument/internal/jsonr"
 	"github.com/stretchr/testify/assert"
 )
 
-const testJsonR1 = `
-{
-	"name": {
-		"value": "John Doe",
-		"timestamp": 1678886400
-	},
-	"age": {
-		"value": 30,
-		"timestamp": 1678886400
-	},
-	"is-married": {
-		"value": true,
-		"timestamp": 1678886400
-	},
-	"address": {
-		"street": {
-			"value": "123 Main St",
-			"timestamp": 1678886400
-		},
-		"city": {
-			"value": "Anytown",
-			"timestamp": 1678886400
-		}
-	},
-	"hobbies": [
-		{
-			"value": "reading",
-			"timestamp": 1678886400
-		},
-		{
-			"value": "hiking",
-			"timestamp": 1678886400
-		}
-	]
-}`
-
-const testJsonR2 = `
-{
-	"name": {
-		"value": "John Doe",
-		"timestamp": 1678886400
-	},
-	"age": {
-		"value": 30,
-		"timestamp": 1678886400
-	},
-	"is-married": {
-		"value": true,
-		"timestamp": 1678886400
-	},
-	"address": {
-		"street": {
-			"value": "123 Main St",
-			"timestamp": 1678886400
-		},
-		"city": {
-			"value": "Anytown",
-			"timestamp": 1678886400
-		}
-	},
-	"hobbies": [
-		{
-			"value": "reading",
-			"timestamp": 1888886400
-		},
-		{
-			"value": "sleeping",
-			"timestamp": 1888886400
-		}
-	]
-}`
-
 const patch = `[
-	{ "op":"replace", "path":"/hobbies/1", "value":"sleeping", "timestamp":1888886400 }
+	{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 2000000000 },
+	{ "op": "replace", "path": "/tirePressure/0", "value": 35.1, "timestamp": 2000000000 },
+	{ "op": "replace", "path": "/engineOn", "value": false, "timestamp": 2000000000 }
 ]`
 
 func TestGeneratePatch(t *testing.T) {
-	var parsedJsonR1, parsedJsonR2 jsonr.JsonR
-	jsonr.Unmarshal([]byte(testJsonR1), &parsedJsonR1)
-	jsonr.Unmarshal([]byte(testJsonR2), &parsedJsonR2)
+	var (
+		parsed1, parsed2 jsonr.JsonR
+		jsonr1, _        = os.ReadFile("example.jsonr")
+		jsonr2, _        = os.ReadFile("example2.jsonr")
+	)
 
-	patch, err := GeneratePatch(parsedJsonR1, parsedJsonR2)
+	jsonr.Unmarshal(jsonr1, &parsed1)
+	jsonr.Unmarshal(jsonr2, &parsed2)
+
+	patch, err := GeneratePatch(parsed1, parsed2)
 	assert.Equal(t, nil, err)
 
-	var p Patch = patch
-
-	t.Log(p.String())
+	t.Log(patch.String())
 }
 
 func TestApplyPatch(t *testing.T) {
-	var parsedJsonR1, parsedJsonR2 jsonr.JsonR
-	jsonr.Unmarshal([]byte(testJsonR1), &parsedJsonR1)
-	jsonr.Unmarshal([]byte(testJsonR2), &parsedJsonR2)
+	var (
+		parsed1, parsed2 jsonr.JsonR
+		jsonr1, _        = os.ReadFile("example.jsonr")
+		jsonr2, _        = os.ReadFile("example2.jsonr")
+	)
 
-	patch, err := GeneratePatch(parsedJsonR1, parsedJsonR2)
+	jsonr.Unmarshal(jsonr1, &parsed1)
+	jsonr.Unmarshal(jsonr2, &parsed2)
+
+	patch, err := GeneratePatch(parsed1, parsed2)
 	assert.Equal(t, nil, err)
-
-	var p Patch = patch
 
 	// Apply patch
-	_, err = ApplyPatch(parsedJsonR1, p)
+	j, err := ApplyPatch(parsed1, patch)
 	assert.Equal(t, nil, err)
+
+	// Check if the result is equal to the second JSON-R
+	ret, _ := jsonr.EqualWithoutTimestamp(parsed2, j)
+	assert.Equal(t, true, ret)
 }
 
 func TestApplyPatchWithJson(t *testing.T) {
-	var doc jsonr.JsonR
-	var p any
+	var (
+		doc           jsonr.JsonR
+		jsonr1, _ = os.ReadFile("example.jsonr")
+		p             Patch
+	)
 
-	jsonr.Unmarshal([]byte(testJsonR1), &doc)
-	p, err := ParsePatch([]byte(patch))
+	// Unmarshal the first JSON-R
+	jsonr.Unmarshal(jsonr1, &doc)
+	p, err := Unmarshal([]byte(patch))
 	assert.Equal(t, nil, err)
 
-	newDoc, err := ApplyPatch(doc, p.(Patch))
+	// Apply patch
+	newDoc, err := ApplyPatch(doc, p)
 	assert.Equal(t, nil, err)
 
-	t.Log(jsonr.String(newDoc))
+	// Check if the result is equal to the second JSON-R
+	jsonr2, _ := os.ReadFile("example2.jsonr")
+	jsonr.Unmarshal(jsonr2, &doc)
+	ret, _ := jsonr.EqualWithoutTimestamp(doc, newDoc)
+	assert.Equal(t, true, ret)
 }

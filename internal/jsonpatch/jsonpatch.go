@@ -1,9 +1,17 @@
 //
 // jsonpatch.go
 //
-// A JSON patch libary for JSON-R documents.
+// Defines the JSON patch type and provides functions
+// for JSON-R patching and generation.
 //
-// Author: Karu (karu-rress)
+// The JSON-R patch is a document that describes
+// changes to be made to a JSON-R document.
+// It is represented as an array of operations.
+// Each operation describes a single change,
+// and only recorded when the value has changed,
+// not when the timestamp has only changed.
+//
+// Author: Karu (@karu-rress)
 //
 
 package jsonpatch
@@ -18,6 +26,10 @@ import (
 
 	"github.com/CAU-CPSS/logument/internal/jsonr"
 )
+
+//////////////////////////////////
+///////// JSON PATCH
+//////////////////////////////////
 
 // Represents the kind of JSON patch operations.
 type OpType string
@@ -44,13 +56,18 @@ func (p *Patch) String() string {
 	return fmt.Sprintf("[\n%s\n]", strings.Join(lines, ",\n"))
 }
 
-func ParsePatch(b []byte) (Patch, error) {
+// Unmarshal converts a JSON byte array to a Patch.
+func Unmarshal(b []byte) (Patch, error) {
 	var patch Patch
 	if err := json.Unmarshal(b, &patch); err != nil {
 		return nil, err
 	}
 	return patch, nil
 }
+
+//////////////////////////////////
+///////// JSON PATCH OPERATIONS
+//////////////////////////////////
 
 // Operation represents a single JSON patch operation.
 type Operation struct {
@@ -61,31 +78,32 @@ type Operation struct {
 }
 
 // String converts the Operation to a JSON string.
-func (p *Operation) String() (s string) {
-	// Using vanila JSON here
-	var (
+func (p *Operation) String() string {
+	var ( // Using vanila JSON here
 		op        = p.Op
 		path      = p.Path
 		value, _  = json.Marshal(p.Value)
 		timestamp = p.Timestamp
 		buf       bytes.Buffer
 	)
-	fmt.Fprintf(&buf, `{ "op": "%s", "path": "%s", "value": %s, "timestamp": %d }`, op, path, value, timestamp)
-	return s
+	fmt.Fprintf(&buf,
+		`{ "op": "%s", "path": "%s", "value": %s, "timestamp": %d }`,
+		op, path, value, timestamp)
+	return buf.String()
 }
 
 // Marshal converts the Operation to a JSON byte Array.
-func (p *Operation) Marshal() ([]byte, error) {
+func (p *Operation) Marshal() (b []byte, err error) {
 	var buf bytes.Buffer
-	fmt.Fprintf(&buf, `{"op":"%s","path":"%s"`, p.Op, p.Path)
+	fmt.Fprintf(&buf, `{ "op": "%s", "path": "%s"`, p.Op, p.Path)
 	if p.Value != nil || p.Op == OpReplace || p.Op == OpAdd || p.Op == OpTest {
 		if v, err := json.Marshal(p.Value); err != nil {
 			return nil, err
 		} else {
-			fmt.Fprintf(&buf, `,"value":%s`, v)
+			fmt.Fprintf(&buf, `, "value": %s`, v)
 		}
 	}
-	fmt.Fprintf(&buf, `,"timestamp":%d}`, p.Timestamp)
+	fmt.Fprintf(&buf, `, "timestamp": %d }`, p.Timestamp)
 	return buf.Bytes(), nil
 }
 
@@ -100,85 +118,72 @@ func GeneratePatch(origin, modified jsonr.JsonR) (Patch, error) {
 	if eq, err := jsonr.Equal(origin, modified); err != nil && eq {
 		return Patch{}, nil
 	}
-
 	return handleValues(origin, modified, "", Patch{})
 }
 
 // ApplyPatch applies a JSON patch to a JSON-R document
-func ApplyPatch(doc jsonr.JsonR, patch Patch) (jsonr.JsonR, error) {
+func ApplyPatch(doc jsonr.JsonR, patch Patch) (j jsonr.JsonR, err error) {
 	for _, op := range patch {
-		var err error
-		doc, err = applyOperation(doc, op)
-		if err != nil {
+		if j, err = applyOperation(doc, op); err != nil {
 			return nil, err
 		}
 	}
-	return doc, nil
+	return j, nil
 }
 
-func applyOperation(doc jsonr.JsonR, op Operation) (jsonr.JsonR, error) {
+func applyOperation(doc jsonr.JsonR, op Operation) (j jsonr.JsonR, err error) {
 	path := rfc6901Decoder.Replace(op.Path)
 
-	// Split the path into parts
+	// Split the path into parts, ignoring the first empty string
 	parts := strings.Split(path, "/")[1:]
 
 	// Traverse the JSON-R document
-	var err error
-	if doc, err = applyTraverse(doc, parts, op); err != nil {
+	if j, err = applyTraverse(doc, parts, op); err != nil {
 		return nil, err
 	}
-	return doc, nil
+	return j, nil
 }
 
-func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (jsonr.JsonR, error) {
-	// If the path is empty, return the document
-	if len(parts) == 0 {
+func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (j jsonr.JsonR, err error) {
+	if len(parts) == 0 { // If the path is empty, return
 		return doc, nil
 	}
 
-	// If doc is a leaf node, return the document
-	switch doc.(type) {
+	switch doc.(type) { // If doc is a leaf node, return
 	case jsonr.Leaf[string], jsonr.Leaf[float64], jsonr.Leaf[bool]:
 		return doc, nil
 	}
 
-	part := parts[0]
-	switch json := doc.(type) {
+	switch part := parts[0]; j := doc.(type) {
 	case jsonr.Object:
-		// Only a single part of path
-		if len(parts) == 1 {
-			// switch by operation type
-			switch op.Op {
+		if len(parts) == 1 { // Only a single part of path left
+			switch op.Op { // switch by operation type
 			case OpAdd, OpReplace:
-				// switch by operation value's datatype
-				switch leaf := op.Value.(type) {
+				switch leaf := j[part].(type) {
 				case jsonr.Leaf[string]:
-					json[part] = jsonr.Leaf[string]{Value: leaf.Value, Timestamp: leaf.Timestamp}
+					j[part] = jsonr.Leaf[string]{Value: op.Value.(string), Timestamp: leaf.Timestamp}
 				case jsonr.Leaf[float64]:
-					json[part] = jsonr.Leaf[float64]{Value: leaf.Value, Timestamp: leaf.Timestamp}
+					j[part] = jsonr.Leaf[float64]{Value: op.Value.(float64), Timestamp: leaf.Timestamp}
 				case jsonr.Leaf[bool]:
-					json[part] = jsonr.Leaf[bool]{Value: leaf.Value, Timestamp: leaf.Timestamp}
+					j[part] = jsonr.Leaf[bool]{Value: op.Value.(bool), Timestamp: leaf.Timestamp}
 				default:
 					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for op.Value", op.Value)
 				}
-
 			case OpRemove:
-				delete(json, part)
-			// case OpMove, OpCopy, OpTest:
-			// 	  Not implemented
+				delete(j, part)
+			case OpMove, OpCopy, OpTest:
+				panic(fmt.Sprintf("applyTraverse(): Operation %s not implemented", op.Op))
 			default:
 				return nil, fmt.Errorf("applyTraverse(): Unknown operation %s", op.Op)
 			}
-			return json, nil
+			return j, nil
 		}
 
-		// Recursively traverse the JSON-R document
-		switch value := json[part].(type) {
-		// TODO: when value is leaf? But it should not be leaf here.
+		switch value := j[part].(type) { // Recursively traverse the JSON-R document
+		case jsonr.Leaf[string], jsonr.Leaf[float64], jsonr.Leaf[bool]:
+			panic(fmt.Sprintf("applyTraverse(): Leaf[T] should not be here"))
 		case jsonr.Object:
-			var err error
-			json[part], err = applyTraverse(value, parts[1:], op)
-			if err != nil {
+			if j[part], err = applyTraverse(value, parts[1:], op); err != nil {
 				return nil, err
 			}
 		case jsonr.Array:
@@ -189,7 +194,6 @@ func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (jsonr.JsonR, 
 
 			switch op.Op {
 			case OpAdd, OpReplace:
-
 				switch elem := value[idx].(type) {
 				// If leaf
 				case jsonr.Leaf[string]:
@@ -199,8 +203,7 @@ func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (jsonr.JsonR, 
 				case jsonr.Leaf[bool]:
 					value[idx] = jsonr.Leaf[bool]{Value: op.Value.(bool), Timestamp: op.Timestamp}
 				case jsonr.Object, jsonr.Array:
-					json[part], err = applyTraverse(value[idx], parts[1:], op)
-					if err != nil {
+					if j[part], err = applyTraverse(value[idx], parts[1:], op); err != nil {
 						return nil, err
 					}
 				default:
@@ -208,7 +211,6 @@ func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (jsonr.JsonR, 
 				}
 			case OpRemove:
 				value = append(value[:idx], value[idx+1:]...)
-
 			default:
 				return nil, fmt.Errorf("applyTraverse(): Unknown operation %s", op.Op)
 			}
@@ -217,8 +219,9 @@ func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (jsonr.JsonR, 
 			return nil, fmt.Errorf("traverse(): Unknown type %T for value", value)
 		}
 
-		return json, nil
-	// case jsonr.Array:
+		return j, nil
+	case jsonr.Array:
+		panic("applyTraverse(): Array is not implemented")
 	default:
 		return nil, fmt.Errorf("applyTraverse(): Unknown type %T for doc", doc)
 	}
@@ -231,13 +234,7 @@ func getIndex(part string) (idx int, err error) {
 	return idx, nil
 }
 
-// From http://tools.ietf.org/html/rfc6901#section-4 :
-//
-// Evaluation of each reference token begins by decoding any escaped
-// character sequence.  This is performed by first transforming any
-// occurrence of the sequence '~1' to '/', and then transforming any
-// occurrence of the sequence '~0' to '~'.
-
+// Note: http://tools.ietf.org/html/rfc6901#section-4 :
 var (
 	rfc6901Encoder = strings.NewReplacer("~", "~0", "/", "~1")
 	rfc6901Decoder = strings.NewReplacer("~1", "/", "~0", "~")

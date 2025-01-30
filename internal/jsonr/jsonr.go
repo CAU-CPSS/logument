@@ -1,46 +1,17 @@
-/**
- *
- * JSON-R (jsonr.go)
- *
- * Defines JSON-R, which consist of Value and Timestamp.
- *
- *
- * Example of JSON-R:
-{
-  "name": {
-    "value": "John Doe",
-    "timestamp": 1678886400
-  },
-  "age": {
-    "value": 30,
-    "timestamp": 1678886400
-  },
-  "isMarried": {
-    "value": true,
-    "timestamp": 1678886400
-  },
-  "address": {
-    "street": {
-      "value": "123 Main St",
-      "timestamp": 1678886400
-    },
-    "city": {
-      "value": "Anytown",
-      "timestamp": 1678886400
-    }
-  },
-  "hobbies": [
-    {
-      "value": "reading",
-      "timestamp": 1678886400
-    },
-    {
-      "value": "hiking",
-      "timestamp": 1678886400
-    }
-  ]
-}
-*/
+//
+// jsonr.go
+//
+// Defines the JSON-R type and provides functions
+// for JSON-R manipulation.
+//
+// JSON-R (JSON by Rolling Ress, or JSON with Revision)
+// is a data format that extends JSON by adding
+// a timestamp to each leaf value.
+//
+// JSON-R is a recursive data structure that can be
+// represented as an object, array, or leaf.
+//
+// Author: Karu (@karu-rress)
 
 package jsonr
 
@@ -50,15 +21,24 @@ import (
 	"reflect"
 )
 
-// Value represents a JSON-R value, including Object and Array.
-type Value interface {
-	isValue()
-}
+// JsonR stores a JSON-R document.
+type JsonR = Value
+
+// Value represents a JSON-R value.
+type Value interface{ isValue() }
+
+// Object stores an object of JSON-R.
+type Object map[string]Value
+
+func (Object) isValue() {} // Marks Object as a Value
+
+// Array stores an array of JSON-R.
+type Array []Value
+
+func (Array) isValue() {} // Marks Array as a Value
 
 // LeafValue is a type that can be used as a value of JSON-R leaf.
-type LeafValue interface {
-	~string | ~float64 | ~bool
-}
+type LeafValue interface{ ~string | ~float64 | ~bool }
 
 // Leaf[T] stores the value and timestamp of a JSON-R leaf.
 type Leaf[T LeafValue] struct {
@@ -66,31 +46,11 @@ type Leaf[T LeafValue] struct {
 	Timestamp int64 `json:"timestamp"` // Unix timestamp
 }
 
-// isValue is a method that marks Leaf[T] as a Value.
-func (Leaf[T]) isValue() {
-	// This method is intentionally left empty.
-}
+func (Leaf[T]) isValue() {} // Marks Leaf as a Value
 
-// Object stores an object of JSON-R.
-type Object map[string]Value
-
-// isValue is a method that marks Object as a Value.
-func (Object) isValue() {
-	// This method is intentionally left empty.
-}
-
-// Array stores an array of JSON-R.
-type Array []Value
-
-// isValue is a method that marks Array as a Value.
-func (Array) isValue() {
-	// This method is intentionally left empty.
-}
-
-// The JSON-R type
-type JsonR interface {
-	Value // type JsonR Value
-}
+//////////////////////////////////
+///////// OPERATIONS
+//////////////////////////////////
 
 // GetValueFromKey returns the value of the given key from the JSON-R object.
 func GetValueFromKey(j JsonR, key string) (v Value, err error) {
@@ -111,7 +71,7 @@ func MarshalIndent(j JsonR, prefix, indent string) (data []byte, err error) {
 	return json.MarshalIndent(j, prefix, indent)
 }
 
-// Equal checks if two JSON-Rs are equal.
+// Equal checks if two JSON-Rs are equal, including timestamps.
 func Equal(j1, j2 JsonR) (ret bool, err error) {
 	var (
 		o1, o2 any
@@ -126,6 +86,42 @@ func Equal(j1, j2 JsonR) (ret bool, err error) {
 	if err = json.Unmarshal(b2, &o2); err != nil {
 		return false, err
 	}
+	return reflect.DeepEqual(o1, o2), nil
+}
+
+// EqualWithoutTimestamp checks if two JSON-Rs are equal, excluding timestamps.
+func EqualWithoutTimestamp(j1, j2 JsonR) (ret bool, err error) {
+	var (
+		o1, o2 any
+		b1, _  = Marshal(j1)
+		b2, _  = Marshal(j2)
+	)
+
+	// Check if the given JSON-Rs are valid
+	if err = json.Unmarshal(b1, &o1); err != nil {
+		return false, err
+	}
+	if err = json.Unmarshal(b2, &o2); err != nil {
+		return false, err
+	}
+
+	// Remove timestamps
+	var removeTimestamp func(o any)
+	removeTimestamp = func(o any) {
+		switch v := o.(type) {
+		case map[string]any:
+			delete(v, "timestamp")
+			for _, value := range v {
+				removeTimestamp(value)
+			}
+		case []any:
+			for _, value := range v {
+				removeTimestamp(value)
+			}
+		}
+	}
+	removeTimestamp(o1)
+	removeTimestamp(o2)
 
 	return reflect.DeepEqual(o1, o2), nil
 }
@@ -193,6 +189,34 @@ func String(j JsonR) string {
 	return string(data)
 }
 
+//////////////////////////////////
+///////// CONVERSIONS
+//////////////////////////////////
+
+// TODO
+// 1. Array -> []any
+// 2. Object -> map[string]any
+// ...
+
+func ToArray(a Array) ([]any, error) {
+	length := len(a)
+	arr := make([]any, length)
+
+	for i, value := range a {
+		switch v := value.(type) {
+		case Leaf[string]:
+			arr[i] = v.Value
+		case Leaf[float64]:
+			arr[i] = v.Value
+		case Leaf[bool]:
+			arr[i] = v.Value
+		default:
+			return nil, fmt.Errorf("All element in a should be leaf")
+		}
+	}
+	return arr, nil
+}
+
 // Any returns the given JSON-R as any(interface{}) type.
 func Any(j JsonR) any {
 	return j
@@ -202,7 +226,8 @@ func Any(j JsonR) any {
 ///////// PRIVATE
 //////////////////////////////////
 
-func parseValue(raw any) (JsonR, error) {
+// parseValue parses the given value and returns a JSON-R value.
+func parseValue(raw any) (Value, error) {
 	switch v := raw.(type) {
 	case nil:
 		return nil, nil
@@ -219,6 +244,7 @@ func parseValue(raw any) (JsonR, error) {
 	}
 }
 
+// parseObject parses the given map as a JSON-R object.
 func parseObject(raw map[string]any) (obj Object, err error) {
 	obj = make(Object)
 	for key, value := range raw {
@@ -231,6 +257,7 @@ func parseObject(raw map[string]any) (obj Object, err error) {
 	return obj, nil
 }
 
+// parseArray parses the given array as a JSON-R array.
 func parseArray(raw []any) (arr Array, err error) {
 	arr = make(Array, len(raw))
 	for i, value := range raw {
@@ -243,6 +270,7 @@ func parseArray(raw []any) (arr Array, err error) {
 	return arr, nil
 }
 
+// parseLeaf parses the given map as a JSON-R leaf.
 func parseLeaf(raw map[string]any) (Value, error) {
 	// Get value and timestamp
 	// The existence of "value" and "timestamp" is already checked in isLeaf()
@@ -264,6 +292,7 @@ func parseLeaf(raw map[string]any) (Value, error) {
 	}
 }
 
+// isLeaf checks if the given map is a JSON-R leaf.
 func isLeaf(m map[string]any) bool {
 	// A JSON-R Object is a Leaf when
 	//  1: it has "value" and "timestamp" keys
