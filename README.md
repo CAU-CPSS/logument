@@ -14,9 +14,10 @@
 
 ## Interface for **_Logument_**
 
-- Create(snapshot jsonr.JsonR, patches jsonpatch.Patch): make a new Logument
-- Apply(): Move pending patches from PatchPool to PatchMap, and then increase(and append) the version
-- Snapshot(targetVersion): Make a snapshot at target version
+- **Create(snapshot jsonr.JsonR, patches jsonpatch.Patch)**: make a new Logument (function name in implementation is 'NewLogument')
+- **Store(patches jsonpatch.Patch)**: Queue new patches in the PatchPool before they are managed in Logument
+- **Apply()**: Move pending patches from PatchPool to PatchMap, and then increase(and append) the version
+- **Snapshot(targetVersion)**: Make a snapshot at target version
 - Compact
 - Slice
 - Pack
