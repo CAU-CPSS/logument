@@ -1,9 +1,17 @@
 //
 // jsonpatch.go
 //
-// A JSON patch libary for JSON-R documents.
+// Defines the JSON patch type and provides functions
+// for JSON-R patching and generation.
 //
-// Author: Karu (karu-rress)
+// The JSON-R patch is a document that describes
+// changes to be made to a JSON-R document.
+// It is represented as an array of operations.
+// Each operation describes a single change,
+// and only recorded when the value has changed,
+// not when the timestamp has only changed.
+//
+// Author: Karu (@karu-rress)
 //
 
 package jsonpatch
@@ -18,6 +26,10 @@ import (
 
 	"github.com/CAU-CPSS/logument/internal/jsonr"
 )
+
+//////////////////////////////////
+///////// JSON PATCH
+//////////////////////////////////
 
 // Represents the kind of JSON patch operations.
 type OpType string
@@ -36,22 +48,26 @@ const (
 type Patch []Operation
 
 // String converts the Patch to a JSON string, with formatting.
-func (p *Patch) String() (ret string) {
+func (p *Patch) String() string {
 	lines := make([]string, len(*p))
 	for i, op := range *p {
 		lines[i] = "    " + op.String()
 	}
-	ret = fmt.Sprintf("[\n%s\n]", strings.Join(lines, ",\n"))
-	return ret
+	return fmt.Sprintf("[\n%s\n]", strings.Join(lines, ",\n"))
 }
 
-func ParsePatch(b []byte) (Patch, error) {
+// Unmarshal converts a JSON byte array to a Patch.
+func Unmarshal(b []byte) (Patch, error) {
 	var patch Patch
 	if err := json.Unmarshal(b, &patch); err != nil {
 		return nil, err
 	}
 	return patch, nil
 }
+
+//////////////////////////////////
+///////// JSON PATCH OPERATIONS
+//////////////////////////////////
 
 // Operation represents a single JSON patch operation.
 type Operation struct {
@@ -62,7 +78,7 @@ type Operation struct {
 }
 
 // String converts the Operation to a JSON string.
-func (p *Operation) String() (s string) {
+func (p *Operation) String() string {
 	var ( // Using vanila JSON here
 		op        = p.Op
 		path      = p.Path
@@ -73,7 +89,7 @@ func (p *Operation) String() (s string) {
 	fmt.Fprintf(&buf,
 		`{ "op": "%s", "path": "%s", "value": %s, "timestamp": %d }`,
 		op, path, value, timestamp)
-	return s
+	return buf.String()
 }
 
 // Marshal converts the Operation to a JSON byte Array.
@@ -88,8 +104,7 @@ func (p *Operation) Marshal() (b []byte, err error) {
 		}
 	}
 	fmt.Fprintf(&buf, `, "timestamp": %d }`, p.Timestamp)
-	b = buf.Bytes()
-	return b, nil
+	return buf.Bytes(), nil
 }
 
 // NewOperation creates a new Operation instance.
@@ -144,14 +159,13 @@ func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (j jsonr.JsonR
 		if len(parts) == 1 { // Only a single part of path left
 			switch op.Op { // switch by operation type
 			case OpAdd, OpReplace:
-				// switch by operation value's datatype
-				switch leaf := op.Value.(type) {
+				switch leaf := j[part].(type) {
 				case jsonr.Leaf[string]:
-					j[part] = jsonr.Leaf[string]{Value: leaf.Value, Timestamp: leaf.Timestamp}
+					j[part] = jsonr.Leaf[string]{Value: op.Value.(string), Timestamp: leaf.Timestamp}
 				case jsonr.Leaf[float64]:
-					j[part] = jsonr.Leaf[float64]{Value: leaf.Value, Timestamp: leaf.Timestamp}
+					j[part] = jsonr.Leaf[float64]{Value: op.Value.(float64), Timestamp: leaf.Timestamp}
 				case jsonr.Leaf[bool]:
-					j[part] = jsonr.Leaf[bool]{Value: leaf.Value, Timestamp: leaf.Timestamp}
+					j[part] = jsonr.Leaf[bool]{Value: op.Value.(bool), Timestamp: leaf.Timestamp}
 				default:
 					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for op.Value", op.Value)
 				}
