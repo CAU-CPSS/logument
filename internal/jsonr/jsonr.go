@@ -71,7 +71,7 @@ func MarshalIndent(j JsonR, prefix, indent string) (data []byte, err error) {
 	return json.MarshalIndent(j, prefix, indent)
 }
 
-// Equal checks if two JSON-Rs are equal.
+// Equal checks if two JSON-Rs are equal, including timestamps.
 func Equal(j1, j2 JsonR) (ret bool, err error) {
 	var (
 		o1, o2 any
@@ -86,6 +86,43 @@ func Equal(j1, j2 JsonR) (ret bool, err error) {
 	if err = json.Unmarshal(b2, &o2); err != nil {
 		return false, err
 	}
+	return reflect.DeepEqual(o1, o2), nil
+}
+
+// EqualWithoutTimestamp checks if two JSON-Rs are equal, excluding timestamps.
+func EqualWithoutTimestamp(j1, j2 JsonR) (ret bool, err error) {
+	var (
+		o1, o2 any
+		b1, _  = Marshal(j1)
+		b2, _  = Marshal(j2)
+	)
+
+	// Check if the given JSON-Rs are valid
+	if err = json.Unmarshal(b1, &o1); err != nil {
+		return false, err
+	}
+	if err = json.Unmarshal(b2, &o2); err != nil {
+		return false, err
+	}
+
+	// Remove timestamps
+	var removeTimestamp func(o any)
+	removeTimestamp = func(o any) {
+		switch v := o.(type) {
+		case map[string]any:
+			delete(v, "timestamp")
+			for _, value := range v {
+				removeTimestamp(value)
+			}
+		case []any:
+			for _, value := range v {
+				removeTimestamp(value)
+			}
+		}
+	}
+	removeTimestamp(o1)
+	removeTimestamp(o2)
+
 	return reflect.DeepEqual(o1, o2), nil
 }
 
