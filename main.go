@@ -1,47 +1,49 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/jsonr"
 	"github.com/CAU-CPSS/logument/internal/logument"
+	"github.com/davecgh/go-spew/spew"
 )
 
 const ONLY_GENERATE_VSS = true
 
+//go:embed examples/example.jsonr
+var expSnapshot []byte
+
+const expPatch = `[
+	{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 2000000000 },
+	{ "op": "replace", "path": "/tirePressure/0", "value": 35.1, "timestamp": 2000000000 },
+	{ "op": "replace", "path": "/engineOn", "value": false, "timestamp": 2000000000 }
+]`
+
 func main() {
-	// if err := run_jpatch(); err != nil {
-	// 	fmt.Println("Application error: %v", err)
-	// 	os.Exit(1)
-	// }
-	if err := run_logument(); err != nil {
-		fmt.Printf("Application error: %v\n", err)
-		os.Exit(1)
-	}
-}
+	var (
+		initSnapshot jsonr.JsonR
+		j            = expSnapshot
+	)
 
-func run_logument() error {
-	// Logument 초기화
-	data := map[string]interface{}{"speed": 100, "location": "Seoul"}
-	lm := logument.NewLogument(data)
+	jsonr.Unmarshal(j, &initSnapshot)
 
-	// 초기 스냅샷 출력
-	fmt.Println("Initial Snapshot:", lm)
+	// Make a new Logument document
+	lgm := logument.NewLogument(initSnapshot, nil)
+	// Store the patch in the PatchPool
+	lgm.Store(expPatch)
+	// Apply the patch to the PatchMap to manage the patch history
+	lgm.Apply()
 
-	// Patch 추가
-	// log.AddPatch("speed", 120)
-	// log.AddPatch("location", "Busan")
-	// fmt.Println("Patches after updates:", log.Patches)
+	// Make a snapshot at the target version
+	targetVesion := uint64(1)
+	lgm.Snapshot(targetVesion)
 
-	// 병합 및 결과 출력
-	// log.MergePatches()
-	// fmt.Println("Snapshot after merging patches:", log.CreateSnapshot())
-
-	return nil
+	// Print the Logument document
+	fmt.Print(spew.Sdump(lgm))
 }
 
 func run_jpatch() error {

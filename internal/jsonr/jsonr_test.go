@@ -16,6 +16,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const exp = "../../examples/example.jsonr"
+const exp2 = "../../examples/example2.jsonr"
+
 // Testing JSON-R unmarshalling
 func TestUnmarshal(t *testing.T) {
 	// Test cases are in 'testcases.go' file.
@@ -38,7 +41,7 @@ func TestUnmarshal(t *testing.T) {
 func TestParsedData(t *testing.T) {
 	var (
 		parsedJsonR    JsonR
-		stringJsonR, _ = os.ReadFile("example.jsonr")
+		stringJsonR, _ = os.ReadFile(exp)
 		err            = Unmarshal(stringJsonR, &parsedJsonR)
 	)
 
@@ -74,7 +77,7 @@ func TestParsedData(t *testing.T) {
 func TestGetTimestamp(t *testing.T) {
 	var (
 		parsedJsonR    JsonR
-		stringJsonR, _ = os.ReadFile("example2.jsonr")
+		stringJsonR, _ = os.ReadFile(exp2)
 		err            = Unmarshal(stringJsonR, &parsedJsonR)
 	)
 

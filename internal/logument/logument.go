@@ -35,7 +35,7 @@ func NewLogument(initialSnapshot any, initialPatches any) *Logument {
 	case Snapshot:
 		ss = initialSnapshot
 	default:
-		panic("Invalid type for initialSnapshot. Must be string or jsonr.Snapshot.")
+		panic("Invalid type for initialSnapshot. Must be string or jsonr.JsonR.")
 	}
 
 	lgm := &Logument{
