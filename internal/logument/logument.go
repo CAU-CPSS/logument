@@ -8,58 +8,83 @@ import (
 	"github.com/CAU-CPSS/logument/internal/jsonr"
 )
 
-type Ss = jsonr.JsonR
-type Pp = jsonpatch.Operation
+type Snapshot = jsonr.JsonR
+type Patch = jsonpatch.Patch
 
 // Logument 구조체
 type Logument struct {
-	CurrentSnapshot Snapshot         // 현재 Snapshot
-	Snapshots       []Snapshot       // 만들었던 Shanpshot 들의 배열
-	Patches         []Patch          // Patch 들의 배열
-	Version         []VersionManager // Version 정보 관리
-}
-
-type VersionManager struct {
-	Version   uint64
-	StartTime time.Time
-	EndTime   time.Time
+	Version   []uint64            // Version 정보 관리
+	Snapshots map[uint64]Snapshot // 만들었던 Shanpshot 들의 배열
+	Patches   map[uint64]Patch    // Patch 들의 배열
 }
 
 // NewLogument TODO: initial data 를 json 으로 변경
 // Create a new Logument document with the given initial data.
-func NewLogument(initialData map[string]any) *Logument {
+func NewLogument(initialSnapshot any, initialPatches any) *Logument {
+	var ss Snapshot
+	var pp Patch
+
+	switch initialSnapshot.(type) {
+	case string:
+		err := jsonr.Unmarshal([]byte(initialSnapshot.(string)), &ss)
+		if err != nil {
+			panic(err)
+		}
+	case Snapshot:
+		ss = initialSnapshot.(Snapshot)
+	default:
+		panic("Invalid type for initialSnapshot. Must be string or jsonr.Snapshot.")
+	}
+
+	switch initialPatches.(type) {
+	case Patch:
+		pp = initialPatches.(Patch)
+	default:
+		panic("Invalid type for initialPatches. Must be Patch or []Patch.")
+	}
+
 	return &Logument{
-		CurrentSnapshot: Snapshot{
-			Version:   1,
-			Timestamp: time.Now(),
-			Data:      initialData,
-		},
-		Patches: []Patch{},
+		Version:   []uint64{0},
+		Snapshots: map[uint64]Snapshot{0: ss},
+		Patches:   map[uint64]Patch{0: pp},
 	}
 }
 
 // AppendPatch data를 받아 logument에 patches에 patch를 추가
 // TODO: Psuedo 구현임 실제 구현 필요
-func (l *Logument) AppendPatch(newPatch any) {
+func (lgm *Logument) AppendPatch(newPatch any) {
 	switch p := newPatch.(type) {
 	case Patch:
-		p.VersionCnt = atomic.LoadUint64(&l.CurrentSnapshot.Version) + 1
-		l.Patches = append(l.Patches, p)
+		lgm.Patches = append(lgm.Patches, p)
 	case []Patch:
-		for i := range p {
-			p[i].VersionCnt = atomic.LoadUint64(&l.CurrentSnapshot.Version) + 1
-		}
-		l.Patches = append(l.Patches, p...)
+		lgm.Patches = append(lgm.Patches, p...)
 	default:
 		panic("Invalid type for AddPatch. Must be Patch or []Patch.")
 	}
 }
 
 // Snapshot Snapshot 생성
-func (l *Logument) Snapshot(targetVer uint64) Snapshot {
-	updatedSnapshot := l.CurrentSnapshot
+func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
+	// Find the latest version before the target version
+	var latestVersion uint64
+	var latestSnapshot Snapshot
+	for version, snapshot := range lgm.Snapshots {
+		if version <= targetVersion {
+			latestVersion = version
+			latestSnapshot = snapshot
+		}
+	}
 
-	return updatedSnapshot
+	if latestVersion == targetVersion {
+		return latestSnapshot
+	}
+
+	latestSnapshot
+
+	// ss := lgm.CurrentSnapshot
+
+	// lgm.Snapshots = append(lgm.Snapshots, updatedSnapshot)
+	// return updatedSnapshot
 }
 
 // Apply Snapshot과 Patch 병합
