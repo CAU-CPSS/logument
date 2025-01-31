@@ -92,36 +92,25 @@ func Equal(j1, j2 JsonR) (ret bool, err error) {
 // EqualWithoutTimestamp checks if two JSON-Rs are equal, excluding timestamps.
 func EqualWithoutTimestamp(j1, j2 JsonR) (ret bool, err error) {
 	var (
-		o1, o2 any
-		b1, _  = Marshal(j1)
-		b2, _  = Marshal(j2)
+		o1, o2       any
+		json1, json2 []byte
 	)
 
-	// Check if the given JSON-Rs are valid
-	if err = json.Unmarshal(b1, &o1); err != nil {
+	// Convert JSON-Rs to JSON
+	if json1, err = ToJson(j1); err != nil {
 		return false, err
 	}
-	if err = json.Unmarshal(b2, &o2); err != nil {
+	if json2, err = ToJson(j2); err != nil {
 		return false, err
 	}
 
-	// Remove timestamps
-	var removeTimestamp func(o any)
-	removeTimestamp = func(o any) {
-		switch v := o.(type) {
-		case map[string]any:
-			delete(v, "timestamp")
-			for _, value := range v {
-				removeTimestamp(value)
-			}
-		case []any:
-			for _, value := range v {
-				removeTimestamp(value)
-			}
-		}
+	// Check if the given JSON-Rs are equal
+	if err = json.Unmarshal(json1, &o1); err != nil {
+		return false, err
 	}
-	removeTimestamp(o1)
-	removeTimestamp(o2)
+	if err = json.Unmarshal(json2, &o2); err != nil {
+		return false, err
+	}
 
 	return reflect.DeepEqual(o1, o2), nil
 }
@@ -220,6 +209,69 @@ func ToArray(a Array) ([]any, error) {
 // Any returns the given JSON-R as any(interface{}) type.
 func Any(j JsonR) any {
 	return j
+}
+
+// ToJson converts the given JSON-R to a JSON byte slice.
+// NOTE: The timestamp field is removed
+func ToJson(j JsonR) (b []byte, err error) {
+	var removeTimestamp func(o any)
+	removeTimestamp = func(o any) {
+		switch value := o.(type) {
+		case map[string]any:
+			for k, v := range value {
+                switch leaf := v.(type) {
+                case Leaf[string]:
+                    value[k] = leaf.Value
+                case Leaf[float64]:
+                    value[k] = leaf.Value
+                case Leaf[bool]:
+                    value[k] = leaf.Value
+				case map[string]any:
+					if isLeaf(leaf) {
+						value[k] = leaf["value"]
+					} else {
+						removeTimestamp(leaf)
+					}
+                default:
+                    removeTimestamp(v)
+                }
+			}
+		case []any:
+            for i, v := range value {
+                switch leaf := v.(type) {
+                case Leaf[string]:
+                    value[i] = leaf.Value
+                case Leaf[float64]:
+                    value[i] = leaf.Value
+                case Leaf[bool]:
+                    value[i] = leaf.Value
+				case map[string]any:
+					if isLeaf(leaf) {
+						value[i] = leaf["value"]
+					} else {
+						removeTimestamp(leaf)
+					}
+                default:
+                    removeTimestamp(v)
+                }
+            }
+		}
+	}
+
+	var (
+		o    any
+		barr []byte
+	)
+	if barr, err = Marshal(j); err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(barr, &o); err != nil {
+		return nil, err
+	}
+
+	removeTimestamp(o)
+
+	return json.Marshal(o)
 }
 
 //////////////////////////////////

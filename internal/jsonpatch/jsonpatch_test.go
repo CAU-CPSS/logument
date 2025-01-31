@@ -46,6 +46,7 @@ func TestApplyPatch(t *testing.T) {
 		parsed1, parsed2 jsonr.JsonR
 		jsonr1, _        = os.ReadFile(exp)
 		jsonr2, _        = os.ReadFile(exp2)
+		b1, b2 		[]byte
 	)
 
 	jsonr.Unmarshal(jsonr1, &parsed1)
@@ -59,6 +60,13 @@ func TestApplyPatch(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	// Check if the result is equal to the second JSON-R
+	b1, err = jsonr.ToJson(j)
+	b2, err = jsonr.ToJson(parsed2)
+
+	t.Log(string(b1))
+	t.Log("=====================================")
+	t.Log(string(b2))
+
 	ret, _ := jsonr.EqualWithoutTimestamp(parsed2, j)
 	assert.Equal(t, true, ret)
 }
