@@ -9,11 +9,18 @@ import (
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/jsonr"
 	"github.com/CAU-CPSS/logument/internal/logument"
+	"github.com/CAU-CPSS/logument/internal/vssgen"
 )
 
 const ONLY_GENERATE_VSS = true
 
-//go:embed examples/example.jsonr
+const (
+	NumCars = 5
+	NumPatches = 30
+	ChangeRate = 0.2
+)
+
+//go:embed examples/example1.jsonr
 var expSnapshot []byte
 
 const expPatch = `[
@@ -23,6 +30,12 @@ const expPatch = `[
 ]`
 
 func main() {
+	// TODO: convert to arg parser
+	if ONLY_GENERATE_VSS {
+		generate_vss()
+		return
+	}
+
 	var (
 		initSnapshot jsonr.JsonR
 		j            = expSnapshot
@@ -43,6 +56,23 @@ func main() {
 
 	// Print the Logument document
 	lgm.Print()
+}
+
+func generate_vss() {
+	metadata := map[string]any{
+		"dataset":     "internal/vssgen/vss_rel_4.2.json",
+		"cars":        NumCars,
+		"files":       NumPatches,
+		"change_rate": ChangeRate,
+		"size":        1.0,
+	}
+	outputDir := "./dataset"
+
+	vssgen.PrepareOutputDir(outputDir)
+	vssgen.SaveMetadata(metadata, outputDir)
+	vssgen.Generate(metadata, outputDir)
+
+	fmt.Printf("Saved to %s! Exiting...\n", outputDir)
 }
 
 func run_jpatch() error {

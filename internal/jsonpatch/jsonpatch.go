@@ -74,7 +74,7 @@ type Operation struct {
 	Op        OpType      `json:"op"`
 	Path      string      `json:"path"`
 	Value     any         `json:"value,omitempty"`
-	Timestamp jsonr.TimeT `json:"timestamp"`
+	Timestamp int64 `json:"timestamp"`
 }
 
 // String converts the Operation to a JSON string.
@@ -108,7 +108,7 @@ func (p *Operation) Marshal() (b []byte, err error) {
 }
 
 // NewOperation creates a new Operation instance.
-func NewOperation(op OpType, path string, value any, timestamp jsonr.TimeT) Operation {
+func NewOperation(op OpType, path string, value any, timestamp int64) Operation {
 	return Operation{op, path, value, timestamp}
 }
 

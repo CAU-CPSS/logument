@@ -98,16 +98,16 @@ func TestSnapshot(t *testing.T) {
 	lgm.Apply()
 
 	// Take a snapshot already taken
-	// snapshot := lgm.Snapshot(0)
-	// t.Log(spew.Sdump(snapshot))
-
-	// Take a snapshot
-	snapshot := lgm.Snapshot(1)
+	snapshot := lgm.Snapshot(0)
 	t.Log(spew.Sdump(snapshot))
 
-	// // Requests exceeding latest version
-	// snapshot = lgm.Snapshot(3)
-	// t.Log(spew.Sdump(snapshot))
+	// Take a snapshot
+	snapshot = lgm.Snapshot(1)
+	t.Log(spew.Sdump(snapshot))
+
+	// Requests exceeding latest version
+	snapshot = lgm.Snapshot(3)
+	t.Log(spew.Sdump(snapshot))
 }
 
 func TestTimedSnapshot(t *testing.T) {

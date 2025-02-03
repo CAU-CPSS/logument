@@ -42,19 +42,17 @@ func (Array) isValue() {} // Marks Array as a Value
 // LeafValue is a type that can be used as a value of JSON-R leaf.
 type LeafValue interface{ ~string | ~float64 | ~bool }
 
-// TimeT is a type that represents a Unix timestamp.
-type TimeT uint64
 
 // Leaf[T] stores the value and timestamp of a JSON-R leaf.
 type Leaf[T LeafValue] struct {
 	Value     T     `json:"value"`     // number, string, boolean
-	Timestamp TimeT `json:"timestamp"` // Unix timestamp
+	Timestamp int64 `json:"timestamp"` // Unix timestamp
 }
 
 func (Leaf[T]) isValue() {} // Marks Leaf as a Value
 
 // DefaultTimestamp is the default timestamp value.
-const DefaultTimestamp = TimeT(0)
+const DefaultTimestamp int64 = -1
 
 //////////////////////////////////
 ///////// OPERATIONS
@@ -171,8 +169,8 @@ func EqualWithoutTimestamp(j1, j2 JsonR) (ret bool, err error) {
 }
 
 // GetLatestTimestamp returns the latest timestamp of the given JSON-R.
-func GetLatestTimestamp(j JsonR) TimeT {
-	updateMax := func(max *TimeT, ts TimeT) {
+func GetLatestTimestamp(j JsonR) int64 {
+	updateMax := func(max *int64, ts int64) {
 		if ts > *max {
 			*max = ts
 		}
@@ -186,7 +184,7 @@ func GetLatestTimestamp(j JsonR) TimeT {
 	case Leaf[bool]:
 		return v.Timestamp
 	case Object, Array:
-		max := TimeT(0)
+		max := int64(0)
 		if obj, ok := v.(Object); ok { // v is Object
 			for _, value := range obj {
 				updateMax(&max, GetLatestTimestamp(value))
@@ -365,13 +363,10 @@ func ToJsonR(o any) (j JsonR, err error) {
 
 	addTimestamp(o)
 
-	// TODO: 이거 좀 깨끗하게....
 	str, err := json.Marshal(o)
+	err = Unmarshal(str, &j)
 
-	var jjj JsonR
-	err = Unmarshal(str, &jjj)
-
-	return jjj, err
+	return j, err
 }
 
 //////////////////////////////////
@@ -428,7 +423,7 @@ func parseLeaf(raw map[string]any) (Value, error) {
 	// The existence of "value" and "timestamp" is already checked in isLeaf()
 	var (
 		value = raw["value"]
-		ts    = TimeT(raw["timestamp"].(float64))
+		ts    = int64(raw["timestamp"].(float64))
 	)
 
 	// Create Leaf with the type of Value

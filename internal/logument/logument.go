@@ -195,7 +195,7 @@ func (lgm *Logument) Snapshot(targetVersion uint64) any {
 	return jsonSnapshot
 }
 
-func (lgm *Logument) TimedSnapshot(targetTimestamp uint64) Snapshot {
+func (lgm *Logument) TimedSnapshot(targetTimestamp int64) Snapshot {
 	// Find the latest timestamp before the target timestamp
 	latestVersion := lgm.Version[0]
 	for v, s := range lgm.Snapshots {
