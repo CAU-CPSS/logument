@@ -143,3 +143,18 @@ func TestCompact(t *testing.T) {
 	lgm.Compact("/location")
 	lgm.Print()
 }
+
+func TestHistory(t *testing.T) {
+	t.Log("Show history\n")
+	lgm := logument.NewLogument(initSnapshot, nil)
+	lgm.Store(initPatch)
+	lgm.Store(secondPatch)
+	lgm.Apply()
+
+	lgm.Store(thirdPatch)
+	lgm.Apply()
+
+	// Show history of the "/location"
+	his := lgm.History("/location")
+	t.Log(spew.Sdump(his))
+}

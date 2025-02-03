@@ -21,7 +21,7 @@
 - **Compact(targetPath string)**: For the specified targetPath, remove patches where only the timestamp has changed (i.e., retain only those patches where the Value has actually been modified)
 - **Slice(startVersion uint64, endVersion uint64)**: Extract a subset of the Logument document that includes all snapshots and patches between the start and end versions (inclusive).  
 - **Pack(targetVersion uint64)**:
-- History
+- **History**:
 - Next
 - **TimeSnapshot(targetTimestamp uint64)**: Create a snapshot based on a target timestamp
 - TimeSlice

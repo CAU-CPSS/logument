@@ -166,6 +166,7 @@ func (lgm *Logument) Snapshot(targetVersion uint64) any {
 		if err != nil {
 			panic("Failed to convert the snapshot to JSON. Error: " + err.Error())
 		}
+
 		return s
 	}
 
@@ -336,7 +337,7 @@ func (lgm *Logument) Pack(targetVersion uint64) map[uint64]Patches {
 	}
 
 	packedPatches := make(map[uint64]Patches)
-	for i := targetVersion+1; i <= lgm.Version[len(lgm.Version)-1]; i++ {
+	for i := targetVersion + 1; i <= lgm.Version[len(lgm.Version)-1]; i++ {
 		packedPatches[i] = lgm.PatchMap[i]
 	}
 
@@ -370,4 +371,43 @@ func (lgm *Logument) Pack(targetVersion uint64) map[uint64]Patches {
 	}
 
 	return packedPatches
+}
+
+func (lgm *Logument) History(targetPath string) map[string]Patches {
+	// Get the history of the changes at the target path
+	// The history should contain all the patches that have changed the value at the target path
+	// The patches should be sorted by the timestamp in ascending order
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+
+	lgm.Compact(targetPath)
+
+	historyPatches := make(map[string]Patches)
+	for _, ps := range lgm.PatchMap {
+		for _, p := range ps {
+			path := rfc6901Decoder.Replace(p.Path)
+			if strings.HasPrefix(path, targetPath) {
+				historyPatches[p.Path] = append(historyPatches[p.Path], p)
+			}
+		}
+	}
+
+	for key := range historyPatches {
+		val, err := jsonr.GetValueFromKey(lgm.Snapshots[0], key)
+		fmt.Println("key: ", key)
+		fmt.Println("val: ", val)
+		if err != nil {
+			panic("Failed to get the value from the snapshot. Error: " + err.Error())
+		}
+		if val != nil {
+			historyPatches[key] = append([]jsonpatch.Operation{{Op: "add",
+				Path:      key,
+				Value:     val,
+				Timestamp: 0}},
+				historyPatches[key]...)
+		}
+	}
+
+	return historyPatches
 }
