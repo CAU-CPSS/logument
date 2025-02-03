@@ -22,14 +22,16 @@ const patch = `[
 	{ "op": "replace", "path": "/engineOn", "value": false, "timestamp": 2000000000 }
 ]`
 
-const exp = "../../examples/example.jsonr"
-const exp2 = "../../examples/example2.jsonr"
+const (
+	ex1 = "../../examples/example1.jsonr"
+	ex2 = "../../examples/example2.jsonr"
+)
 
 func TestGeneratePatch(t *testing.T) {
 	var (
 		parsed1, parsed2 jsonr.JsonR
-		jsonr1, _        = os.ReadFile(exp)
-		jsonr2, _        = os.ReadFile(exp2)
+		jsonr1, _        = os.ReadFile(ex1)
+		jsonr2, _        = os.ReadFile(ex2)
 	)
 
 	jsonr.Unmarshal(jsonr1, &parsed1)
@@ -44,9 +46,9 @@ func TestGeneratePatch(t *testing.T) {
 func TestApplyPatch(t *testing.T) {
 	var (
 		parsed1, parsed2 jsonr.JsonR
-		jsonr1, _        = os.ReadFile(exp)
-		jsonr2, _        = os.ReadFile(exp2)
-		b1, b2 		[]byte
+		jsonr1, _        = os.ReadFile(ex1)
+		jsonr2, _        = os.ReadFile(ex2)
+		b1, b2           []byte
 	)
 
 	jsonr.Unmarshal(jsonr1, &parsed1)
@@ -73,9 +75,9 @@ func TestApplyPatch(t *testing.T) {
 
 func TestApplyPatchWithJson(t *testing.T) {
 	var (
-		doc           jsonr.JsonR
-		jsonr1, _ = os.ReadFile(exp)
-		p             Patch
+		doc       jsonr.JsonR
+		jsonr1, _ = os.ReadFile(ex1)
+		p         Patch
 	)
 
 	// Unmarshal the first JSON-R
@@ -88,7 +90,7 @@ func TestApplyPatchWithJson(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	// Check if the result is equal to the second JSON-R
-	jsonr2, _ := os.ReadFile(exp2)
+	jsonr2, _ := os.ReadFile(ex2)
 	jsonr.Unmarshal(jsonr2, &doc)
 	ret, _ := jsonr.EqualWithoutTimestamp(doc, newDoc)
 	assert.Equal(t, true, ret)

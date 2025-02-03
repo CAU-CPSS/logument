@@ -394,7 +394,7 @@ func (lgm *Logument) History(targetPath string) map[string]Patches {
 	}
 
 	for key := range historyPatches {
-		val, err := jsonr.GetValueFromKey(lgm.Snapshots[0], key)
+		val, err := jsonr.GetValue(lgm.Snapshots[0], key)
 		fmt.Println("key: ", key)
 		fmt.Println("val: ", val)
 		if err != nil {
