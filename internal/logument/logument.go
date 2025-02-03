@@ -401,7 +401,8 @@ func (lgm *Logument) History(targetPath string) map[string]Patches {
 			panic("Failed to get the value from the snapshot. Error: " + err.Error())
 		}
 		if val != nil {
-			historyPatches[key] = append([]jsonpatch.Operation{{Op: "add",
+			historyPatches[key] = append([]jsonpatch.Operation{{
+				Op:        "add",
 				Path:      key,
 				Value:     val,
 				Timestamp: 0}},
