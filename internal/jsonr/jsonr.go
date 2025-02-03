@@ -47,11 +47,14 @@ type TimeT uint64
 
 // Leaf[T] stores the value and timestamp of a JSON-R leaf.
 type Leaf[T LeafValue] struct {
-	Value     T      `json:"value"`     // number, string, boolean
+	Value     T     `json:"value"`     // number, string, boolean
 	Timestamp TimeT `json:"timestamp"` // Unix timestamp
 }
 
 func (Leaf[T]) isValue() {} // Marks Leaf as a Value
+
+// DefaultTimestamp is the default timestamp value.
+const DefaultTimestamp = TimeT(0)
 
 //////////////////////////////////
 ///////// OPERATIONS
@@ -324,6 +327,51 @@ func ToJson(j JsonR) (b []byte, err error) {
 	removeTimestamp(o)
 
 	return json.Marshal(o)
+}
+
+// ToJsonR converts the given JSON object to a JSON-R.
+func ToJsonR(o any) (j JsonR, err error) {
+	var addTimestamp func(o any)
+	addTimestamp = func(o any) {
+		switch value := o.(type) {
+		case map[string]any:
+			for k, v := range value {
+				switch leaf := v.(type) {
+				case string:
+					value[k] = Leaf[string]{Value: leaf, Timestamp: DefaultTimestamp}
+				case float64:
+					value[k] = Leaf[float64]{Value: leaf, Timestamp: DefaultTimestamp}
+				case bool:
+					value[k] = Leaf[bool]{Value: leaf, Timestamp: DefaultTimestamp}
+				default:
+					addTimestamp(v)
+				}
+			}
+		case []any:
+			for i, v := range value {
+				switch leaf := v.(type) {
+				case string:
+					value[i] = Leaf[string]{Value: leaf, Timestamp: DefaultTimestamp}
+				case float64:
+					value[i] = Leaf[float64]{Value: leaf, Timestamp: DefaultTimestamp}
+				case bool:
+					value[i] = Leaf[bool]{Value: leaf, Timestamp: DefaultTimestamp}
+				default:
+					addTimestamp(v)
+				}
+			}
+		}
+	}
+
+	addTimestamp(o)
+
+	// TODO: 이거 좀 깨끗하게....
+	str, err := json.Marshal(o)
+
+	var jjj JsonR
+	err = Unmarshal(str, &jjj)
+
+	return jjj, err
 }
 
 //////////////////////////////////

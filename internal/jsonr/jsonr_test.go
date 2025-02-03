@@ -9,6 +9,7 @@
 package jsonr
 
 import (
+	"encoding/json"
 	"os"
 	"reflect"
 	"testing"
@@ -19,6 +20,7 @@ import (
 const (
 	ex1 = "../../examples/example1.jsonr"
 	ex2 = "../../examples/example2.jsonr"
+	js1 = "../../examples/example1.json"
 )
 
 // Testing JSON-R unmarshalling
@@ -100,13 +102,22 @@ func TestGetValue(t *testing.T) {
 		err            = Unmarshal(stringJsonR, &parsedJsonR)
 	)
 
-	if err != nil {
-		t.Errorf("Parse() error = %v", err)
-		return
-	}
+	assert.Nil(t, err)
 
 	// Use path to retrieve the value
 	value, err := GetValue(parsedJsonR, "/tirePressure/0")
 	t.Log("Value:", value)
 	assert.Nil(t, err)
+}
+
+func TestToJsonR(t *testing.T) {
+	var j any
+
+	strJson, _ := os.ReadFile(js1)
+	err := json.Unmarshal(strJson, &j)
+	assert.Nil(t, err)
+
+	jsonR, err := ToJsonR(j)
+	assert.Nil(t, err)
+	t.Log(String(jsonR))
 }
