@@ -105,6 +105,7 @@ func TestGetValue(t *testing.T) {
 		return
 	}
 
+	// Use path to retrieve the value
 	value, err := GetValue(parsedJsonR, "/tirePressure/0")
 	t.Log("Value:", value)
 	assert.Nil(t, err)
