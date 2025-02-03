@@ -14,7 +14,7 @@ import (
 
 // Note: http://tools.ietf.org/html/rfc6901#section-4 :
 var (
-	rfc6901Encoder = strings.NewReplacer("~", "~0", "/", "~1")
+	// rfc6901Encoder = strings.NewReplacer("~", "~0", "/", "~1")
 	rfc6901Decoder = strings.NewReplacer("~1", "/", "~0", "~")
 )
 
