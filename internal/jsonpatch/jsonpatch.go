@@ -74,7 +74,7 @@ type Operation struct {
 	Op        OpType `json:"op"`
 	Path      string `json:"path"`
 	Value     any    `json:"value,omitempty"`
-	Timestamp int64  `json:"timestamp"`
+	Timestamp uint64 `json:"timestamp"`
 }
 
 // String converts the Operation to a JSON string.
@@ -108,7 +108,7 @@ func (p *Operation) Marshal() (b []byte, err error) {
 }
 
 // NewOperation creates a new Operation instance.
-func NewOperation(op OpType, path string, value any, timestamp int64) Operation {
+func NewOperation(op OpType, path string, value any, timestamp uint64) Operation {
 	return Operation{op, path, value, timestamp}
 }
 
@@ -149,8 +149,8 @@ func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (j jsonr.JsonR
 		return doc, nil
 	}
 
-	fmt.Printf("doc: %v\n", doc)
-	fmt.Printf("parts: %v\n", parts)
+	// fmt.Printf("doc: %v\n", doc)
+	// fmt.Printf("parts: %v\n", parts)
 
 	switch doc.(type) { // If doc is a leaf node, return
 	case jsonr.Leaf[string], jsonr.Leaf[float64], jsonr.Leaf[bool]:
@@ -162,13 +162,13 @@ func applyTraverse(doc jsonr.JsonR, parts []string, op Operation) (j jsonr.JsonR
 		if len(parts) == 1 { // Only a single part of path left
 			switch op.Op { // switch by operation type
 			case OpAdd, OpReplace:
-				switch leaf := j[part].(type) {
+				switch j[part].(type) {
 				case jsonr.Leaf[string]:
-					j[part] = jsonr.Leaf[string]{Value: op.Value.(string), Timestamp: leaf.Timestamp}
+					j[part] = jsonr.Leaf[string]{Value: op.Value.(string), Timestamp: op.Timestamp}
 				case jsonr.Leaf[float64]:
-					j[part] = jsonr.Leaf[float64]{Value: op.Value.(float64), Timestamp: leaf.Timestamp}
+					j[part] = jsonr.Leaf[float64]{Value: op.Value.(float64), Timestamp: op.Timestamp}
 				case jsonr.Leaf[bool]:
-					j[part] = jsonr.Leaf[bool]{Value: op.Value.(bool), Timestamp: leaf.Timestamp}
+					j[part] = jsonr.Leaf[bool]{Value: op.Value.(bool), Timestamp: op.Timestamp}
 				default:
 					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for op.Value", op.Value)
 				}
@@ -309,9 +309,9 @@ func diff(origin, modified jsonr.Object, path string, patch Patch) (Patch, error
 				patch = append(patch, NewOperation(OpRemove, p, nil, origLeaf.Timestamp))
 			case jsonr.Object:
 				// TODO: is there a way to calculate the timestamp?
-				patch = append(patch, NewOperation(OpRemove, p, nil, -1))
+				patch = append(patch, NewOperation(OpRemove, p, nil, 0))
 			case jsonr.Array:
-				patch = append(patch, NewOperation(OpRemove, p, nil, -1))
+				patch = append(patch, NewOperation(OpRemove, p, nil, 0))
 			default:
 				panic(fmt.Sprintf("diff(): Unknown type %T for origValue", origValue))
 			}
@@ -448,7 +448,7 @@ func compareArray(origArr, modArr jsonr.Array, p string) (patch Patch) {
 	// Find elements that need to be removed
 	processArray(origArr, modArr, func(i int, _ any) {
 		// TODO: is there a way to calculate the timestamp?
-		patch = append(patch, NewOperation(OpRemove, makePath(p, i), nil, -1))
+		patch = append(patch, NewOperation(OpRemove, makePath(p, i), nil, 0))
 	})
 
 	reversed := make(Patch, len(patch))

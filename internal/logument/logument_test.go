@@ -23,24 +23,30 @@ const initSnapshot = `{
     ] }`
 
 const initPatch = `[
-	{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 2000000000 },
-	{ "op": "replace", "path": "/tirePressure/0", "value": 35.1, "timestamp": 2000000000 }
+	{ "op": "replace", "path": "/location/latitude", "value": 43.9409, "timestamp": 1800000000 },	
+	{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 1800000000 },
+	{ "op": "replace", "path": "/tirePressure/0", "value": 35.1, "timestamp": 1900000000 }
 ]`
 
 const secondPatch = `[
 	{ "op": "replace", "path": "/engineOn", "value": false, "timestamp": 2000000000 }
 ]`
 
+const thirdPatch = `[
+	{ "op": "replace", "path": "/location/latitude", "value": 43.9409, "timestamp": 2100000000 },	
+	{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 2100000000 }
+]`
+
 func TestCreate(t *testing.T) {
-	t.Log("Make a new Logument document")
+	t.Log("Make a new Logument document\n")
 
 	// use only string format
-	t.Log("Make a Logument with string format")
+	t.Log("Make a Logument with string format\n")
 	lgm := logument.NewLogument(initSnapshot, initPatch)
 	t.Log(spew.Sdump(lgm))
 
 	// use Snapshot and Patches format
-	t.Log("Make a Logument with Snapshot format")
+	t.Log("Make a Logument with Snapshot format\n")
 	var ss jsonr.JsonR
 	err := jsonr.Unmarshal([]byte(initSnapshot), &ss)
 	if err != nil {
@@ -54,7 +60,7 @@ func TestCreate(t *testing.T) {
 	t.Log(spew.Sdump(lgmWithFormatdata))
 
 	// use []Patches format
-	t.Log("Make a Logument with []Patches format")
+	t.Log("Make a Logument with []Patches format\n")
 	pp2, err := jsonpatch.Unmarshal([]byte(secondPatch))
 	if err != nil {
 		t.Error(err)
@@ -64,7 +70,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestStore(t *testing.T) {
-	t.Log("Store patches to the pool")
+	t.Log("Store patches to the pool\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
 
 	lgm.Store(initPatch)
@@ -73,8 +79,8 @@ func TestStore(t *testing.T) {
 	t.Log(spew.Sdump(lgm))
 }
 
-func TestAccept(t *testing.T) {
-	t.Log("Accept patches")
+func TestApply(t *testing.T) {
+	t.Log("Apply patches\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
 	lgm.Store(initPatch)
 	lgm.Store(secondPatch)
@@ -85,7 +91,7 @@ func TestAccept(t *testing.T) {
 }
 
 func TestSnapshot(t *testing.T) {
-	t.Log("Take a snapshot")
+	t.Log("Take a snapshot\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
 	lgm.Store(initPatch)
 	lgm.Store(secondPatch)
@@ -102,4 +108,38 @@ func TestSnapshot(t *testing.T) {
 	// // Requests exceeding latest version
 	// snapshot = lgm.Snapshot(3)
 	// t.Log(spew.Sdump(snapshot))
+}
+
+func TestTimedSnapshot(t *testing.T) {
+	t.Log("Take a timed snapshot\n")
+	lgm := logument.NewLogument(initSnapshot, nil)
+	lgm.Store(initPatch)
+	lgm.Store(secondPatch)
+	lgm.Apply()
+
+	// Take a snapshot already taken
+	// snapshot := lgm.TimedSnapshot(1700000000)
+	// t.Log(spew.Sdump(snapshot))
+
+	// Take a snapshot
+	snapshot := lgm.TimedSnapshot(1900000000)
+	t.Log(spew.Sdump(snapshot))
+
+	// // Requests exceeding latest version
+	// snapshot = lgm.TimedSnapshot(2100000000)
+	// t.Log(spew.Sdump(snapshot))
+}
+
+func TestCompact(t *testing.T) {
+	t.Log("Compact patches\n")
+	lgm := logument.NewLogument(initSnapshot, nil)
+	lgm.Store(initPatch)
+	lgm.Store(secondPatch)
+	lgm.Apply()
+
+	lgm.Store(thirdPatch)
+	lgm.Apply()
+
+	lgm.Compact("/location")
+	lgm.Print()
 }

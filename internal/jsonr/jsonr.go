@@ -43,7 +43,7 @@ type LeafValue interface{ ~string | ~float64 | ~bool }
 // Leaf[T] stores the value and timestamp of a JSON-R leaf.
 type Leaf[T LeafValue] struct {
 	Value     T     `json:"value"`     // number, string, boolean
-	Timestamp int64 `json:"timestamp"` // Unix timestamp
+	Timestamp uint64 `json:"timestamp"` // Unix timestamp
 }
 
 func (Leaf[T]) isValue() {} // Marks Leaf as a Value
@@ -116,8 +116,8 @@ func EqualWithoutTimestamp(j1, j2 JsonR) (ret bool, err error) {
 }
 
 // GetLatestTimestamp returns the latest timestamp of the given JSON-R.
-func GetLatestTimestamp(j JsonR) int64 {
-	updateMax := func(max *int64, ts int64) {
+func GetLatestTimestamp(j JsonR) uint64 {
+	updateMax := func(max *uint64, ts uint64) {
 		if ts > *max {
 			*max = ts
 		}
@@ -131,7 +131,7 @@ func GetLatestTimestamp(j JsonR) int64 {
 	case Leaf[bool]:
 		return v.Timestamp
 	case Object, Array:
-		max := int64(0)
+		max := uint64(0)
 		if obj, ok := v.(Object); ok { // v is Object
 			for _, value := range obj {
 				updateMax(&max, GetLatestTimestamp(value))
@@ -328,7 +328,7 @@ func parseLeaf(raw map[string]any) (Value, error) {
 	// The existence of "value" and "timestamp" is already checked in isLeaf()
 	var (
 		value = raw["value"]
-		ts    = int64(raw["timestamp"].(float64))
+		ts    = uint64(raw["timestamp"].(float64))
 	)
 
 	// Create Leaf with the type of Value

@@ -9,7 +9,6 @@ import (
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/jsonr"
 	"github.com/CAU-CPSS/logument/internal/logument"
-	"github.com/davecgh/go-spew/spew"
 )
 
 const ONLY_GENERATE_VSS = true
@@ -43,7 +42,7 @@ func main() {
 	lgm.Snapshot(targetVesion)
 
 	// Print the Logument document
-	fmt.Print(spew.Sdump(lgm))
+	lgm.Print()
 }
 
 func run_jpatch() error {

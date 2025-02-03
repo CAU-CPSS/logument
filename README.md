@@ -14,16 +14,16 @@
 
 ## Interface for **_Logument_**
 
-- **Create(snapshot jsonr.JsonR, patches jsonpatch.Patch)**: make a new Logument (function name in implementation is 'NewLogument')
-- **Store(patches jsonpatch.Patch)**: Queue new patches in the PatchPool before they are managed in Logument
-- **Apply()**: Move pending patches from PatchPool to PatchMap, and then increase(and append) the version
-- **Snapshot(targetVersion)**: Make a snapshot at target version
-- Compact
-- Slice
-- Pack
+- **Create(snapshot jsonr.JsonR, patches jsonpatch.Patch)**: make a new Logument using an initial snapshot (_Note_: The function name in the implementation is `NewLogument`)
+- **Store(patches jsonpatch.Patch)**: Append new patches to the PatchPool; These patches are queued and will be later integrated into the document state via the Apply operation
+- **Apply()**: Incorporate all pending patches from the PatchPool into the PatchMap, update(increase) the version, and clear the PatchPool
+- **Snapshot(targetVersion uint64)**: Generate a snapshot representing the document state at the specified version by applying the corresponding patches to the nearest previous snapshot
+- **Compact(targetPath string)**: For the specified targetPath, remove patches where only the timestamp has changed (i.e., retain only those patches where the Value has actually been modified)
+- **Slice(startVersion uint64, endVersion uint64)**: Extract a subset of the Logument document that includes all snapshots and patches between the start and end versions (inclusive).  
+- **Pack(targetVersion uint64)**:
 - History
 - Next
-- TimeSnapshot
+- **TimeSnapshot(targetTimestamp uint64)**: Create a snapshot based on a target timestamp
 - TimeSlice
 
 ---
