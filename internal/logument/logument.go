@@ -84,6 +84,24 @@ func (lgm *Logument) Print() {
 	fmt.Println(spew.Sdump(lgm))
 }
 
+func (lgm *Logument) getSortedVersionsFromSnapshot() []uint64 {
+	versions := make([]uint64, 0, len(lgm.Snapshots))
+	for _, version := range versions {
+		versions = append(versions, version)
+	}
+	sort.Slice(versions, func(i, j int) bool { return versions[i] < versions[j] })
+	return versions
+}
+
+func (lgm *Logument) getSortedVersionsFromPatch() []uint64 {
+	versions := make([]uint64, 0, len(lgm.PatchMap))
+	for _, version := range versions {
+		versions = append(versions, version)
+	}
+	sort.Slice(versions, func(i, j int) bool { return versions[i] < versions[j] })
+	return versions
+}
+
 func (lgm *Logument) Store(inputPatches any) {
 	var pp Patches
 
@@ -122,29 +140,28 @@ func (lgm *Logument) Apply() {
 	}
 
 	latestVersion := lgm.Version[len(lgm.Version)-1]
+
+	if _, exist := lgm.PatchMap[latestVersion+1]; exist {
+		panic("The patch for the next version already exists.")
+	}
 	lgm.PatchMap[latestVersion+1] = lgm.PatchPool
+
 	lgm.Version = append(lgm.Version, latestVersion+1)
 	lgm.PatchPool = nil
 }
 
 func (lgm *Logument) findLatest(targetVersion uint64) (latestVersion uint64, latestSnapshot Snapshot) {
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+
 	if targetVersion > lgm.Version[len(lgm.Version)-1] {
 		panic("Target version should be smaller than the latest version." +
 			"\nTarget version: " + strconv.FormatUint(targetVersion, 10) +
 			"\nLatest version: " + strconv.FormatUint(lgm.Version[len(lgm.Version)-1], 10))
 	}
-	if !lgm.isContinuous() {
-		panic("Versions are not continuous.")
-	}
 
-	versions := make([]uint64, 0, len(lgm.Snapshots))
-	for ver := range lgm.Snapshots {
-		versions = append(versions, ver)
-	}
-
-	sort.Slice(versions, func(i, j int) bool {
-		return versions[i] < versions[j]
-	})
+	versions := lgm.getSortedVersionsFromSnapshot()
 	idx := sort.Search(len(versions), func(i int) bool {
 		return versions[i] > targetVersion
 	})
@@ -157,28 +174,22 @@ func (lgm *Logument) findLatest(targetVersion uint64) (latestVersion uint64, lat
 }
 
 // Snapshot Snapshot 생성
-func (lgm *Logument) Snapshot(targetVersion uint64) any {
+func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
 	// Find the latest version before the target version
 	latestVersion, latestSnapshot := lgm.findLatest(targetVersion)
-
-	if latestVersion == targetVersion {
-		s, err := jsonr.ToJson(latestSnapshot)
-		if err != nil {
-			panic("Failed to convert the snapshot to JSON. Error: " + err.Error())
-		}
-
-		return s
-	}
-
 	var timedSnapshot Snapshot
 
-	// Apply patches from the latest version to the target version
-	for i := latestVersion + 1; i <= targetVersion; i++ {
-		var err error
-		timedSnapshot, err = jsonpatch.ApplyPatch(latestSnapshot, lgm.PatchMap[i])
-		if err != nil {
-			panic("Failed to make a snapshot with the given version. Error: " + err.Error())
+	if latestVersion != targetVersion {
+		// Apply patches from the latest version to the target version
+		for i := latestVersion + 1; i <= targetVersion; i++ {
+			var err error
+			timedSnapshot, err = jsonpatch.ApplyPatch(latestSnapshot, lgm.PatchMap[i])
+			if err != nil {
+				panic("Failed to make a snapshot with the given version. Error: " + err.Error())
+			}
 		}
+	} else {
+		timedSnapshot = latestSnapshot
 	}
 
 	s, err := jsonr.ToJson(timedSnapshot)
@@ -192,16 +203,28 @@ func (lgm *Logument) Snapshot(targetVersion uint64) any {
 		panic("Failed to unmarshal the snapshot. Error: " + err.Error())
 	}
 
-	return jsonSnapshot
+	timedSnapshot, err = jsonr.ToJsonR(jsonSnapshot)
+	if err != nil {
+		panic("Failed to convert the snapshot to JsonR. Error: " + err.Error())
+	}
+
+	return timedSnapshot
 }
 
-func (lgm *Logument) TimedSnapshot(targetTimestamp int64) Snapshot {
+func (lgm *Logument) TimedSnapshot(targetTime int64) Snapshot {
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+
+	versions := lgm.getSortedVersionsFromSnapshot()
+
 	// Find the latest timestamp before the target timestamp
 	latestVersion := lgm.Version[0]
-	for v, s := range lgm.Snapshots {
+	for _, version := range versions {
+		s := lgm.Snapshots[version]
 		lts := jsonr.GetLatestTimestamp(s)
-		if lts <= targetTimestamp {
-			latestVersion = v
+		if lts <= targetTime {
+			latestVersion = version
 		} else {
 			break
 		}
@@ -220,7 +243,7 @@ func (lgm *Logument) TimedSnapshot(targetTimestamp int64) Snapshot {
 
 	var latestPatches Patches
 	for _, p := range lgm.PatchMap[latestVersion+1] {
-		if p.Timestamp <= targetTimestamp {
+		if p.Timestamp <= targetTime {
 			latestPatches = append(latestPatches, p)
 		}
 	}
@@ -245,14 +268,9 @@ func (lgm *Logument) Compact(targetPath string) {
 
 	latestValues := make(map[string]any)
 
-	keys := make([]uint64, 0, len(lgm.PatchMap))
-	for key := range lgm.PatchMap {
-		keys = append(keys, key)
-	}
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
-
-	for _, key := range keys {
-		ps := lgm.PatchMap[key]
+	versions := lgm.getSortedVersionsFromPatch()
+	for _, version := range versions {
+		ps := lgm.PatchMap[version]
 		compactPatches := make(Patches, 0, len(ps))
 		for _, p := range ps {
 			pt := rfc6901Decoder.Replace(p.Path)
@@ -275,7 +293,7 @@ func (lgm *Logument) Compact(targetPath string) {
 				compactPatches = append(compactPatches, p)
 			}
 		}
-		lgm.PatchMap[key] = compactPatches
+		lgm.PatchMap[version] = compactPatches
 	}
 }
 
@@ -299,22 +317,67 @@ func (lgm *Logument) Slice(startVersion, endVersion uint64) *Logument {
 			"\nLatest version: " + strconv.FormatUint(lgm.Version[len(lgm.Version)-1], 10))
 	}
 
+	versionsFromSnapshot := lgm.getSortedVersionsFromSnapshot()
 	SlicedSnapshots := make(map[uint64]Snapshot)
-	for ver, snap := range lgm.Snapshots {
-		if ver >= startVersion && ver <= endVersion {
-			SlicedSnapshots[ver] = snap
+	for _, version := range versionsFromSnapshot {
+		if version >= startVersion && version <= endVersion {
+			SlicedSnapshots[version] = lgm.Snapshots[version]
 		}
 	}
 
+	versionsFromPatch := lgm.getSortedVersionsFromPatch()
 	SlicedPatches := make(map[uint64]Patches)
-	for ver, patch := range lgm.PatchMap {
-		if ver >= startVersion && ver <= endVersion {
-			SlicedPatches[ver] = patch
+	for _, version := range versionsFromPatch {
+		if version >= startVersion && version <= endVersion {
+			SlicedPatches[version] = lgm.PatchMap[version]
 		}
 	}
 
 	slicedLgm := &Logument{
 		Version:   lgm.Version[startVersion : endVersion+1],
+		Snapshots: SlicedSnapshots,
+		PatchMap:  SlicedPatches,
+		PatchPool: nil,
+	}
+
+	return slicedLgm
+}
+
+func (lgm *Logument) TimeSlice(startTime, endTime int64) *Logument {
+	// TimeSlice the Logument to make a subset of the Logument based on the timestamp
+	// The subset should contain the snapshots and patches from the start time to the end time
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+	if startTime > endTime {
+		panic("Start time should be smaller than the end time." +
+			"\nStart time: " + strconv.FormatInt(startTime, 10) +
+			"\nEnd time: " + strconv.FormatInt(endTime, 10))
+	}
+
+	versionsFromSnapshot := lgm.getSortedVersionsFromSnapshot()
+	SlicedSnapshots := make(map[uint64]Snapshot)
+	for _, version := range versionsFromSnapshot {
+		snapshot := lgm.Snapshots[version]
+		latestTimestamp := jsonr.GetLatestTimestamp(snapshot)
+		if latestTimestamp >= startTime && latestTimestamp <= endTime {
+			SlicedSnapshots[version] = snapshot
+		}
+	}
+
+	versionsFromPatch := lgm.getSortedVersionsFromPatch()
+	SlicedPatches := make(map[uint64]Patches)
+	for _, version := range versionsFromPatch {
+		patches := lgm.PatchMap[version]
+		for _, patch := range patches {
+			if patch.Timestamp >= startTime && patch.Timestamp <= endTime {
+				SlicedPatches[version] = append(SlicedPatches[version], patch)
+			}
+		}
+	}
+
+	slicedLgm := &Logument{
+		Version:   lgm.Version,
 		Snapshots: SlicedSnapshots,
 		PatchMap:  SlicedPatches,
 		PatchPool: nil,
@@ -330,15 +393,18 @@ func (lgm *Logument) Pack(targetVersion uint64) map[uint64]Patches {
 		panic("Versions are not continuous.")
 	}
 
-	if targetVersion > lgm.Version[len(lgm.Version)-1] {
+	if lgm.Version[len(lgm.Version)-1] < targetVersion {
 		panic("Target version should be smaller than the latest version." +
 			"\nTarget version: " + strconv.FormatUint(targetVersion, 10) +
 			"\nLatest version: " + strconv.FormatUint(lgm.Version[len(lgm.Version)-1], 10))
 	}
 
+	versions := lgm.getSortedVersionsFromPatch()
 	packedPatches := make(map[uint64]Patches)
-	for i := targetVersion + 1; i <= lgm.Version[len(lgm.Version)-1]; i++ {
-		packedPatches[i] = lgm.PatchMap[i]
+	for _, version := range versions {
+		if targetVersion <= version {
+			packedPatches[version] = lgm.PatchMap[version]
+		}
 	}
 
 	latestValues := make(map[string]any)
@@ -393,6 +459,7 @@ func (lgm *Logument) History(targetPath string) map[string]Patches {
 		}
 	}
 
+	// Add the initial value to the history
 	for key := range historyPatches {
 		val, err := jsonr.GetValue(lgm.Snapshots[0], key)
 		fmt.Println("key: ", key)
@@ -405,8 +472,9 @@ func (lgm *Logument) History(targetPath string) map[string]Patches {
 				Op:        "add",
 				Path:      key,
 				Value:     val,
-				Timestamp: 0}},
-				historyPatches[key]...)
+				Timestamp: 0,
+			}},
+				historyPatches[key]...) // Add the initial value to the beginning
 		}
 	}
 

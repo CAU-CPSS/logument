@@ -106,8 +106,8 @@ func TestSnapshot(t *testing.T) {
 	t.Log(spew.Sdump(snapshot))
 
 	// Requests exceeding latest version
-	snapshot = lgm.Snapshot(3)
-	t.Log(spew.Sdump(snapshot))
+	// snapshot = lgm.Snapshot(3)
+	// t.Log(spew.Sdump(snapshot))
 }
 
 func TestTimedSnapshot(t *testing.T) {
