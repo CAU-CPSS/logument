@@ -37,6 +37,11 @@ const thirdPatch = `[
 	{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 2100000000 }
 ]`
 
+const forthPatch = `[
+	{ "op": "replace", "path": "/tirePressure/2", "value": 33.7, "timestamp": 2300000000 },
+	{ "op": "replace", "path": "/speed", "value": 94.9, "timestamp": 2400000000 }
+]`
+
 func TestCreate(t *testing.T) {
 	t.Log("Make a new Logument document\n")
 
@@ -122,7 +127,7 @@ func TestTimedSnapshot(t *testing.T) {
 	// t.Log(spew.Sdump(snapshot))
 
 	// Take a snapshot
-	snapshot := lgm.TimedSnapshot(1900000000)
+	snapshot := lgm.TimeSnapshot(1900000000)
 	t.Log(spew.Sdump(snapshot))
 
 	// // Requests exceeding latest version
@@ -157,4 +162,20 @@ func TestHistory(t *testing.T) {
 	// Show history of the "/location"
 	his := lgm.History("/location")
 	t.Log(spew.Sdump(his))
+}
+
+func TestSlice(t *testing.T) {
+	t.Log("Slice Logument\n")
+	lgm := logument.NewLogument(initSnapshot, nil)
+	lgm.Store(initPatch)
+	lgm.Store(secondPatch)
+	lgm.Apply()  // version 1
+	lgm.Store(thirdPatch)
+	lgm.Apply()  // version 2
+	lgm.Store(forthPatch)
+	lgm.Apply()  // version 3
+
+	// Slice patches
+	lgmSubset := lgm.Slice(1, 3)
+	lgmSubset.Print()
 }
