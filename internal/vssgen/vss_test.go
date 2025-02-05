@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	file = "./vss_rel_4.2.json"
+	file = "./vss.json"
 )
 
 var v = &VssJson{
@@ -198,7 +198,7 @@ func TestJsonPatch(t *testing.T) {
 
 func TestGenerateVss(t *testing.T) {
 	metadata := map[string]any{
-		"dataset":     "internal/vssgen/vss_rel_4.2.json",
+		"dataset":     "internal/vssgen/vss.json",
 		"cars":        100,
 		"files":       300,
 		"change_rate": 0.2,

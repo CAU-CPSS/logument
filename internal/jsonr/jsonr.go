@@ -230,7 +230,7 @@ func ToJson(j JsonR) (b []byte, err error) {
 					if isLeaf(leaf) {
 						value[k] = leaf["value"]
 					} else {
-						removeTimestamp(leaf)
+						removeTimestamp(v)
 					}
                 default:
                     removeTimestamp(v)
