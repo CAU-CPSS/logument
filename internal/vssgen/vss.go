@@ -10,6 +10,7 @@
 package vssgen
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -370,15 +371,13 @@ func (vss *VssJson) Save(file string) {
 	} else { // If JSON patch
 		var lines []string
 		for _, item := range vss.data.([]any) {
-			jsonLine, _ := json.Marshal(item)
-			strLine := string(jsonLine)
+			var buf bytes.Buffer
+			d := item.(map[string]any)
 
-			// Format the JSON line
-			strLine = strings.ReplaceAll(strLine, "{", "{ ")
-			strLine = strings.ReplaceAll(strLine, ":", ": ")
-			strLine = strings.ReplaceAll(strLine, ",", ", ")
-			strLine = strings.ReplaceAll(strLine, "}", " }")
-			lines = append(lines, "    "+strLine)
+			fmt.Fprintf(&buf,
+				`{ "op": "%s", "path": "%s", "value": %#v, "timestamp": %d }`,
+				d["op"], d["path"], d["value"], int64(d["timestamp"].(float64)))
+			lines = append(lines, "    "+buf.String())
 		}
 
 		// Join all lines with commas and wrap them in square brackets

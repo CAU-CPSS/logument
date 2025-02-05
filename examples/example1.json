@@ -1,0 +1,15 @@
+{
+    "vehicleId": "ABC1234",
+    "speed": 72.5,
+    "engineOn": true,
+    "location": {
+        "latitude": 37.7749,
+        "longitude": -122.4194
+    },
+    "tirePressure": [
+        32.1,
+        31.8,
+        32.0,
+        31.9
+    ]
+}
