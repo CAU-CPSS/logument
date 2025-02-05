@@ -1,3 +1,11 @@
+//
+// main.go
+//
+// Main entry point for the Logument project.
+//
+// Author: Sunghwan Park (@tjdghks994) & Karu (@karu-rress)
+//
+
 package main
 
 import (
@@ -13,14 +21,6 @@ import (
 	"github.com/CAU-CPSS/logument/internal/vssgen"
 )
 
-const ONLY_GENERATE_VSS = true
-
-const (
-	NumCars = 5
-	NumPatches = 30
-	ChangeRate = 0.2
-)
-
 //go:embed examples/example1.jsonr
 var expSnapshot []byte
 
@@ -31,9 +31,8 @@ const expPatch = `[
 ]`
 
 func main() {
-	arguments := os.Args[1:]
-
-	if len(arguments) > 0 {
+	// If the flag is set, generate VSS and exit
+	if arguments := os.Args[1:]; len(arguments) > 0 {
 		generate_vss()
 		return
 	}
@@ -72,7 +71,7 @@ func generate_vss() {
 }
 
 func run_jpatch() error {
-	// 원본 JSON 문서
+	// Original JSON Document
 	original, _ := jsonr.NewJsonR(`{
 		"name": "Alice",
 		"age": 25,
@@ -82,7 +81,7 @@ func run_jpatch() error {
 		}
 	}`)
 
-	// 변경된 JSON
+	// Modified JSON
 	modified, _ := jsonr.NewJsonR(`{
 		"name": "Alice",
 		"age": 26,
@@ -93,14 +92,14 @@ func run_jpatch() error {
 		"phone": "010-1234-5678"
 	}`)
 
-	// JSON Patch 생성
+	// Generating JSON Patch
 	patch, err := jsonpatch.GeneratePatch(original, modified)
 	if err != nil {
 		log.Fatalf("Error creating patch: %v", err)
 	}
 	fmt.Println(patch)
 
-	// Patch 결과를 출력
+	// Printing the Patch result
 	patchBytes, err := json.MarshalIndent(patch, "", "  ")
 	if err != nil {
 		log.Fatalf("Error marshalling patch: %v", err)
