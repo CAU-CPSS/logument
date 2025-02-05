@@ -3,13 +3,13 @@
 //
 // Test cases for vss.go
 //
+// Author: Karu (@karu-rress)
 //
 
 package vssgen
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"testing"
 
@@ -194,21 +194,4 @@ func TestJsonPatch(t *testing.T) {
 
 	result, _ := jsonpatch.CreatePatch(_v, _v_next)
 	t.Logf("Patch: %v\n", result)
-}
-
-func TestGenerateVss(t *testing.T) {
-	metadata := map[string]any{
-		"dataset":     "internal/vssgen/vss.json",
-		"cars":        100,
-		"files":       300,
-		"change_rate": 0.2,
-		"size":        1.0,
-	}
-	outputDir := "../dataset"
-
-	PrepareOutputDir(outputDir)
-	SaveMetadata(metadata, outputDir)
-	Generate(metadata, outputDir)
-
-	fmt.Printf("Saved to %s! Exiting...\n", outputDir)
 }

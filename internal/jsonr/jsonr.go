@@ -19,6 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 )
 
 // JsonR stores a JSON-R document.
@@ -40,6 +42,7 @@ func (Array) isValue() {} // Marks Array as a Value
 // LeafValue is a type that can be used as a value of JSON-R leaf.
 type LeafValue interface{ ~string | ~float64 | ~bool }
 
+
 // Leaf[T] stores the value and timestamp of a JSON-R leaf.
 type Leaf[T LeafValue] struct {
 	Value     T     `json:"value"`     // number, string, boolean
@@ -48,17 +51,67 @@ type Leaf[T LeafValue] struct {
 
 func (Leaf[T]) isValue() {} // Marks Leaf as a Value
 
+// DefaultTimestamp is the default timestamp value.
+const DefaultTimestamp int64 = -1
+
 //////////////////////////////////
 ///////// OPERATIONS
 //////////////////////////////////
 
-// GetValueFromKey returns the value of the given key from the JSON-R object.
-func GetValueFromKey(j JsonR, key string) (v Value, err error) {
-	if obj, ok := j.(Object); !ok {
-		return nil, fmt.Errorf("%v is not an jsonr.Object", j)
-	} else {
-		return obj[key], nil
+// GetValue returns the value of the given key from the JSON-R object.
+func GetValue(j JsonR, path string) (v Value, err error) {
+	var getValue func(j JsonR, parts []string) (Value, error)
+	getValue = func(j JsonR, parts []string) (Value, error) {
+		if len(parts) == 1 {
+			// If j is an Object, return the value of the key
+			if obj, ok := j.(Object); ok {
+				if value, ok := obj[parts[0]]; ok {
+					return value, nil
+				} else {
+					return nil, fmt.Errorf("key not found: %s", parts[0])
+				}
+			} else if arr, ok := j.(Array); ok {
+				// If j is an Array, return the value of the index
+				index, err := strconv.Atoi(parts[0])
+				if err != nil {
+					return nil, fmt.Errorf("invalid index: %s", parts[0])
+				}
+				if index < 0 || index >= len(arr) {
+					return nil, fmt.Errorf("index out of range: %d", index)
+				}
+				return arr[index], nil
+			} else {
+				return nil, fmt.Errorf("invalid type: %T", j)
+			}
+		}
+
+		// If j is an Object, get the value of the key and call getValue recursively
+		if obj, ok := j.(Object); ok {
+			if value, ok := obj[parts[0]]; ok {
+				return getValue(value, parts[1:])
+			} else {
+				return nil, fmt.Errorf("key not found: %s", parts[0])
+			}
+		} else if arr, ok := j.(Array); ok {
+			// If j is an Array, get the value of the index and call getValue recursively
+			index, err := strconv.Atoi(parts[0])
+			if err != nil {
+				return nil, fmt.Errorf("invalid index: %s", parts[0])
+			}
+			if index < 0 || index >= len(arr) {
+				return nil, fmt.Errorf("index out of range: %d", index)
+			}
+			return getValue(arr[index], parts[1:])
+		} else {
+			return nil, fmt.Errorf("Cannot recursively get value from %T", j)
+		}
 	}
+
+	rfc6901Decoder := strings.NewReplacer("~1", "/", "~0", "~")
+	path = rfc6901Decoder.Replace(path)
+	parts := strings.Split(path, "/")[1:]
+
+	return getValue(j, parts)
 }
 
 // Marshal converts the JSON-R to a byte slice.
@@ -219,42 +272,42 @@ func ToJson(j JsonR) (b []byte, err error) {
 		switch value := o.(type) {
 		case map[string]any:
 			for k, v := range value {
-                switch leaf := v.(type) {
-                case Leaf[string]:
-                    value[k] = leaf.Value
-                case Leaf[float64]:
-                    value[k] = leaf.Value
-                case Leaf[bool]:
-                    value[k] = leaf.Value
+				switch leaf := v.(type) {
+				case Leaf[string]:
+					value[k] = leaf.Value
+				case Leaf[float64]:
+					value[k] = leaf.Value
+				case Leaf[bool]:
+					value[k] = leaf.Value
 				case map[string]any:
 					if isLeaf(leaf) {
 						value[k] = leaf["value"]
 					} else {
 						removeTimestamp(v)
 					}
-                default:
-                    removeTimestamp(v)
-                }
+				default:
+					removeTimestamp(v)
+				}
 			}
 		case []any:
-            for i, v := range value {
-                switch leaf := v.(type) {
-                case Leaf[string]:
-                    value[i] = leaf.Value
-                case Leaf[float64]:
-                    value[i] = leaf.Value
-                case Leaf[bool]:
-                    value[i] = leaf.Value
+			for i, v := range value {
+				switch leaf := v.(type) {
+				case Leaf[string]:
+					value[i] = leaf.Value
+				case Leaf[float64]:
+					value[i] = leaf.Value
+				case Leaf[bool]:
+					value[i] = leaf.Value
 				case map[string]any:
 					if isLeaf(leaf) {
 						value[i] = leaf["value"]
 					} else {
 						removeTimestamp(leaf)
 					}
-                default:
-                    removeTimestamp(v)
-                }
-            }
+				default:
+					removeTimestamp(v)
+				}
+			}
 		}
 	}
 
@@ -272,6 +325,48 @@ func ToJson(j JsonR) (b []byte, err error) {
 	removeTimestamp(o)
 
 	return json.Marshal(o)
+}
+
+// ToJsonR converts the given JSON object to a JSON-R.
+func ToJsonR(o any) (j JsonR, err error) {
+	var addTimestamp func(o any)
+	addTimestamp = func(o any) {
+		switch value := o.(type) {
+		case map[string]any:
+			for k, v := range value {
+				switch leaf := v.(type) {
+				case string:
+					value[k] = Leaf[string]{Value: leaf, Timestamp: DefaultTimestamp}
+				case float64:
+					value[k] = Leaf[float64]{Value: leaf, Timestamp: DefaultTimestamp}
+				case bool:
+					value[k] = Leaf[bool]{Value: leaf, Timestamp: DefaultTimestamp}
+				default:
+					addTimestamp(v)
+				}
+			}
+		case []any:
+			for i, v := range value {
+				switch leaf := v.(type) {
+				case string:
+					value[i] = Leaf[string]{Value: leaf, Timestamp: DefaultTimestamp}
+				case float64:
+					value[i] = Leaf[float64]{Value: leaf, Timestamp: DefaultTimestamp}
+				case bool:
+					value[i] = Leaf[bool]{Value: leaf, Timestamp: DefaultTimestamp}
+				default:
+					addTimestamp(v)
+				}
+			}
+		}
+	}
+
+	addTimestamp(o)
+
+	str, err := json.Marshal(o)
+	err = Unmarshal(str, &j)
+
+	return j, err
 }
 
 //////////////////////////////////

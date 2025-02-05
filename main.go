@@ -5,16 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/jsonr"
 	"github.com/CAU-CPSS/logument/internal/logument"
-	"github.com/davecgh/go-spew/spew"
+	"github.com/CAU-CPSS/logument/internal/vssgen"
 )
 
 const ONLY_GENERATE_VSS = true
 
-//go:embed examples/example.jsonr
+const (
+	NumCars = 5
+	NumPatches = 30
+	ChangeRate = 0.2
+)
+
+//go:embed examples/example1.jsonr
 var expSnapshot []byte
 
 const expPatch = `[
@@ -24,6 +31,13 @@ const expPatch = `[
 ]`
 
 func main() {
+	arguments := os.Args[1:]
+
+	if len(arguments) > 0 {
+		generate_vss()
+		return
+	}
+
 	var (
 		initSnapshot jsonr.JsonR
 		j            = expSnapshot
@@ -43,7 +57,18 @@ func main() {
 	lgm.Snapshot(targetVesion)
 
 	// Print the Logument document
-	fmt.Print(spew.Sdump(lgm))
+	lgm.Print()
+}
+
+func generate_vss() {
+	option := vssgen.ParseArgs("internal/vssgen/vss.json")
+	outputDir := "./dataset"
+
+	vssgen.PrepareOutputDir(outputDir)
+	vssgen.SaveMetadata(option, outputDir)
+	vssgen.Generate(option, outputDir)
+
+	fmt.Printf("Saved to %s! Exiting...\n", outputDir)
 }
 
 func run_jpatch() error {
