@@ -18,7 +18,7 @@ var (
 	rfc6901Decoder = strings.NewReplacer("~1", "/", "~0", "~")
 )
 
-type Snapshot = jsonr.JsonR 
+type Snapshot = jsonr.JsonR
 type Patches = jsonpatch.Patch  // []jsonpatch.Operation
 
 // Logument 구조체
@@ -69,7 +69,9 @@ func (lgm *Logument) isContinuous() bool {
 		return true
 	}
 
-	sort.Slice(lgm.Version, func(i, j int) bool { return lgm.Version[i] < lgm.Version[j] })
+	sort.Slice(lgm.Version, func(i, j int) bool {
+		return lgm.Version[i] < lgm.Version[j]
+	})
 
 	for idx, v := range lgm.Version {
 		if idx == 0 {

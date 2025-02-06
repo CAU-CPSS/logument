@@ -26,6 +26,11 @@ import (
 // If true, metadata will be saved in each JSON file
 const SAVE_METADATA = false
 
+const (
+	jsonRValue = "value"
+	jsonRTimestamp = "timestamp"
+)
+
 // VSS JSON manager struct
 type VssJson struct {
 	initialized bool
@@ -99,7 +104,7 @@ func (vss VssJson) LeafNodes() []map[string]any {
 		isJsonRLeaf := false
 
 		if isParent {
-			_, isJsonRLeaf = d.(map[string]any)["timestamp"]
+			_, isJsonRLeaf = d.(map[string]any)[jsonRTimestamp]
 		}
 
 		if !isJsonRLeaf {
@@ -173,82 +178,82 @@ func (vss VssJson) Generate(datasetSize float64, id int) *VssJson {
 		switch {
 		case dtype == "boolean":
 			new[node] = map[string]any{
-				"value":     rand.Float64() < 0.5,
-				"timestamp": timestamp,
+				jsonRValue:     rand.Float64() < 0.5,
+				jsonRTimestamp: timestamp,
 			}
 		case dtype == "int8" || dtype == "uint8" || dtype == "float" && metadata["unit"] == "percent":
 			f := rand.Float64() * 100
 			if dtype == "float" {
 				new[node] = map[string]any{
-					"value":     f,
-					"timestamp": timestamp,
+					jsonRValue:     f,
+					jsonRTimestamp: timestamp,
 				}
 			} else {
 				new[node] = map[string]any{
-					"value":     int(f),
-					"timestamp": timestamp,
+					jsonRValue:     int(f),
+					jsonRTimestamp: timestamp,
 				}
 			}
 		case allowed_ok:
 			array := metadata["allowed"].([]any)
 			new[node] = map[string]any{
-				"value":     array[rand.Intn(len(array))],
-				"timestamp": timestamp,
+				jsonRValue:     array[rand.Intn(len(array))],
+				jsonRTimestamp: timestamp,
 			}
 		case dtype == "double" || dtype == "float":
 			new[node] = map[string]any{
-				"value":     rand.Float64() * 100,
-				"timestamp": timestamp,
+				jsonRValue:     rand.Float64() * 100,
+				jsonRTimestamp: timestamp,
 			}
 		case dtype == "float[]":
 			new[node] = make([]any, 0)
 			for i := 0; i < rand.Intn(5)+1; i++ {
 				new[node] = append(new[node].([]any), map[string]any{
-					"value":     rand.Float64() * 100,
-					"timestamp": timestamp,
+					jsonRValue:     rand.Float64() * 100,
+					jsonRTimestamp: timestamp,
 				})
 			}
 		case dtype == "int8" || dtype == "int16" || dtype == "int32":
 			new[node] = map[string]any{
-				"value":     rand.Intn(201) - 100,
-				"timestamp": timestamp,
+				jsonRValue:     rand.Intn(201) - 100,
+				jsonRTimestamp: timestamp,
 			}
 		case dtype == "string":
 			new[node] = map[string]any{
-				"value":     genRandomString(15),
-				"timestamp": timestamp,
+				jsonRValue:     genRandomString(15),
+				jsonRTimestamp: timestamp,
 			}
 		case dtype == "string[]":
 			new[node] = make([]any, 0)
 			for i := 0; i < rand.Intn(5)+1; i++ {
 				new[node] = append(new[node].([]any), map[string]any{
-					"value":     genRandomString(15),
-					"timestamp": timestamp,
+					jsonRValue:     genRandomString(15),
+					jsonRTimestamp: timestamp,
 				})
 			}
 		case dtype == "uint8" || dtype == "uint16" || dtype == "uint32":
 			new[node] = map[string]any{
-				"value":     rand.Intn(101),
-				"timestamp": timestamp,
+				jsonRValue:     rand.Intn(101),
+				jsonRTimestamp: timestamp,
 			}
 		case dtype == "uint8[]":
 			new[node] = make([]any, 0)
 			for i := 0; i < rand.Intn(5)+1; i++ {
 				new[node] = append(new[node].([]any), map[string]any{
-					"value":     rand.Intn(101),
-					"timestamp": timestamp,
+					jsonRValue:     rand.Intn(101),
+					jsonRTimestamp: timestamp,
 				})
 			}
 		case dtype == nil:
 			new[node] = map[string]any{
-				"value":     nil,
-				"timestamp": timestamp,
+				jsonRValue:     nil,
+				jsonRTimestamp: timestamp,
 			}
 		}
 	}
 
 	if SAVE_METADATA {
-		result["Metadata"] = map[string]any{
+		result["metadata"] = map[string]any{
 			"CarId":  id,
 			"FileNo": 1,
 			"Time":   timestamp,
@@ -290,8 +295,8 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 				new[node] = make([]any, 0)
 				for _, item := range arr {
 					new[node] = append(new[node].([]any), map[string]any{
-						"value":     item.(map[string]any)["value"],
-						"timestamp": timestamp,
+						jsonRValue:     item.(map[string]any)[jsonRValue],
+						jsonRTimestamp: timestamp,
 					})
 				}
 				continue
@@ -299,40 +304,40 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 
 			if rand.Float64() > changeRate {
 				new[node] = map[string]any{
-					"value":     value.(map[string]any)["value"],
-					"timestamp": timestamp,
+					jsonRValue:     value.(map[string]any)[jsonRValue],
+					jsonRTimestamp: timestamp,
 				}
 				continue
 			}
 
-			switch value.(map[string]any)["value"].(type) {
+			switch value.(map[string]any)[jsonRValue].(type) {
 			case string:
 				new[node] = map[string]any{
-					"value":     genRandomString(15),
-					"timestamp": timestamp,
+					jsonRValue:     genRandomString(15),
+					jsonRTimestamp: timestamp,
 				}
 			case bool:
-				v := value.(map[string]any)["value"].(bool)
+				v := value.(map[string]any)[jsonRValue].(bool)
 				new[node] = map[string]any{
-					"value":     !v,
-					"timestamp": timestamp,
+					jsonRValue:     !v,
+					jsonRTimestamp: timestamp,
 				}
 			case int:
 				new[node] = map[string]any{
-					"value":     rand.Intn(201) - 100,
-					"timestamp": timestamp,
+					jsonRValue:     rand.Intn(201) - 100,
+					jsonRTimestamp: timestamp,
 				}
 			case float64:
 				new[node] = map[string]any{
-					"value":     rand.Float64() * 100,
-					"timestamp": timestamp,
+					jsonRValue:     rand.Float64() * 100,
+					jsonRTimestamp: timestamp,
 				}
 			}
 		}
 	}
 
 	if SAVE_METADATA {
-		result["Metadata"] = map[string]any{
+		result["metadata"] = map[string]any{
 			"CarId":  id,
 			"FileNo": fileNo,
 			"Time":   timestamp,
@@ -375,8 +380,8 @@ func (vss *VssJson) Save(file string) {
 			d := item.(map[string]any)
 
 			fmt.Fprintf(&buf,
-				`{ "op": "%s", "path": "%s", "value": %#v, "timestamp": %d }`,
-				d["op"], d["path"], d["value"], int64(d["timestamp"].(float64)))
+				`{ "op": "%s", "path": "%s", jsonRValue: %#v, jsonRTimestamp: %d }`,
+				d["op"], d["path"], d[jsonRValue], int64(d[jsonRTimestamp].(float64)))
 			lines = append(lines, "    "+buf.String())
 		}
 

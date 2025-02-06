@@ -60,19 +60,17 @@ func TestParsedData(t *testing.T) {
 	t.Log("Parsed JSON-R type:", jsonRType)
 
 	// Checking the leaf
-	id, _ := GetValue(parsedJsonR, "vehicleId")
+	id, _ := GetValue(parsedJsonR, "/vehicleId")
 	assert.Equal(t, reflect.TypeOf(id).String(), "jsonr.Leaf[string]")
 	t.Log("Vehicle ID:", id.(Leaf[string]).Value)
 
 	// Checking the nested object
-	location, _ := GetValue(parsedJsonR, "location")
-	assert.Equal(t, reflect.TypeOf(location).String(), "jsonr.Object")
-	lat, _ := GetValue(location, "latitude")
-	lon, _ := GetValue(location, "longitude")
+	lat, _ := GetValue(parsedJsonR, "/location/latitude")
+	lon, _ := GetValue(parsedJsonR, "/location/longitude")
 	t.Log("Location:", lat, lon)
 
 	// Checking the nested array
-	tires, _ := GetValue(parsedJsonR, "tirePressure")
+	tires, _ := GetValue(parsedJsonR, "/tirePressure")
 	assert.Equal(t, reflect.TypeOf(tires).String(), "jsonr.Array")
 	tarr, _ := ToArray(tires.(Array))
 	t.Log("Tires:", tarr)

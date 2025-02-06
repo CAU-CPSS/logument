@@ -13,8 +13,10 @@ const initSnapshot = `{
     "vehicleId": { "value": "ABC1234", "timestamp": 1700000000 },
     "speed": { "value": 72.5, "timestamp": 1700000000 },
     "engineOn": { "value": true, "timestamp": 1700000000 },
-    "location": { "latitude": { "value": 37.7749, "timestamp": 1700000000 },
-        "longitude": { "value": -122.4194, "timestamp": 1700000000 } },
+    "location": {
+		"latitude": { "value": 37.7749, "timestamp": 1700000000 },
+        "longitude": { "value": -122.4194, "timestamp": 1700000000 }
+	},
     "tirePressure": [
         { "value": 32.1, "timestamp": 1700000000 },
         { "value": 31.8, "timestamp": 1700000000 },
@@ -22,42 +24,40 @@ const initSnapshot = `{
         { "value": 31.9, "timestamp": 1700000000 }
     ] }`
 
-const initPatch = `[
-	{ "op": "replace", "path": "/location/latitude", "value": 43.9409, "timestamp": 1800000000 },	
-	{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 1800000000 },
-	{ "op": "replace", "path": "/tirePressure/0", "value": 35.1, "timestamp": 1900000000 }
-]`
-
-const secondPatch = `[
-	{ "op": "replace", "path": "/engineOn", "value": false, "timestamp": 2000000000 }
-]`
-
-const thirdPatch = `[
-	{ "op": "replace", "path": "/location/latitude", "value": 43.9409, "timestamp": 2100000000 },	
-	{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 2100000000 }
-]`
-
-const forthPatch = `[
-	{ "op": "replace", "path": "/tirePressure/2", "value": 33.7, "timestamp": 2300000000 },
-	{ "op": "replace", "path": "/speed", "value": 94.9, "timestamp": 2400000000 }
-]`
+var Patches = []string{
+	`[
+		{ "op": "replace", "path": "/location/latitude", "value": 43.9409, "timestamp": 1800000000 },
+		{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 1800000000 },
+		{ "op": "replace", "path": "/tirePressure/0", "value": 35.1, "timestamp": 1900000000 }
+	]`,
+	`[
+		{ "op": "replace", "path": "/engineOn", "value": false, "timestamp": 2000000000 }
+	]`,
+	`[
+		{ "op": "replace", "path": "/location/latitude", "value": 43.9409, "timestamp": 2100000000 },
+		{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 2100000000 }
+	]`,
+	`[
+		{ "op": "replace", "path": "/tirePressure/2", "value": 33.7, "timestamp": 2300000000 },
+		{ "op": "replace", "path": "/speed", "value": 94.9, "timestamp": 2400000000 }
+	]`,
+}
 
 func TestCreate(t *testing.T) {
 	t.Log("Make a new Logument document\n")
 
 	// use only string format
 	t.Log("Make a Logument with string format\n")
-	lgm := logument.NewLogument(initSnapshot, initPatch)
+	lgm := logument.NewLogument(initSnapshot, Patches[0])
 	t.Log(spew.Sdump(lgm))
 
 	// use Snapshot and Patches format
 	t.Log("Make a Logument with Snapshot format\n")
 	var ss jsonr.JsonR
-	err := jsonr.Unmarshal([]byte(initSnapshot), &ss)
-	if err != nil {
+	if err := jsonr.Unmarshal([]byte(initSnapshot), &ss); err != nil {
 		panic(err)
 	}
-	pp, err := jsonpatch.Unmarshal([]byte(initPatch))
+	pp, err := jsonpatch.Unmarshal([]byte(Patches[0]))
 	if err != nil {
 		t.Error(err)
 	}
@@ -66,7 +66,7 @@ func TestCreate(t *testing.T) {
 
 	// use []Patches format
 	t.Log("Make a Logument with []Patches format\n")
-	pp2, err := jsonpatch.Unmarshal([]byte(secondPatch))
+	pp2, err := jsonpatch.Unmarshal([]byte(Patches[1]))
 	if err != nil {
 		t.Error(err)
 	}
@@ -78,17 +78,17 @@ func TestStore(t *testing.T) {
 	t.Log("Store patches to the pool\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
 
-	lgm.Store(initPatch)
+	lgm.Store(Patches[0])
 	t.Log(spew.Sdump(lgm))
-	lgm.Store(secondPatch)
+	lgm.Store(Patches[1])
 	t.Log(spew.Sdump(lgm))
 }
 
 func TestApply(t *testing.T) {
 	t.Log("Apply patches\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(initPatch)
-	lgm.Store(secondPatch)
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
 	t.Log(spew.Sdump(lgm))
 
 	lgm.Apply()
@@ -98,8 +98,8 @@ func TestApply(t *testing.T) {
 func TestSnapshot(t *testing.T) {
 	t.Log("Take a snapshot\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(initPatch)
-	lgm.Store(secondPatch)
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
 	lgm.Apply()
 
 	// Take a snapshot already taken
@@ -118,8 +118,8 @@ func TestSnapshot(t *testing.T) {
 func TestTimedSnapshot(t *testing.T) {
 	t.Log("Take a timed snapshot\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(initPatch)
-	lgm.Store(secondPatch)
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
 	lgm.Apply()
 
 	// Take a snapshot already taken
@@ -138,11 +138,11 @@ func TestTimedSnapshot(t *testing.T) {
 func TestCompact(t *testing.T) {
 	t.Log("Compact patches\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(initPatch)
-	lgm.Store(secondPatch)
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
 	lgm.Apply()
 
-	lgm.Store(thirdPatch)
+	lgm.Store(Patches[2])
 	lgm.Apply()
 
 	lgm.Compact("/location")
@@ -152,11 +152,11 @@ func TestCompact(t *testing.T) {
 func TestHistory(t *testing.T) {
 	t.Log("Show history\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(initPatch)
-	lgm.Store(secondPatch)
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
 	lgm.Apply()
 
-	lgm.Store(thirdPatch)
+	lgm.Store(Patches[2])
 	lgm.Apply()
 
 	// Show history of the "/location"
@@ -167,13 +167,13 @@ func TestHistory(t *testing.T) {
 func TestSlice(t *testing.T) {
 	t.Log("Slice Logument\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(initPatch)
-	lgm.Store(secondPatch)
-	lgm.Apply()  // version 1
-	lgm.Store(thirdPatch)
-	lgm.Apply()  // version 2
-	lgm.Store(forthPatch)
-	lgm.Apply()  // version 3
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
+	lgm.Apply() // version 1
+	lgm.Store(Patches[2])
+	lgm.Apply() // version 2
+	lgm.Store(Patches[3])
+	lgm.Apply() // version 3
 
 	// Slice patches
 	lgmSubset := lgm.Slice(1, 3)

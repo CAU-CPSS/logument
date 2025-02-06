@@ -173,6 +173,12 @@ Temporary Items
 
 # End of https://www.toptal.com/developers/gitignore/api/goland,macos,go
 
+# VSCODE
+.vscode/
+
 # JSON dataset
 dataset/
 dataset_old/
+
+# Meeting
+meeting/
