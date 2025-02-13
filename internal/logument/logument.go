@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
-	"github.com/CAU-CPSS/logument/internal/jsonr"
+	"github.com/CAU-CPSS/logument/internal/tjson"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -18,8 +18,8 @@ var (
 	rfc6901Decoder = strings.NewReplacer("~1", "/", "~0", "~")
 )
 
-type Snapshot = jsonr.JsonR
-type Patches = jsonpatch.Patch  // []jsonpatch.Operation
+type Snapshot = tjson.TJson
+type Patches = jsonpatch.Patch // []jsonpatch.Operation
 
 // Logument 구조체
 type Logument struct {
@@ -29,21 +29,20 @@ type Logument struct {
 	PatchPool Patches             // Apply 되지 않은 patch
 }
 
-
 func NewLogument(initialSnapshot any, initialPatches any) *Logument {
 	// Create a new Logument document with the given initial data
 	var snapshot Snapshot
 
 	switch initialSnapshot := initialSnapshot.(type) {
 	case string:
-		err := jsonr.Unmarshal([]byte(initialSnapshot), &snapshot)
+		err := tjson.Unmarshal([]byte(initialSnapshot), &snapshot)
 		if err != nil {
 			panic(err)
 		}
 	case Snapshot:
 		snapshot = initialSnapshot
 	default:
-		panic("Invalid type for initialSnapshot. Must be string or jsonr.JsonR.")
+		panic("Invalid type for initialSnapshot. Must be string or tjson.TJson.")
 	}
 
 	lgm := &Logument{
@@ -186,7 +185,7 @@ func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
 
 	if latestVersion != targetVersion {
 		// Apply patches from the latest version to the target version
-		for i := latestVersion+1; i <= targetVersion; i++ {
+		for i := latestVersion + 1; i <= targetVersion; i++ {
 			var err error
 			timedSnapshot, err = jsonpatch.ApplyPatch(latestSnapshot, lgm.PatchMap[i])
 			if err != nil {
@@ -197,7 +196,7 @@ func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
 		timedSnapshot = latestSnapshot
 	}
 
-	jsonSnapshot, err := jsonr.ToJson(timedSnapshot)
+	jsonSnapshot, err := tjson.ToJson(timedSnapshot)
 	if err != nil {
 		panic("Failed to convert the snapshot to JSON. Error: " + err.Error())
 	}
@@ -208,9 +207,9 @@ func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
 		panic("Failed to unmarshal the snapshot. Error: " + err.Error())
 	}
 
-	snapshot, err := jsonr.ToJsonR(unmarshaledJsonSnapshot)
+	snapshot, err := tjson.ToTJson(unmarshaledJsonSnapshot)
 	if err != nil {
-		panic("Failed to convert the snapshot to JsonR. Error: " + err.Error())
+		panic("Failed to convert the snapshot to TJson. Error: " + err.Error())
 	}
 
 	return snapshot
@@ -227,7 +226,7 @@ func (lgm *Logument) TimeSnapshot(targetTime int64) Snapshot {
 	latestVersion := lgm.Version[0]
 	for _, version := range versions {
 		s := lgm.Snapshots[version]
-		lts := jsonr.GetLatestTimestamp(s)
+		lts := tjson.GetLatestTimestamp(s)
 		if lts <= targetTime {
 			latestVersion = version
 		} else {
@@ -336,7 +335,7 @@ func (lgm *Logument) Slice(startVersion, endVersion uint64) *Logument {
 		if version >= startVersion && version <= endVersion {
 			// SlicedVersions always includes all versions between the start and end versions
 			// because lgm.Version and lgm.PatchMap are continuous.
-			// However, lgm.Snapshots may not be continuous, 
+			// However, lgm.Snapshots may not be continuous,
 			// so the following line works correctly only in this loop.
 			SlicedVersions = append(SlicedVersions, version)
 			SlicedPatches[version] = lgm.PatchMap[version]
@@ -376,7 +375,7 @@ func (lgm *Logument) TimeSlice(startTime, endTime int64) *Logument {
 	SlicedSnapshots := make(map[uint64]Snapshot)
 	for _, version := range versionsFromSnapshot {
 		snapshot := lgm.Snapshots[version]
-		latestTimestamp := jsonr.GetLatestTimestamp(snapshot)
+		latestTimestamp := tjson.GetLatestTimestamp(snapshot)
 		if latestTimestamp >= startTime && latestTimestamp <= endTime {
 			SlicedSnapshots[version] = snapshot
 		}
@@ -390,7 +389,7 @@ func (lgm *Logument) TimeSlice(startTime, endTime int64) *Logument {
 			if patch.Timestamp >= startTime && patch.Timestamp <= endTime {
 				// SlicedVersions always includes all versions between the start and end times
 				// because lgm.Version and lgm.PatchMap are continuous.
-				// However, lgm.Snapshots may not be continuous, 
+				// However, lgm.Snapshots may not be continuous,
 				// so the following line works correctly only in this loop.
 				SlicedVersions = append(SlicedVersions, version)
 				SlicedPatches[version] = append(SlicedPatches[version], patch)
@@ -489,7 +488,7 @@ func (lgm *Logument) History(targetPath string) map[string]Patches {
 
 	// Add the initial value to the history
 	for key := range historyPatches {
-		val, err := jsonr.GetValue(lgm.Snapshots[0], key)
+		val, err := tjson.GetValue(lgm.Snapshots[0], key)
 		fmt.Println("key: ", key)
 		fmt.Println("val: ", val)
 		if err != nil {

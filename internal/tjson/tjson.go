@@ -1,19 +1,18 @@
 //
-// jsonr.go
+// tjson.go
 //
-// Defines the JSON-R type and provides functions
-// for JSON-R manipulation.
+// Defines the T-JSON type and provides functions
+// for T-JSON manipulation.
 //
-// JSON-R (JSON by Rolling Ress, or JSON with Revision)
-// is a data format that extends JSON by adding
-// a timestamp to each leaf value.
+// T-JSON (Temporal JSON) is a data format that
+// extends JSON by adding a timestamp to each leaf value.
 //
-// JSON-R is a recursive data structure that can be
+// T-JSON is a recursive data structure that can be
 // represented as an object, array, or leaf.
 //
 // Author: Karu (@karu-rress)
 
-package jsonr
+package tjson
 
 import (
 	"encoding/json"
@@ -23,27 +22,27 @@ import (
 	"strings"
 )
 
-// JsonR stores a JSON-R document.
-type JsonR = Value
+// TJson stores a T-JSON document.
+type TJson = Value
 
-// Value represents a JSON-R value.
+// Value represents a T-JSON value.
 type Value interface{ isValue() }
 
-// Object stores an object of JSON-R.
+// Object stores an object of T-JSON.
 type Object map[string]Value
 
 func (Object) isValue() {} // Marks Object as a Value
 
-// Array stores an array of JSON-R.
+// Array stores an array of T-JSON.
 type Array []Value
 
 func (Array) isValue() {} // Marks Array as a Value
 
-// LeafValue is a type that can be used as a value of JSON-R leaf.
+// LeafValue is a type that can be used as a value of T-JSON leaf.
 type LeafValue interface{ ~string | ~float64 | ~bool }
 
 
-// Leaf[T] stores the value and timestamp of a JSON-R leaf.
+// Leaf[T] stores the value and timestamp of a T-JSON leaf.
 type Leaf[T LeafValue] struct {
 	Value     T     `json:"value"`     // number, string, boolean
 	Timestamp int64 `json:"timestamp"` // Unix timestamp
@@ -58,10 +57,10 @@ const DefaultTimestamp int64 = -1
 ///////// OPERATIONS
 //////////////////////////////////
 
-// GetValue returns the value of the given key from the JSON-R object.
-func GetValue(j JsonR, path string) (v Value, err error) {
-	var getValue func(j JsonR, parts []string) (Value, error)
-	getValue = func(j JsonR, parts []string) (Value, error) {
+// GetValue returns the value of the given key from the T-JSON object.
+func GetValue(j TJson, path string) (v Value, err error) {
+	var getValue func(j TJson, parts []string) (Value, error)
+	getValue = func(j TJson, parts []string) (Value, error) {
 		if len(parts) == 1 {
 			// If j is an Object, return the value of the key
 			if obj, ok := j.(Object); ok {
@@ -114,25 +113,25 @@ func GetValue(j JsonR, path string) (v Value, err error) {
 	return getValue(j, parts)
 }
 
-// Marshal converts the JSON-R to a byte slice.
-func Marshal(j JsonR) (data []byte, err error) {
+// Marshal converts the T-JSON to a byte slice.
+func Marshal(j TJson) (data []byte, err error) {
 	return json.Marshal(j)
 }
 
-// MarshalIndent converts the JSON-R to a byte slice with indent.
-func MarshalIndent(j JsonR, prefix, indent string) (data []byte, err error) {
+// MarshalIndent converts the T-JSON to a byte slice with indent.
+func MarshalIndent(j TJson, prefix, indent string) (data []byte, err error) {
 	return json.MarshalIndent(j, prefix, indent)
 }
 
-// Equal checks if two JSON-Rs are equal, including timestamps.
-func Equal(j1, j2 JsonR) (ret bool, err error) {
+// Equal checks if two T-JSONs are equal, including timestamps.
+func Equal(j1, j2 TJson) (ret bool, err error) {
 	var (
 		o1, o2 any
 		b1, _  = Marshal(j1)
 		b2, _  = Marshal(j2)
 	)
 
-	// Check if the given JSON-Rs are valid
+	// Check if the given T-JSONs are valid
 	if err = json.Unmarshal(b1, &o1); err != nil {
 		return false, err
 	}
@@ -142,14 +141,14 @@ func Equal(j1, j2 JsonR) (ret bool, err error) {
 	return reflect.DeepEqual(o1, o2), nil
 }
 
-// EqualWithoutTimestamp checks if two JSON-Rs are equal, excluding timestamps.
-func EqualWithoutTimestamp(j1, j2 JsonR) (ret bool, err error) {
+// EqualWithoutTimestamp checks if two T-JSONs are equal, excluding timestamps.
+func EqualWithoutTimestamp(j1, j2 TJson) (ret bool, err error) {
 	var (
 		o1, o2       any
 		json1, json2 []byte
 	)
 
-	// Convert JSON-Rs to JSON
+	// Convert T-JSONs to JSON
 	if json1, err = ToJson(j1); err != nil {
 		return false, err
 	}
@@ -157,7 +156,7 @@ func EqualWithoutTimestamp(j1, j2 JsonR) (ret bool, err error) {
 		return false, err
 	}
 
-	// Check if the given JSON-Rs are equal
+	// Check if the given T-JSONs are equal
 	if err = json.Unmarshal(json1, &o1); err != nil {
 		return false, err
 	}
@@ -168,8 +167,8 @@ func EqualWithoutTimestamp(j1, j2 JsonR) (ret bool, err error) {
 	return reflect.DeepEqual(o1, o2), nil
 }
 
-// GetLatestTimestamp returns the latest timestamp of the given JSON-R.
-func GetLatestTimestamp(j JsonR) int64 {
+// GetLatestTimestamp returns the latest timestamp of the given T-JSON.
+func GetLatestTimestamp(j TJson) int64 {
 	updateMax := func(max *int64, ts int64) {
 		if ts > *max {
 			*max = ts
@@ -196,7 +195,7 @@ func GetLatestTimestamp(j JsonR) int64 {
 		}
 		return max
 	default:
-		panic(fmt.Sprintf("GetTimestamp: invalid type %T for JSON-R", j))
+		panic(fmt.Sprintf("GetTimestamp: invalid type %T for T-JSON", j))
 	}
 }
 
@@ -204,15 +203,15 @@ func GetLatestTimestamp(j JsonR) int64 {
 ///////// PARSER
 //////////////////////////////////
 
-// NewJsonR creates a new JSON-R from the given JSON-R string.
-func NewJsonR(jsonr string) (JsonR, error) {
-	var j JsonR
-	err := Unmarshal([]byte(jsonr), &j)
+// NewTJson creates a new T-JSON from the given T-JSON string.
+func NewTJson(tjson string) (TJson, error) {
+	var j TJson
+	err := Unmarshal([]byte(tjson), &j)
 	return j, err
 }
 
-// Unmarshal parses the JSON-R data and stores the result.
-func Unmarshal(data []byte, j *JsonR) (err error) {
+// Unmarshal parses the T-JSON data and stores the result.
+func Unmarshal(data []byte, j *TJson) (err error) {
 	var raw any
 	if err = json.Unmarshal(data, &raw); err != nil {
 		return
@@ -222,11 +221,11 @@ func Unmarshal(data []byte, j *JsonR) (err error) {
 	return err
 }
 
-// String converts JSON-R to a string.
-func String(j JsonR) string {
+// String converts T-JSON to a string.
+func String(j TJson) string {
 	data, err := json.MarshalIndent(j, "", "    ")
 	if err != nil {
-		panic(fmt.Sprintf("failed to marshal JSON-R: %v", err))
+		panic(fmt.Sprintf("failed to marshal T-JSON: %v", err))
 	}
 	return string(data)
 }
@@ -259,14 +258,14 @@ func ToArray(a Array) ([]any, error) {
 	return arr, nil
 }
 
-// Any returns the given JSON-R as any(interface{}) type.
-func Any(j JsonR) any {
+// Any returns the given T-JSON as any(interface{}) type.
+func Any(j TJson) any {
 	return j
 }
 
-// ToJson converts the given JSON-R to a JSON byte slice.
+// ToJson converts the given T-JSON to a JSON byte slice.
 // NOTE: The timestamp field is removed
-func ToJson(j JsonR) (b []byte, err error) {
+func ToJson(j TJson) (b []byte, err error) {
 	var removeTimestamp func(o any)
 	removeTimestamp = func(o any) {
 		switch value := o.(type) {
@@ -327,8 +326,8 @@ func ToJson(j JsonR) (b []byte, err error) {
 	return json.Marshal(o)
 }
 
-// ToJsonR converts the given JSON object to a JSON-R.
-func ToJsonR(o any) (j JsonR, err error) {
+// ToTJson converts the given JSON object to a T-JSON.
+func ToTJson(o any) (j TJson, err error) {
 	var addTimestamp func(o any)
 	addTimestamp = func(o any) {
 		switch value := o.(type) {
@@ -373,25 +372,25 @@ func ToJsonR(o any) (j JsonR, err error) {
 ///////// PRIVATE
 //////////////////////////////////
 
-// parseValue parses the given value and returns a JSON-R value.
+// parseValue parses the given value and returns a T-JSON value.
 func parseValue(raw any) (Value, error) {
 	switch v := raw.(type) {
 	case nil:
 		return nil, nil
 	case map[string]any:
-		if isLeaf(v) { // type is a JSON-R leaf
+		if isLeaf(v) { // type is a T-JSON leaf
 			return parseLeaf(v)
-		} else { // type is a JSON-R object
+		} else { // type is a T-JSON object
 			return parseObject(v)
 		}
-	case []any: // type is a JSON-R array
+	case []any: // type is a T-JSON array
 		return parseArray(v)
 	default:
 		return nil, fmt.Errorf("invalid value type: %v (type: %T)", v, v)
 	}
 }
 
-// parseObject parses the given map as a JSON-R object.
+// parseObject parses the given map as a T-JSON object.
 func parseObject(raw map[string]any) (obj Object, err error) {
 	obj = make(Object)
 	for key, value := range raw {
@@ -404,7 +403,7 @@ func parseObject(raw map[string]any) (obj Object, err error) {
 	return obj, nil
 }
 
-// parseArray parses the given array as a JSON-R array.
+// parseArray parses the given array as a T-JSON array.
 func parseArray(raw []any) (arr Array, err error) {
 	arr = make(Array, len(raw))
 	for i, value := range raw {
@@ -417,7 +416,7 @@ func parseArray(raw []any) (arr Array, err error) {
 	return arr, nil
 }
 
-// parseLeaf parses the given map as a JSON-R leaf.
+// parseLeaf parses the given map as a T-JSON leaf.
 func parseLeaf(raw map[string]any) (Value, error) {
 	// Get value and timestamp
 	// The existence of "value" and "timestamp" is already checked in isLeaf()
@@ -439,9 +438,9 @@ func parseLeaf(raw map[string]any) (Value, error) {
 	}
 }
 
-// isLeaf checks if the given map is a JSON-R leaf.
+// isLeaf checks if the given map is a T-JSON leaf.
 func isLeaf(m map[string]any) bool {
-	// A JSON-R Object is a Leaf when
+	// A T-JSON Object is a Leaf when
 	//  1: it has "value" and "timestamp" keys
 	//  2: no other keys exist
 	_, ok1 := m["value"]

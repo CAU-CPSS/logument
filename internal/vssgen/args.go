@@ -69,7 +69,7 @@ func SaveMetadata(metadata map[string]any, dataFolder string) {
 	os.WriteFile(filepath.Join(dataFolder, metadataFile), metadataData, 0644)
 }
 
-// Generate generates the VSS dataset as JSON-R & JSON patch
+// Generate generates the VSS dataset as T-JSON & JSON patch
 func Generate(metadata map[string]any, dataFolder string) {
 	var (
 		dataset    = metadata["dataset"].(string)

@@ -1,0 +1,77 @@
+<!--
+//
+// index.html
+//
+// Web-based visualizer for the Logument project.
+//
+// Author: Karu (@karu-rress)
+//
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Logument Test</title>
+    <style>
+
+    </style>
+</head>
+<body>
+    <h1>Logument Test</h1>
+
+    <label for="combobox1">Select Option:</label>
+    <select id="combobox1">
+        <option value="Option1">Option 1</option>
+        <option value="Option2">Option 2</option>
+        <option value="Option3">Option 3</option>
+    </select><br>
+
+    <label for="form1">Input Data 1:</label>
+    <input type="text" id="form1"><br>
+
+    <label for="combobox2">Select Option:</label>
+    <select id="combobox2">
+        <option value="Option1">Option 1</option>
+        <option value="Option2">Option 2</option>
+        <option value="Option3">Option 3</option>
+    </select><br>
+
+    <label for="form2">Input Data 2:</label>
+    <input type="text" id="form2"><br>
+
+    <label for="combobox3">Select Option:</label>
+    <select id="combobox3">
+        <option value="Option1">Option 1</option>
+        <option value="Option2">Option 2</option>
+        <option value="Option3">Option 3</option>
+    </select><br>
+
+    <button onclick="sendData()">Calculate</button>
+
+    <h3>Result:</h3>
+    <input type="text" id="form3" readonly>
+
+
+
+</body>
+</html>
+
+
+<!--
+
+처음 - initial document보여줌
+
+patch 1~3번부터 선택해서 패치할 수 있고...
+
+Patchpool에 아직 apply되지 않은 patch들을 보여줌.
+----
+Demo 페이지에 처음 들어가면 기본적으로 딱 뜨는 환경은
+JSON document가 (version 0) 떠야 함. initial snapshot 담은 거.
+
+그 후 patch pool 버튼을 클릭했을 때 toggle로 뜨든 list로 뜨든 그렇게 해서
+현재 append 가능한 patch list들이 쭉 뜨면 좋겠음.
+patch version 1~N까지.
+
+
+
+-->

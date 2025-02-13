@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
-	"github.com/CAU-CPSS/logument/internal/jsonr"
 	"github.com/CAU-CPSS/logument/internal/logument"
+	"github.com/CAU-CPSS/logument/internal/tjson"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -53,8 +53,8 @@ func TestCreate(t *testing.T) {
 
 	// use Snapshot and Patches format
 	t.Log("Make a Logument with Snapshot format\n")
-	var ss jsonr.JsonR
-	if err := jsonr.Unmarshal([]byte(initSnapshot), &ss); err != nil {
+	var ss tjson.TJson
+	if err := tjson.Unmarshal([]byte(initSnapshot), &ss); err != nil {
 		panic(err)
 	}
 	pp, err := jsonpatch.Unmarshal([]byte(Patches[0]))
