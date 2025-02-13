@@ -1,9 +1,11 @@
 //
 // main.go
 //
-// Main entry point for the Logument project.
+// Web-based visualizer for the Logument project.
 //
-// Author: Sunghwan Park (@tjdghks994) & Karu (@karu-rress)
+// Authors:
+//   Karu (@karu-rress)
+//   Sunghwan Park (@tjdghks994)
 //
 
 package main
@@ -12,16 +14,19 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
+	"net/http"
+	_ "net/http"
 	"os"
 
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
-	"github.com/CAU-CPSS/logument/internal/jsonr"
 	"github.com/CAU-CPSS/logument/internal/logument"
+	"github.com/CAU-CPSS/logument/internal/tjson"
 	"github.com/CAU-CPSS/logument/internal/vssgen"
 )
 
-//go:embed examples/example1.jsonr
+//go:embed examples/example1.tjson
 var expSnapshot []byte
 
 const expPatch = `[
@@ -30,19 +35,63 @@ const expPatch = `[
 	{ "op": "replace", "path": "/engineOn", "value": false, "timestamp": 2000000000 }
 ]`
 
-func main() {
-	// If the flag is set, generate VSS and exit
-	if arguments := os.Args[1:]; len(arguments) > 0 {
-		generate_vss()
+// homeHandler handles the main page
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("index.html"))
+	tmpl.Execute(w, nil)
+}
+
+// AJAX request handler for patching
+func patchHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
+	input1 := r.FormValue("input1")
+	input2 := r.FormValue("input2")
+
+	_ = input1
+	_ = input2
+
+	// func1 호출
+	// result := func1(input1, input2)
+
+	// 결과 반환
+	// w.Write([]byte(result))
+}
+
+func main() {
+	// If the flag is set, generate VSS and exit
+	if arguments := os.Args[1:]; len(arguments) > 0 {
+		generateVss()
+		return
+	}
+
+	////
+
+	///
+
+	///
+
+	//
+
+	////
+
+	///
+
+	http.HandleFunc("/", homeHandler)
+	fmt.Println("Server running at http://localhost:8080")
+	http.ListenAndServe(":8080", nil)
+
+	http.HandleFunc("/compute", patchHandler) // AJAX 요청 처리
+
 	var (
-		initSnapshot jsonr.JsonR
+		initSnapshot tjson.TJson
 		j            = expSnapshot
 	)
 
-	jsonr.Unmarshal(j, &initSnapshot)
+	tjson.Unmarshal(j, &initSnapshot)
 
 	// Make a new Logument document
 	lgm := logument.NewLogument(initSnapshot, nil)
@@ -59,7 +108,7 @@ func main() {
 	lgm.Print()
 }
 
-func generate_vss() {
+func generateVss() {
 	option := vssgen.ParseArgs("internal/vssgen/vss.json")
 	outputDir := "./dataset"
 
@@ -70,9 +119,9 @@ func generate_vss() {
 	fmt.Printf("Saved to %s! Exiting...\n", outputDir)
 }
 
-func run_jpatch() error {
+func runJpatch() error {
 	// Original JSON Document
-	original, _ := jsonr.NewJsonR(`{
+	original, _ := tjson.NewTJson(`{
 		"name": "Alice",
 		"age": 25,
 		"address": {
@@ -82,7 +131,7 @@ func run_jpatch() error {
 	}`)
 
 	// Modified JSON
-	modified, _ := jsonr.NewJsonR(`{
+	modified, _ := tjson.NewTJson(`{
 		"name": "Alice",
 		"age": 26,
 		"address": {
