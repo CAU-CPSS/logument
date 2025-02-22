@@ -34,8 +34,6 @@
 
 - **TimeSlice(startTime, endTime int64)**: Extract a subset of the Logument document based on the specified start and end timestamps
 
-- (Next)
-
 ---
 
 ## Contribute
