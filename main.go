@@ -22,11 +22,11 @@ import (
 
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/logument"
-	"github.com/CAU-CPSS/logument/internal/tjson"
+	"github.com/CAU-CPSS/logument/internal/tson"
 	"github.com/CAU-CPSS/logument/internal/vssgen"
 )
 
-//go:embed examples/example1.tjson
+//go:embed examples/example1.tson
 var expSnapshot []byte
 
 const expPatch = `[
@@ -87,11 +87,11 @@ func main() {
 	http.HandleFunc("/compute", patchHandler) // AJAX 요청 처리
 
 	var (
-		initSnapshot tjson.TJson
+		initSnapshot tson.Tson
 		j            = expSnapshot
 	)
 
-	tjson.Unmarshal(j, &initSnapshot)
+	tson.Unmarshal(j, &initSnapshot)
 
 	// Make a new Logument document
 	lgm := logument.NewLogument(initSnapshot, nil)
@@ -121,7 +121,7 @@ func generateVss() {
 
 func runJpatch() error {
 	// Original JSON Document
-	original, _ := tjson.NewTJson(`{
+	original, _ := tson.NewTson(`{
 		"name": "Alice",
 		"age": 25,
 		"address": {
@@ -131,7 +131,7 @@ func runJpatch() error {
 	}`)
 
 	// Modified JSON
-	modified, _ := tjson.NewTJson(`{
+	modified, _ := tson.NewTson(`{
 		"name": "Alice",
 		"age": 26,
 		"address": {

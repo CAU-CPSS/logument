@@ -6,7 +6,7 @@
 
 - Structure
   - Version []uint64: Logument가 관리하는 버전의 배열; should be continuos
-  - Snapshot map[uint64]tjson.TJson: 최초 Create 시와 Snapshot 함수에 의해 생성된 Snapshot의 map (version, Snapshot)
+  - Snapshot map[uint64]tson.Tson: 최초 Create 시와 Snapshot 함수에 의해 생성된 Snapshot의 map (version, Snapshot)
   - PatchMap map[uint64]jsonpatch.Patch: Logument 내에서 관리하는 Patch의 map (version, Patches)
   - PatchPool jsonpatch.Patch: Logument에서 관리 예정인 Patches
 
@@ -14,7 +14,7 @@
 
 ## Interface for **_Logument_**
 
-- **Create(snapshot tjson.TJson, patches jsonpatch.Patch)**: make a new Logument using an initial snapshot (**_Note_**: The function name in the implementation is `NewLogument`)
+- **Create(snapshot tson.Tson, patches jsonpatch.Patch)**: make a new Logument using an initial snapshot (**_Note_**: The function name in the implementation is `NewLogument`)
 
 - **Store(patches jsonpatch.Patch)**: Append new patches to the PatchPool; These patches are queued and will be later integrated into the Logument state via the `Apply` operation
 
@@ -41,5 +41,5 @@
 ## Contribute
 
 - **_Logument_** interface: Sunghwan Park
-- T-JSON & JSON Patch implementation: Sunwoo Na ([Karu](https://github.com/karu-rress))
+- TSON & JSON Patch implementation: Sunwoo Na ([Karu](https://github.com/karu-rress))
 - Data Synchronize Framework: Sunwoo Na ([Karu](https://github.com/karu-rress))

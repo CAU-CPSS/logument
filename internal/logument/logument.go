@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
-	"github.com/CAU-CPSS/logument/internal/tjson"
+	"github.com/CAU-CPSS/logument/internal/tson"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -18,7 +18,7 @@ var (
 	rfc6901Decoder = strings.NewReplacer("~1", "/", "~0", "~")
 )
 
-type Snapshot = tjson.TJson
+type Snapshot = tson.Tson
 type Patches = jsonpatch.Patch // []jsonpatch.Operation
 
 // Logument 구조체
@@ -35,14 +35,14 @@ func NewLogument(initialSnapshot any, initialPatches any) *Logument {
 
 	switch initialSnapshot := initialSnapshot.(type) {
 	case string:
-		err := tjson.Unmarshal([]byte(initialSnapshot), &snapshot)
+		err := tson.Unmarshal([]byte(initialSnapshot), &snapshot)
 		if err != nil {
 			panic(err)
 		}
 	case Snapshot:
 		snapshot = initialSnapshot
 	default:
-		panic("Invalid type for initialSnapshot. Must be string or tjson.TJson.")
+		panic("Invalid type for initialSnapshot. Must be string or tson.Tson.")
 	}
 
 	lgm := &Logument{
@@ -196,7 +196,7 @@ func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
 		timedSnapshot = latestSnapshot
 	}
 
-	jsonSnapshot, err := tjson.ToJson(timedSnapshot)
+	jsonSnapshot, err := tson.ToJson(timedSnapshot)
 	if err != nil {
 		panic("Failed to convert the snapshot to JSON. Error: " + err.Error())
 	}
@@ -207,9 +207,9 @@ func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
 		panic("Failed to unmarshal the snapshot. Error: " + err.Error())
 	}
 
-	snapshot, err := tjson.ToTJson(unmarshaledJsonSnapshot)
+	snapshot, err := tson.ToTson(unmarshaledJsonSnapshot)
 	if err != nil {
-		panic("Failed to convert the snapshot to TJson. Error: " + err.Error())
+		panic("Failed to convert the snapshot to Tson. Error: " + err.Error())
 	}
 
 	return snapshot
@@ -226,7 +226,7 @@ func (lgm *Logument) TimeSnapshot(targetTime int64) Snapshot {
 	latestVersion := lgm.Version[0]
 	for _, version := range versions {
 		s := lgm.Snapshots[version]
-		lts := tjson.GetLatestTimestamp(s)
+		lts := tson.GetLatestTimestamp(s)
 		if lts <= targetTime {
 			latestVersion = version
 		} else {
@@ -375,7 +375,7 @@ func (lgm *Logument) TimeSlice(startTime, endTime int64) *Logument {
 	SlicedSnapshots := make(map[uint64]Snapshot)
 	for _, version := range versionsFromSnapshot {
 		snapshot := lgm.Snapshots[version]
-		latestTimestamp := tjson.GetLatestTimestamp(snapshot)
+		latestTimestamp := tson.GetLatestTimestamp(snapshot)
 		if latestTimestamp >= startTime && latestTimestamp <= endTime {
 			SlicedSnapshots[version] = snapshot
 		}
@@ -488,7 +488,7 @@ func (lgm *Logument) History(targetPath string) map[string]Patches {
 
 	// Add the initial value to the history
 	for key := range historyPatches {
-		val, err := tjson.GetValue(lgm.Snapshots[0], key)
+		val, err := tson.GetValue(lgm.Snapshots[0], key)
 		fmt.Println("key: ", key)
 		fmt.Println("val: ", val)
 		if err != nil {

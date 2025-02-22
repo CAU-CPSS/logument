@@ -1,12 +1,12 @@
 //
-// tjson_test.go
+// tson_test.go
 //
-// Tests for the tjson package.
+// Tests for the tson package.
 //
 // Author: Karu (@karu-rress)
 //
 
-package tjson
+package tson
 
 import (
 	"encoding/json"
@@ -18,18 +18,18 @@ import (
 )
 
 const (
-	ex1 = "../../examples/example1.tjson"
-	ex2 = "../../examples/example2.tjson"
+	ex1 = "../../examples/example1.tson"
+	ex2 = "../../examples/example2.tson"
 	js1 = "../../examples/example1.json"
 )
 
-// Testing T-JSON unmarshalling
+// Testing TSON unmarshalling
 func TestUnmarshal(t *testing.T) {
 	// Test cases are in 'testcases.go' file.
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			var got TJson
-			err := Unmarshal([]byte(tc.tJson), &got)
+			var got Tson
+			err := Unmarshal([]byte(tc.tson), &got)
 			if ret := err != nil; ret != tc.wantErr {
 				t.Errorf("Parse() error = %v, wantErr %v", err, tc.wantErr)
 				return
@@ -41,12 +41,12 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
-// Checking parsed T-JSON data
+// Checking parsed TSON data
 func TestParsedData(t *testing.T) {
 	var (
-		parsedTJson    TJson
-		stringTJson, _ = os.ReadFile(ex1)
-		err            = Unmarshal(stringTJson, &parsedTJson)
+		parsedTson    Tson
+		stringTson, _ = os.ReadFile(ex1)
+		err            = Unmarshal(stringTson, &parsedTson)
 	)
 
 	if err != nil { // If error occurs
@@ -54,33 +54,33 @@ func TestParsedData(t *testing.T) {
 		return
 	}
 
-	// Check the type of the parsed T-JSON data (should be 'tjson.Object')
-	tJsonType := reflect.TypeOf(parsedTJson).String()
-	assert.Equal(t, tJsonType, "tjson.Object")
-	t.Log("Parsed T-JSON type:", tJsonType)
+	// Check the type of the parsed TSON data (should be 'tson.Object')
+	tsonType := reflect.TypeOf(parsedTson).String()
+	assert.Equal(t, tsonType, "tson.Object")
+	t.Log("Parsed TSON type:", tsonType)
 
 	// Checking the leaf
-	id, _ := GetValue(parsedTJson, "/vehicleId")
-	assert.Equal(t, reflect.TypeOf(id).String(), "tjson.Leaf[string]")
+	id, _ := GetValue(parsedTson, "/vehicleId")
+	assert.Equal(t, reflect.TypeOf(id).String(), "tson.Leaf[string]")
 	t.Log("Vehicle ID:", id.(Leaf[string]).Value)
 
 	// Checking the nested object
-	lat, _ := GetValue(parsedTJson, "/location/latitude")
-	lon, _ := GetValue(parsedTJson, "/location/longitude")
+	lat, _ := GetValue(parsedTson, "/location/latitude")
+	lon, _ := GetValue(parsedTson, "/location/longitude")
 	t.Log("Location:", lat, lon)
 
 	// Checking the nested array
-	tires, _ := GetValue(parsedTJson, "/tirePressure")
-	assert.Equal(t, reflect.TypeOf(tires).String(), "tjson.Array")
+	tires, _ := GetValue(parsedTson, "/tirePressure")
+	assert.Equal(t, reflect.TypeOf(tires).String(), "tson.Array")
 	tarr, _ := ToArray(tires.(Array))
 	t.Log("Tires:", tarr)
 }
 
 func TestGetTimestamp(t *testing.T) {
 	var (
-		parsedTJson    TJson
-		stringTJson, _ = os.ReadFile(ex2)
-		err            = Unmarshal(stringTJson, &parsedTJson)
+		parsedTson    Tson
+		stringTson, _ = os.ReadFile(ex2)
+		err            = Unmarshal(stringTson, &parsedTson)
 	)
 
 	if err != nil {
@@ -88,34 +88,34 @@ func TestGetTimestamp(t *testing.T) {
 		return
 	}
 
-	timestamp := GetLatestTimestamp(parsedTJson)
+	timestamp := GetLatestTimestamp(parsedTson)
 	assert.Equal(t, timestamp, int64(2000000000))
 	t.Logf("Max timestamp: %d", timestamp)
 }
 
 func TestGetValue(t *testing.T) {
 	var (
-		parsedTJson    TJson
-		stringTJson, _ = os.ReadFile(ex1)
-		err            = Unmarshal(stringTJson, &parsedTJson)
+		parsedTson    Tson
+		stringTson, _ = os.ReadFile(ex1)
+		err            = Unmarshal(stringTson, &parsedTson)
 	)
 
 	assert.Nil(t, err)
 
 	// Use path to retrieve the value
-	value, err := GetValue(parsedTJson, "/tirePressure/0")
+	value, err := GetValue(parsedTson, "/tirePressure/0")
 	t.Log("Value:", value)
 	assert.Nil(t, err)
 }
 
-func TestToTJson(t *testing.T) {
+func TestToTson(t *testing.T) {
 	var j any
 
 	strJson, _ := os.ReadFile(js1)
 	err := json.Unmarshal(strJson, &j)
 	assert.Nil(t, err)
 
-	tJson, err := ToTJson(j)
+	tson, err := ToTson(j)
 	assert.Nil(t, err)
-	t.Log(String(tJson))
+	t.Log(String(tson))
 }

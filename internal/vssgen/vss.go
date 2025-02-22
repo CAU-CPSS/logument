@@ -20,15 +20,15 @@ import (
 	"math/rand"
 
 	"github.com/CAU-CPSS/logument/internal/jsonpatch"
-	"github.com/CAU-CPSS/logument/internal/tjson"
+	"github.com/CAU-CPSS/logument/internal/tson"
 )
 
 // If true, metadata will be saved in each JSON file
 const SAVE_METADATA = false
 
 const (
-	tJsonValue     = "value"
-	tJsonTimestamp = "timestamp"
+	tsonValue     = "value"
+	tsonTimestamp = "timestamp"
 )
 
 // VSS JSON manager struct
@@ -101,13 +101,13 @@ func (vss VssJson) LeafNodes() []map[string]any {
 		}
 
 		_, isParent := d.(map[string]any)
-		isTJsonLeaf := false
+		isTsonLeaf := false
 
 		if isParent {
-			_, isTJsonLeaf = d.(map[string]any)[tJsonTimestamp]
+			_, isTsonLeaf = d.(map[string]any)[tsonTimestamp]
 		}
 
-		if !isTJsonLeaf {
+		if !isTsonLeaf {
 			for key, value := range d.(map[string]any) {
 				fullKey := key
 				if parent != "" && key != "children" {
@@ -178,76 +178,76 @@ func (vss VssJson) Generate(datasetSize float64, id int) *VssJson {
 		switch {
 		case dtype == "boolean":
 			new[node] = map[string]any{
-				tJsonValue:     rand.Float64() < 0.5,
-				tJsonTimestamp: timestamp,
+				tsonValue:     rand.Float64() < 0.5,
+				tsonTimestamp: timestamp,
 			}
 		case dtype == "int8" || dtype == "uint8" || dtype == "float" && metadata["unit"] == "percent":
 			f := rand.Float64() * 100
 			if dtype == "float" {
 				new[node] = map[string]any{
-					tJsonValue:     f,
-					tJsonTimestamp: timestamp,
+					tsonValue:     f,
+					tsonTimestamp: timestamp,
 				}
 			} else {
 				new[node] = map[string]any{
-					tJsonValue:     int(f),
-					tJsonTimestamp: timestamp,
+					tsonValue:     int(f),
+					tsonTimestamp: timestamp,
 				}
 			}
 		case allowed_ok:
 			array := metadata["allowed"].([]any)
 			new[node] = map[string]any{
-				tJsonValue:     array[rand.Intn(len(array))],
-				tJsonTimestamp: timestamp,
+				tsonValue:     array[rand.Intn(len(array))],
+				tsonTimestamp: timestamp,
 			}
 		case dtype == "double" || dtype == "float":
 			new[node] = map[string]any{
-				tJsonValue:     rand.Float64() * 100,
-				tJsonTimestamp: timestamp,
+				tsonValue:     rand.Float64() * 100,
+				tsonTimestamp: timestamp,
 			}
 		case dtype == "float[]":
 			new[node] = make([]any, 0)
 			for i := 0; i < rand.Intn(5)+1; i++ {
 				new[node] = append(new[node].([]any), map[string]any{
-					tJsonValue:     rand.Float64() * 100,
-					tJsonTimestamp: timestamp,
+					tsonValue:     rand.Float64() * 100,
+					tsonTimestamp: timestamp,
 				})
 			}
 		case dtype == "int8" || dtype == "int16" || dtype == "int32":
 			new[node] = map[string]any{
-				tJsonValue:     rand.Intn(201) - 100,
-				tJsonTimestamp: timestamp,
+				tsonValue:     rand.Intn(201) - 100,
+				tsonTimestamp: timestamp,
 			}
 		case dtype == "string":
 			new[node] = map[string]any{
-				tJsonValue:     genRandomString(15),
-				tJsonTimestamp: timestamp,
+				tsonValue:     genRandomString(15),
+				tsonTimestamp: timestamp,
 			}
 		case dtype == "string[]":
 			new[node] = make([]any, 0)
 			for i := 0; i < rand.Intn(5)+1; i++ {
 				new[node] = append(new[node].([]any), map[string]any{
-					tJsonValue:     genRandomString(15),
-					tJsonTimestamp: timestamp,
+					tsonValue:     genRandomString(15),
+					tsonTimestamp: timestamp,
 				})
 			}
 		case dtype == "uint8" || dtype == "uint16" || dtype == "uint32":
 			new[node] = map[string]any{
-				tJsonValue:     rand.Intn(101),
-				tJsonTimestamp: timestamp,
+				tsonValue:     rand.Intn(101),
+				tsonTimestamp: timestamp,
 			}
 		case dtype == "uint8[]":
 			new[node] = make([]any, 0)
 			for i := 0; i < rand.Intn(5)+1; i++ {
 				new[node] = append(new[node].([]any), map[string]any{
-					tJsonValue:     rand.Intn(101),
-					tJsonTimestamp: timestamp,
+					tsonValue:     rand.Intn(101),
+					tsonTimestamp: timestamp,
 				})
 			}
 		case dtype == nil:
 			new[node] = map[string]any{
-				tJsonValue:     nil,
-				tJsonTimestamp: timestamp,
+				tsonValue:     nil,
+				tsonTimestamp: timestamp,
 			}
 		}
 	}
@@ -295,8 +295,8 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 				new[node] = make([]any, 0)
 				for _, item := range arr {
 					new[node] = append(new[node].([]any), map[string]any{
-						tJsonValue:     item.(map[string]any)[tJsonValue],
-						tJsonTimestamp: timestamp,
+						tsonValue:     item.(map[string]any)[tsonValue],
+						tsonTimestamp: timestamp,
 					})
 				}
 				continue
@@ -304,33 +304,33 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 
 			if rand.Float64() > changeRate {
 				new[node] = map[string]any{
-					tJsonValue:     value.(map[string]any)[tJsonValue],
-					tJsonTimestamp: timestamp,
+					tsonValue:     value.(map[string]any)[tsonValue],
+					tsonTimestamp: timestamp,
 				}
 				continue
 			}
 
-			switch value.(map[string]any)[tJsonValue].(type) {
+			switch value.(map[string]any)[tsonValue].(type) {
 			case string:
 				new[node] = map[string]any{
-					tJsonValue:     genRandomString(15),
-					tJsonTimestamp: timestamp,
+					tsonValue:     genRandomString(15),
+					tsonTimestamp: timestamp,
 				}
 			case bool:
-				v := value.(map[string]any)[tJsonValue].(bool)
+				v := value.(map[string]any)[tsonValue].(bool)
 				new[node] = map[string]any{
-					tJsonValue:     !v,
-					tJsonTimestamp: timestamp,
+					tsonValue:     !v,
+					tsonTimestamp: timestamp,
 				}
 			case int:
 				new[node] = map[string]any{
-					tJsonValue:     rand.Intn(201) - 100,
-					tJsonTimestamp: timestamp,
+					tsonValue:     rand.Intn(201) - 100,
+					tsonTimestamp: timestamp,
 				}
 			case float64:
 				new[node] = map[string]any{
-					tJsonValue:     rand.Float64() * 100,
-					tJsonTimestamp: timestamp,
+					tsonValue:     rand.Float64() * 100,
+					tsonTimestamp: timestamp,
 				}
 			}
 		}
@@ -345,11 +345,11 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 	}
 
 	// Step 1. Create a patch using the current dataset and the new dataset
-	var origin, modified tjson.TJson
-	if err := tjson.Unmarshal(mapToJson(vss.data.(map[string]any)), &origin); err != nil {
+	var origin, modified tson.Tson
+	if err := tson.Unmarshal(mapToJson(vss.data.(map[string]any)), &origin); err != nil {
 		panic(err)
 	}
-	if err := tjson.Unmarshal(mapToJson(result), &modified); err != nil {
+	if err := tson.Unmarshal(mapToJson(result), &modified); err != nil {
 		panic(err)
 	}
 
@@ -380,8 +380,8 @@ func (vss *VssJson) Save(file string) {
 			d := item.(map[string]any)
 
 			fmt.Fprintf(&buf,
-				`{ "op": "%s", "path": "%s", tJsonValue: %#v, tJsonTimestamp: %d }`,
-				d["op"], d["path"], d[tJsonValue], int64(d[tJsonTimestamp].(float64)))
+				`{ "op": "%s", "path": "%s", tsonValue: %#v, tsonTimestamp: %d }`,
+				d["op"], d["path"], d[tsonValue], int64(d[tsonTimestamp].(float64)))
 			lines = append(lines, "    "+buf.String())
 		}
 

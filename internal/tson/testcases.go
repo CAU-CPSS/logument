@@ -1,24 +1,24 @@
 //
 // testcases.go
 //
-// Test cases for testing tjson.
+// Test cases for testing tson package.
 //
 // Author: Karu (@karu-rress)
 //
 
-package tjson
+package tson
 
 type testCase struct {
 	name    string
-	tJson   string
+	tson   string
 	want    Value
 	wantErr bool
 }
 
 var testCases = []testCase{
 	{
-		name: "Valid T-JSON",
-		tJson: `
+		name: "Valid TSON",
+		tson: `
 		{
 			"name": { "value": "John Doe", "timestamp": 1678886400 },
 			"age": { "value": 30, "timestamp": 1678886400 },
@@ -49,19 +49,19 @@ var testCases = []testCase{
 	},
 	{
 		name:    "Invalid JSON",
-		tJson:   `{ "name": "John Doe", }`,
+		tson:   `{ "name": "John Doe", }`,
 		want:    nil,
 		wantErr: true,
 	},
 	{
 		name:    "Missing Value Key",
-		tJson:   `{"name": {"timestamp": 1678886400}}`,
+		tson:   `{"name": {"timestamp": 1678886400}}`,
 		want:    nil,
 		wantErr: true,
 	},
 	{
 		name:    "Missing Timestamp Key",
-		tJson:   `{"name": {"value": "John Doe"}}`,
+		tson:   `{"name": {"value": "John Doe"}}`,
 		want:    nil,
 		wantErr: true,
 	},

@@ -12,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/CAU-CPSS/logument/internal/tjson"
+	"github.com/CAU-CPSS/logument/internal/tson"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,19 +23,19 @@ const patch = `[
 ]`
 
 const (
-	tj1 = "../../examples/example1.tjson"
-	tj2 = "../../examples/example2.tjson"
+	tj1 = "../../examples/example1.tson"
+	tj2 = "../../examples/example2.tson"
 )
 
 func TestGeneratePatch(t *testing.T) {
 	var (
-		parsed1, parsed2 tjson.TJson
-		tjson1, _        = os.ReadFile(tj1)
-		tjson2, _        = os.ReadFile(tj2)
+		parsed1, parsed2 tson.Tson
+		tson1, _        = os.ReadFile(tj1)
+		tson2, _        = os.ReadFile(tj2)
 	)
 
-	tjson.Unmarshal(tjson1, &parsed1)
-	tjson.Unmarshal(tjson2, &parsed2)
+	tson.Unmarshal(tson1, &parsed1)
+	tson.Unmarshal(tson2, &parsed2)
 
 	patch, err := GeneratePatch(parsed1, parsed2)
 	assert.Equal(t, nil, err)
@@ -45,14 +45,14 @@ func TestGeneratePatch(t *testing.T) {
 
 func TestApplyPatch(t *testing.T) {
 	var (
-		parsed1, parsed2 tjson.TJson
-		tjson1, _        = os.ReadFile(tj1)
-		tjson2, _        = os.ReadFile(tj2)
+		parsed1, parsed2 tson.Tson
+		tson1, _        = os.ReadFile(tj1)
+		tson2, _        = os.ReadFile(tj2)
 		b1, b2           []byte
 	)
 
-	tjson.Unmarshal(tjson1, &parsed1)
-	tjson.Unmarshal(tjson2, &parsed2)
+	tson.Unmarshal(tson1, &parsed1)
+	tson.Unmarshal(tson2, &parsed2)
 
 	patch, err := GeneratePatch(parsed1, parsed2)
 	assert.Equal(t, nil, err)
@@ -61,27 +61,27 @@ func TestApplyPatch(t *testing.T) {
 	j, err := ApplyPatch(parsed1, patch)
 	assert.Equal(t, nil, err)
 
-	// Check if the result is equal to the second T-JSON
-	b1, err = tjson.ToJson(j)
-	b2, err = tjson.ToJson(parsed2)
+	// Check if the result is equal to the second TSON
+	b1, err = tson.ToJson(j)
+	b2, err = tson.ToJson(parsed2)
 
 	t.Log(string(b1))
 	t.Log("=====================================")
 	t.Log(string(b2))
 
-	ret, _ := tjson.EqualWithoutTimestamp(parsed2, j)
+	ret, _ := tson.EqualWithoutTimestamp(parsed2, j)
 	assert.Equal(t, true, ret)
 }
 
 func TestApplyPatchWithJson(t *testing.T) {
 	var (
-		doc       tjson.TJson
-		tjson1, _ = os.ReadFile(tj1)
+		doc       tson.Tson
+		tson1, _ = os.ReadFile(tj1)
 		p         Patch
 	)
 
-	// Unmarshal the first T-JSON
-	tjson.Unmarshal(tjson1, &doc)
+	// Unmarshal the first TSON
+	tson.Unmarshal(tson1, &doc)
 	p, err := Unmarshal([]byte(patch))
 	assert.Equal(t, nil, err)
 
@@ -89,9 +89,9 @@ func TestApplyPatchWithJson(t *testing.T) {
 	newDoc, err := ApplyPatch(doc, p)
 	assert.Equal(t, nil, err)
 
-	// Check if the result is equal to the second T-JSON
-	tjson2, _ := os.ReadFile(tj2)
-	tjson.Unmarshal(tjson2, &doc)
-	ret, _ := tjson.EqualWithoutTimestamp(doc, newDoc)
+	// Check if the result is equal to the second TSON
+	tson2, _ := os.ReadFile(tj2)
+	tson.Unmarshal(tson2, &doc)
+	ret, _ := tson.EqualWithoutTimestamp(doc, newDoc)
 	assert.Equal(t, true, ret)
 }
