@@ -57,18 +57,18 @@ const DefaultTimestamp int64 = -1
 //////////////////////////////////
 
 // GetValue returns the value of the given key from the TSON object.
-func GetValue(j Tson, path string) (v Value, err error) {
-	var getValue func(j Tson, parts []string) (Value, error)
-	getValue = func(j Tson, parts []string) (Value, error) {
+func GetValue(t Tson, path string) (v Value, err error) {
+	var getValue func(t Tson, parts []string) (Value, error)
+	getValue = func(t Tson, parts []string) (Value, error) {
 		if len(parts) == 1 {
 			// If j is an Object, return the value of the key
-			if obj, ok := j.(Object); ok {
+			if obj, ok := t.(Object); ok {
 				if value, ok := obj[parts[0]]; ok {
 					return value, nil
 				} else {
 					return nil, fmt.Errorf("key not found: %s", parts[0])
 				}
-			} else if arr, ok := j.(Array); ok {
+			} else if arr, ok := t.(Array); ok {
 				// If j is an Array, return the value of the index
 				index, err := strconv.Atoi(parts[0])
 				if err != nil {
@@ -79,18 +79,18 @@ func GetValue(j Tson, path string) (v Value, err error) {
 				}
 				return arr[index], nil
 			} else {
-				return nil, fmt.Errorf("invalid type: %T", j)
+				return nil, fmt.Errorf("invalid type: %T", t)
 			}
 		}
 
 		// If j is an Object, get the value of the key and call getValue recursively
-		if obj, ok := j.(Object); ok {
+		if obj, ok := t.(Object); ok {
 			if value, ok := obj[parts[0]]; ok {
 				return getValue(value, parts[1:])
 			} else {
 				return nil, fmt.Errorf("key not found: %s", parts[0])
 			}
-		} else if arr, ok := j.(Array); ok {
+		} else if arr, ok := t.(Array); ok {
 			// If j is an Array, get the value of the index and call getValue recursively
 			index, err := strconv.Atoi(parts[0])
 			if err != nil {
@@ -101,7 +101,7 @@ func GetValue(j Tson, path string) (v Value, err error) {
 			}
 			return getValue(arr[index], parts[1:])
 		} else {
-			return nil, fmt.Errorf("Cannot recursively get value from %T", j)
+			return nil, fmt.Errorf("Cannot recursively get value from %T", t)
 		}
 	}
 
@@ -109,25 +109,15 @@ func GetValue(j Tson, path string) (v Value, err error) {
 	path = rfc6901Decoder.Replace(path)
 	parts := strings.Split(path, "/")[1:]
 
-	return getValue(j, parts)
-}
-
-// Marshal converts the TSON to a byte slice.
-func Marshal(j Tson) (data []byte, err error) {
-	return json.Marshal(j)
-}
-
-// MarshalIndent converts the TSON to a byte slice with indent.
-func MarshalIndent(j Tson, prefix, indent string) (data []byte, err error) {
-	return json.MarshalIndent(j, prefix, indent)
+	return getValue(t, parts)
 }
 
 // Equal checks if two TSONs are equal, including timestamps.
 func Equal(j1, j2 Tson) (ret bool, err error) {
 	var (
 		o1, o2 any
-		b1, _  = Marshal(j1)
-		b2, _  = Marshal(j2)
+		b1, _  = ToJsonBytes(j1)
+		b2, _  = ToJsonBytes(j2)
 	)
 
 	// Check if the given TSONs are valid
@@ -167,14 +157,14 @@ func EqualWithoutTimestamp(j1, j2 Tson) (ret bool, err error) {
 }
 
 // GetLatestTimestamp returns the latest timestamp of the given TSON.
-func GetLatestTimestamp(j Tson) int64 {
+func GetLatestTimestamp(t Tson) int64 {
 	updateMax := func(max *int64, ts int64) {
 		if ts > *max {
 			*max = ts
 		}
 	}
 
-	switch v := j.(type) {
+	switch v := t.(type) {
 	case Leaf[string]:
 		return v.Timestamp
 	case Leaf[float64]:
@@ -194,7 +184,7 @@ func GetLatestTimestamp(j Tson) int64 {
 		}
 		return max
 	default:
-		panic(fmt.Sprintf("GetTimestamp: invalid type %T for TSON", j))
+		panic(fmt.Sprintf("GetTimestamp: invalid type %T for TSON", t))
 	}
 }
 
@@ -202,27 +192,9 @@ func GetLatestTimestamp(j Tson) int64 {
 ///////// PARSER
 //////////////////////////////////
 
-// NewTson creates a new TSON from the given TSON string.
-func NewTson(tjson string) (Tson, error) {
-	var j Tson
-	err := Unmarshal([]byte(tjson), &j)
-	return j, err
-}
-
-// Unmarshal parses the TSON data and stores the result.
-func Unmarshal(data []byte, j *Tson) (err error) {
-	var raw any
-	if err = json.Unmarshal(data, &raw); err != nil {
-		return
-	}
-
-	*j, err = parseValue(raw)
-	return err
-}
-
-// String converts TSON to a string.
-func String(j Tson) string {
-	data, err := json.MarshalIndent(j, "", "    ")
+// OldString converts TSON to a string.
+func OldString(t Tson) string {
+	data, err := json.MarshalIndent(t, "", "    ")
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal TSON: %v", err))
 	}
@@ -258,13 +230,13 @@ func ToArray(a Array) ([]any, error) {
 }
 
 // Any returns the given TSON as any(interface{}) type.
-func Any(j Tson) any {
-	return j
+func Any(t Tson) any {
+	return t
 }
 
 // ToJson converts the given TSON to a JSON byte slice.
 // NOTE: The timestamp field is removed
-func ToJson(j Tson) (b []byte, err error) {
+func ToJson(t Tson) (b []byte, err error) {
 	var removeTimestamp func(o any)
 	removeTimestamp = func(o any) {
 		switch value := o.(type) {
@@ -313,7 +285,7 @@ func ToJson(j Tson) (b []byte, err error) {
 		o    any
 		barr []byte
 	)
-	if barr, err = Marshal(j); err != nil {
+	if barr, err = ToJsonBytes(t); err != nil {
 		return nil, err
 	}
 	if err = json.Unmarshal(barr, &o); err != nil {
@@ -326,7 +298,7 @@ func ToJson(j Tson) (b []byte, err error) {
 }
 
 // ToTson converts the given JSON object to a TSON.
-func ToTson(o any) (j Tson, err error) {
+func ToTson(o any) (t Tson, err error) {
 	var addTimestamp func(o any)
 	addTimestamp = func(o any) {
 		switch value := o.(type) {
@@ -362,9 +334,9 @@ func ToTson(o any) (j Tson, err error) {
 	addTimestamp(o)
 
 	str, err := json.Marshal(o)
-	err = Unmarshal(str, &j)
+	err = Unmarshal(str, &t)
 
-	return j, err
+	return t, err
 }
 
 //////////////////////////////////

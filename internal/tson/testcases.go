@@ -20,16 +20,16 @@ var testCases = []testCase{
 		name: "Valid TSON",
 		tson: `
 		{
-			"name": { "value": "John Doe", "timestamp": 1678886400 },
-			"age": { "value": 30, "timestamp": 1678886400 },
-			"is-married": { "value": true, "timestamp": 1678886400 },
+			"name" <1678886400>: "John Doe",
+			"age" <1678886400>: 30,
+			"is-married" <1678886400>: true,
 			"address": {
-				"street": { "value": "123 Main St", "timestamp": 1678886400 },
-				"city": { "value": "Anytown", "timestamp": 1678886400 }
+				"street" <1678886400>: "123 Main St",
+				"city" <1678886400>: "Anytown"
 			},
 			"hobbies": [
-				{ "value": "reading", "timestamp": 1678886400 },
-				{ "value": "hiking", "timestamp": 1678886400 }
+				<1678886400> "reading",
+				<1678886400> "hiking"
 			]
 		}`,
 		want: Object{
@@ -54,14 +54,14 @@ var testCases = []testCase{
 		wantErr: true,
 	},
 	{
-		name:    "Missing Value Key",
-		tson:   `{"name": {"timestamp": 1678886400}}`,
+		name:    "Missing Value",
+		tson:   `{"name" <1678886400>: }`,
 		want:    nil,
 		wantErr: true,
 	},
 	{
-		name:    "Missing Timestamp Key",
-		tson:   `{"name": {"value": "John Doe"}}`,
+		name:    "Missing Timestamp",
+		tson:   `{"name": "John Doe"}`,
 		want:    nil,
 		wantErr: true,
 	},

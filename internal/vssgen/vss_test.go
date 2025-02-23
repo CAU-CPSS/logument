@@ -10,11 +10,13 @@ package vssgen
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
 
 	"encoding/json"
 
+	"github.com/CAU-CPSS/logument/internal/tson"
 	"github.com/appscode/jsonpatch"
 )
 
@@ -176,7 +178,8 @@ func TestGenerateNext(t *testing.T) {
 	_v := NewVssJson(file)
 	v := _v.Generate(1.0, 1)
 
-	_, patch := v.GenerateNext(0.5, 1, 2)
+	j, patch := v.GenerateNext(0.5, 1, 2)
+	_ = j
 	patch.Print()
 }
 
@@ -185,7 +188,7 @@ func TestSave(t *testing.T) {
 	v1 := _v.Generate(1.0, 1)
 
 	result, _ := v1.GenerateNext(0.5, 1, 2)
-	result.Save("./test_patch.json")
+	result.Save("./test.tson")
 }
 
 func TestJsonPatch(t *testing.T) {
@@ -194,4 +197,83 @@ func TestJsonPatch(t *testing.T) {
 
 	result, _ := jsonpatch.CreatePatch(_v, _v_next)
 	t.Logf("Patch: %v\n", result)
+}
+
+func TestCase(t *testing.T) {
+	// 예제 1: 일반 JSON 형식의 데이터 (map[string]interface{})
+	jsonData := map[string]interface{}{
+		"vehicleId": map[string]interface{}{
+			"value":     "ABC1234",
+			"timestamp": 1700000000,
+		},
+		"speed": map[string]interface{}{
+			"value":     72.5,
+			"timestamp": 1700000000,
+		},
+		"engineOn": map[string]interface{}{
+			"value":     true,
+			"timestamp": 1700000000,
+		},
+		"location": map[string]interface{}{
+			"latitude": map[string]interface{}{
+				"value":     37.7749,
+				"timestamp": 1700000000,
+			},
+			"longitude": map[string]interface{}{
+				"value":     -122.4194,
+				"timestamp": 1700000000,
+			},
+		},
+		"tirePressure": []interface{}{
+			map[string]interface{}{
+				"value":     32.1,
+				"timestamp": 1700000000,
+			},
+			map[string]interface{}{
+				"value":     31.8,
+				"timestamp": 1700000000,
+			},
+			map[string]interface{}{
+				"value":     32.0,
+				"timestamp": 1700000000,
+			},
+			map[string]interface{}{
+				"value":     31.9,
+				"timestamp": 1700000000,
+			},
+		},
+	}
+
+	// 예제 2: Tson 타입을 사용한 데이터
+	tsonData := tson.Object{
+		"vehicleId": tson.Leaf[string]{Value: "ABC1234", Timestamp: 1700000000},
+		"speed":     tson.Leaf[float64]{Value: 72.5, Timestamp: 1700000000},
+		"engineOn":  tson.Leaf[bool]{Value: true, Timestamp: 1700000000},
+		"location": tson.Object{
+			"latitude":  tson.Leaf[float64]{Value: 37.7749, Timestamp: 1700000000},
+			"longitude": tson.Leaf[float64]{Value: -122.4194, Timestamp: 1700000000},
+		},
+		"tirePressure": tson.Array{
+			tson.Leaf[float64]{Value: 32.1, Timestamp: 1700000000},
+			tson.Leaf[float64]{Value: 31.8, Timestamp: 1700000000},
+			tson.Leaf[float64]{Value: 32.0, Timestamp: 1700000000},
+			tson.Leaf[float64]{Value: 31.9, Timestamp: 1700000000},
+		},
+	}
+
+	fmt.Println("=== JSON 데이터 ===")
+	data, err := tson.MarshalIndent(jsonData, "", "  ")
+	if err != nil {
+		fmt.Println("Error during MarshalIndent:", err)
+		return
+	}
+	fmt.Println(string(data))
+
+	fmt.Println("\n=== Tson 데이터 ===")
+	data2, err := tson.MarshalIndent(tsonData, "", "  ")
+	if err != nil {
+		fmt.Println("Error during MarshalIndent:", err)
+		return
+	}
+	fmt.Println(string(data2))
 }

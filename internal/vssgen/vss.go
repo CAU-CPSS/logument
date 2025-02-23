@@ -78,7 +78,7 @@ func (vss *VssJson) removeKeys(keys ...string) {
 // Print JSON data
 func (vss VssJson) Print() {
 	// TODO: format JSON patch differently...
-	d, _ := json.MarshalIndent(vss.data, "", "    ")
+	d, _ := tson.MarshalIndent(vss.data, "", "    ")
 	fmt.Println(string(d))
 }
 
@@ -345,11 +345,18 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 	}
 
 	// Step 1. Create a patch using the current dataset and the new dataset
+	// var j any
 	var origin, modified tson.Tson
-	if err := tson.Unmarshal(mapToJson(vss.data.(map[string]any)), &origin); err != nil {
+
+	b := mapToJson(vss.data.(map[string]any))
+	origin, err := tson.FromJsonBytes(b)
+	if err != nil {
 		panic(err)
 	}
-	if err := tson.Unmarshal(mapToJson(result), &modified); err != nil {
+
+	b = mapToJson(result)
+	modified, err = tson.FromJsonBytes(b)
+	if err != nil {
 		panic(err)
 	}
 
@@ -372,7 +379,11 @@ func (vss *VssJson) Save(file string) {
 
 	// If vanilla JSON object
 	if _, ok := vss.data.(map[string]any); ok {
-		data, _ = json.MarshalIndent(vss.data, "", "    ")
+		var err error
+		data, err = tson.MarshalIndent(vss.data, "", "    ")
+		if err != nil {
+			fmt.Printf("Error marshalling JSON: %v\n", err)
+		}
 	} else { // If JSON patch
 		var lines []string
 		for _, item := range vss.data.([]any) {
@@ -380,7 +391,7 @@ func (vss *VssJson) Save(file string) {
 			d := item.(map[string]any)
 
 			fmt.Fprintf(&buf,
-				`{ "op": "%s", "path": "%s", tsonValue: %#v, tsonTimestamp: %d }`,
+				`{ "op": "%s", "path": "%s", "value": %#v, "timestamp": %d }`,
 				d["op"], d["path"], d[tsonValue], int64(d[tsonTimestamp].(float64)))
 			lines = append(lines, "    "+buf.String())
 		}

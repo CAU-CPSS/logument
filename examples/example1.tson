@@ -1,42 +1,15 @@
 {
-    "vehicleId": {
-        "value": "ABC1234",
-        "timestamp": 1700000000
-    },
-    "speed": {
-        "value": 72.5,
-        "timestamp": 1700000000
-    },
-    "engineOn": {
-        "value": true,
-        "timestamp": 1700000000
-    },
+    "vehicleId" <1700000000>: "ABC1234",
+    "speed" <1700000000>: 72.5,
+    "engineOn" <1700000000>: true,
     "location": {
-        "latitude": {
-            "value": 37.7749,
-            "timestamp": 1700000000
-        },
-        "longitude": {
-            "value": -122.4194,
-            "timestamp": 1700000000
-        }
+        "latitude" <1700000000>: 37.7749,
+        "longitude" <1700000000>: -122.4194
     },
     "tirePressure": [
-        {
-            "value": 32.1,
-            "timestamp": 1700000000
-        },
-        {
-            "value": 31.8,
-            "timestamp": 1700000000
-        },
-        {
-            "value": 32.0,
-            "timestamp": 1700000000
-        },
-        {
-            "value": 31.9,
-            "timestamp": 1700000000
-        }
+        <1700000000> 32.1,
+        <1700000000> 31.8,
+        <1700000000> 32.0,
+        <1700000000> 31.9
     ]
 }

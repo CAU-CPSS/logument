@@ -122,29 +122,29 @@ func GeneratePatch(origin, modified tson.Tson) (Patch, error) {
 }
 
 // ApplyPatch applies a JSON patch to a TSON document
-func ApplyPatch(doc tson.Tson, patch Patch) (j tson.Tson, err error) {
+func ApplyPatch(doc tson.Tson, patch Patch) (t tson.Tson, err error) {
 	for _, op := range patch {
-		if j, err = applyOperation(doc, op); err != nil {
+		if t, err = applyOperation(doc, op); err != nil {
 			return nil, err
 		}
 	}
-	return j, nil
+	return t, nil
 }
 
-func applyOperation(doc tson.Tson, op Operation) (j tson.Tson, err error) {
+func applyOperation(doc tson.Tson, op Operation) (t tson.Tson, err error) {
 	path := rfc6901Decoder.Replace(op.Path)
 
 	// Split the path into parts, ignoring the first empty string
 	parts := strings.Split(path, "/")[1:]
 
 	// Traverse the TSON document
-	if j, err = applyTraverse(doc, parts, op); err != nil {
+	if t, err = applyTraverse(doc, parts, op); err != nil {
 		return nil, err
 	}
-	return j, nil
+	return t, nil
 }
 
-func applyTraverse(doc tson.Tson, parts []string, op Operation) (j tson.Tson, err error) {
+func applyTraverse(doc tson.Tson, parts []string, op Operation) (t tson.Tson, err error) {
 	if len(parts) == 0 { // If the path is empty, return
 		return doc, nil
 	}

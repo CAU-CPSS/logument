@@ -99,15 +99,15 @@ func Generate(metadata map[string]any, dataFolder string) {
 
 		// Generate first JSON files
 		data := vss.Generate(size, i)
-		data.Save(filepath.Join(carDir, fmt.Sprintf("%d_1.json", i)))
-		data.Save(filepath.Join(patchDir, fmt.Sprintf("%d_1.json", i)))
+		data.Save(filepath.Join(carDir, fmt.Sprintf("%d_1.tson", i)))
+		data.Save(filepath.Join(patchDir, fmt.Sprintf("%d_1.tson", i)))
 		bar.Add(1)
 
 		// Generate the rest of the JSON files
 		for j := 2; j <= files; j++ {
 			data, patch := data.GenerateNext(changeRate, i, j)
-			data.Save(filepath.Join(carDir, fmt.Sprintf("%d_%d.json", i, j)))
-			patch.Save(filepath.Join(patchDir, fmt.Sprintf("%d_%d.json", i, j)))
+			data.Save(filepath.Join(carDir, fmt.Sprintf("%d_%d.tson", i, j)))
+			patch.Save(filepath.Join(patchDir, fmt.Sprintf("%d_%d.tson", i, j)))
 			bar.Add(1)
 		}
 	}

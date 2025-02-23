@@ -46,7 +46,7 @@ func TestParsedData(t *testing.T) {
 	var (
 		parsedTson    Tson
 		stringTson, _ = os.ReadFile(ex1)
-		err            = Unmarshal(stringTson, &parsedTson)
+		err           = Unmarshal(stringTson, &parsedTson)
 	)
 
 	if err != nil { // If error occurs
@@ -80,7 +80,7 @@ func TestGetTimestamp(t *testing.T) {
 	var (
 		parsedTson    Tson
 		stringTson, _ = os.ReadFile(ex2)
-		err            = Unmarshal(stringTson, &parsedTson)
+		err           = Unmarshal(stringTson, &parsedTson)
 	)
 
 	if err != nil {
@@ -97,7 +97,7 @@ func TestGetValue(t *testing.T) {
 	var (
 		parsedTson    Tson
 		stringTson, _ = os.ReadFile(ex1)
-		err            = Unmarshal(stringTson, &parsedTson)
+		err           = Unmarshal(stringTson, &parsedTson)
 	)
 
 	assert.Nil(t, err)
@@ -117,5 +117,21 @@ func TestToTson(t *testing.T) {
 
 	tson, err := ToTson(j)
 	assert.Nil(t, err)
-	t.Log(String(tson))
+	t.Log(OldString(tson))
+}
+
+func TestMarshalIndent(t *testing.T) {
+	var (
+		parsedTson    Tson
+		stringTson, _ = os.ReadFile(ex1)
+		err           = Unmarshal(stringTson, &parsedTson)
+	)
+
+	if err != nil {
+		t.Errorf("Parse() error = %v", err)
+		return
+	}
+
+	b, _ := MarshalIndent(parsedTson, "", "  ")
+	t.Log(string(b))
 }

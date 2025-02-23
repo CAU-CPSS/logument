@@ -30,8 +30,8 @@ const (
 func TestGeneratePatch(t *testing.T) {
 	var (
 		parsed1, parsed2 tson.Tson
-		tson1, _        = os.ReadFile(tj1)
-		tson2, _        = os.ReadFile(tj2)
+		tson1, _         = os.ReadFile(tj1)
+		tson2, _         = os.ReadFile(tj2)
 	)
 
 	tson.Unmarshal(tson1, &parsed1)
@@ -46,8 +46,8 @@ func TestGeneratePatch(t *testing.T) {
 func TestApplyPatch(t *testing.T) {
 	var (
 		parsed1, parsed2 tson.Tson
-		tson1, _        = os.ReadFile(tj1)
-		tson2, _        = os.ReadFile(tj2)
+		tson1, _         = os.ReadFile(tj1)
+		tson2, _         = os.ReadFile(tj2)
 		b1, b2           []byte
 	)
 
@@ -75,9 +75,9 @@ func TestApplyPatch(t *testing.T) {
 
 func TestApplyPatchWithJson(t *testing.T) {
 	var (
-		doc       tson.Tson
+		doc      tson.Tson
 		tson1, _ = os.ReadFile(tj1)
-		p         Patch
+		p        Patch
 	)
 
 	// Unmarshal the first TSON
