@@ -5,10 +5,10 @@
 ## What is **_Logument_**?
 
 - Structure
-  - Version []uint64: Logument가 관리하는 버전의 배열; should be continuos
-  - Snapshot map[uint64]tson.Tson: 최초 Create 시와 Snapshot 함수에 의해 생성된 Snapshot의 map (version, Snapshot)
-  - PatchMap map[uint64]jsonpatch.Patch: Logument 내에서 관리하는 Patch의 map (version, Patches)
-  - PatchPool jsonpatch.Patch: Logument에서 관리 예정인 Patches
+  - Version []uint64: An array of versions that **_Logument_** manages; should be continuos
+  - Snapshot map[uint64]tson.Tson: A map which contains an initial Snapshot (by `Create`) and Snapshots from `Snapshot` Function (version, Snapshot)
+  - PatchMap map[uint64]tsonpatch.Patch: A map of Patches managed internally in **_Logument_** (version, Patches)
+  - PatchPool tsonpatch.Patch: Patches to be managed in **_Logument_**
 
 ---
 
@@ -33,6 +33,12 @@
 - **TimeSnapshot(targetTime int64)**: Create a snapshot based on a target timestamp
 
 - **TimeSlice(startTime, endTime int64)**: Extract a subset of the Logument document based on the specified start and end timestamps
+
+---
+
+## About TSON
+
+For more about **_TSON_**, please refer to [internal/tson/README.md].
 
 ---
 
