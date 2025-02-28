@@ -3,9 +3,9 @@ package logument_test
 import (
 	"testing"
 
-	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/logument"
 	"github.com/CAU-CPSS/logument/internal/tson"
+	"github.com/CAU-CPSS/logument/internal/tsonpatch"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -57,7 +57,7 @@ func TestCreate(t *testing.T) {
 	if err := tson.Unmarshal([]byte(initSnapshot), &ss); err != nil {
 		panic(err)
 	}
-	pp, err := jsonpatch.Unmarshal([]byte(Patches[0]))
+	pp, err := tsonpatch.Unmarshal([]byte(Patches[0]))
 	if err != nil {
 		t.Error(err)
 	}
@@ -66,11 +66,11 @@ func TestCreate(t *testing.T) {
 
 	// use []Patches format
 	t.Log("Make a Logument with []Patches format\n")
-	pp2, err := jsonpatch.Unmarshal([]byte(Patches[1]))
+	pp2, err := tsonpatch.Unmarshal([]byte(Patches[1]))
 	if err != nil {
 		t.Error(err)
 	}
-	lgmWithPatches := logument.NewLogument(ss, []jsonpatch.Patch{pp, pp2})
+	lgmWithPatches := logument.NewLogument(ss, []tsonpatch.Patch{pp, pp2})
 	t.Log(spew.Sdump(lgmWithPatches))
 }
 

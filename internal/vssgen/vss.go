@@ -19,8 +19,8 @@ import (
 
 	"math/rand"
 
-	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/tson"
+	"github.com/CAU-CPSS/logument/internal/tsonpatch"
 )
 
 // If true, metadata will be saved in each JSON file
@@ -360,7 +360,7 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 		panic(err)
 	}
 
-	ops, _ := jsonpatch.GeneratePatch(origin, modified)
+	ops, _ := tsonpatch.GeneratePatch(origin, modified)
 
 	// Step 2. Convert the patch object to a []byte
 	bytes, _ := json.Marshal(ops)

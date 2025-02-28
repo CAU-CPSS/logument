@@ -20,9 +20,9 @@ import (
 	_ "net/http"
 	"os"
 
-	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/logument"
 	"github.com/CAU-CPSS/logument/internal/tson"
+	"github.com/CAU-CPSS/logument/internal/tsonpatch"
 	"github.com/CAU-CPSS/logument/internal/vssgen"
 )
 
@@ -121,7 +121,7 @@ func generateVss() {
 
 func runJpatch() error {
 	// Original JSON Document
-	original, _ := tson.NewTson(`{
+	original, _ := tson.DEPRECATEDNewTson(`{
 		"name": "Alice",
 		"age": 25,
 		"address": {
@@ -131,7 +131,7 @@ func runJpatch() error {
 	}`)
 
 	// Modified JSON
-	modified, _ := tson.NewTson(`{
+	modified, _ := tson.DEPRECATEDNewTson(`{
 		"name": "Alice",
 		"age": 26,
 		"address": {
@@ -142,7 +142,7 @@ func runJpatch() error {
 	}`)
 
 	// Generating JSON Patch
-	patch, err := jsonpatch.GeneratePatch(original, modified)
+	patch, err := tsonpatch.GeneratePatch(original, modified)
 	if err != nil {
 		log.Fatalf("Error creating patch: %v", err)
 	}

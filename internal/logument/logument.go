@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/CAU-CPSS/logument/internal/jsonpatch"
 	"github.com/CAU-CPSS/logument/internal/tson"
+	"github.com/CAU-CPSS/logument/internal/tsonpatch"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -19,7 +19,7 @@ var (
 )
 
 type Snapshot = tson.Tson
-type Patches = jsonpatch.Patch // []jsonpatch.Operation
+type Patches = tsonpatch.Patch // []jsonpatch.Operation
 
 // Logument 구조체
 type Logument struct {
@@ -112,7 +112,7 @@ func (lgm *Logument) Store(inputPatches any) {
 	switch inputPatches := inputPatches.(type) {
 	case string:
 		var err error
-		patches, err = jsonpatch.Unmarshal([]byte(inputPatches))
+		patches, err = tsonpatch.Unmarshal([]byte(inputPatches))
 		if err != nil {
 			panic(err)
 		}
@@ -187,7 +187,7 @@ func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
 		// Apply patches from the latest version to the target version
 		for i := latestVersion + 1; i <= targetVersion; i++ {
 			var err error
-			timedSnapshot, err = jsonpatch.ApplyPatch(latestSnapshot, lgm.PatchMap[i])
+			timedSnapshot, err = tsonpatch.ApplyPatch(latestSnapshot, lgm.PatchMap[i])
 			if err != nil {
 				panic("Failed to make a snapshot with the given version. Error: " + err.Error())
 			}
@@ -196,7 +196,7 @@ func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
 		timedSnapshot = latestSnapshot
 	}
 
-	jsonSnapshot, err := tson.ToJson(timedSnapshot)
+	jsonSnapshot, err := tson.ToJsonBytes(timedSnapshot)
 	if err != nil {
 		panic("Failed to convert the snapshot to JSON. Error: " + err.Error())
 	}
@@ -207,7 +207,8 @@ func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
 		panic("Failed to unmarshal the snapshot. Error: " + err.Error())
 	}
 
-	snapshot, err := tson.ToTson(unmarshaledJsonSnapshot)
+	var snapshot tson.Tson
+	err = tson.ToTson(unmarshaledJsonSnapshot, &snapshot)
 	if err != nil {
 		panic("Failed to convert the snapshot to Tson. Error: " + err.Error())
 	}
@@ -253,7 +254,7 @@ func (lgm *Logument) TimeSnapshot(targetTime int64) Snapshot {
 	}
 
 	// Apply patches
-	timedSnapshot, err := jsonpatch.ApplyPatch(latestSnapshot, latestPatches)
+	timedSnapshot, err := tsonpatch.ApplyPatch(latestSnapshot, latestPatches)
 	if err != nil {
 		panic("Failed to make a snapshot with the given version. Error: " + err.Error())
 	}
@@ -495,7 +496,7 @@ func (lgm *Logument) History(targetPath string) map[string]Patches {
 			panic("Failed to get the value from the snapshot. Error: " + err.Error())
 		}
 		if val != nil {
-			historyPatches[key] = append([]jsonpatch.Operation{{
+			historyPatches[key] = append([]tsonpatch.Operation{{
 				Op:        "add",
 				Path:      key,
 				Value:     val,

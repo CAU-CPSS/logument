@@ -180,7 +180,9 @@ func TestGenerateNext(t *testing.T) {
 
 	j, patch := v.GenerateNext(0.5, 1, 2)
 	_ = j
+
 	patch.Print()
+
 }
 
 func TestSave(t *testing.T) {

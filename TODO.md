@@ -1,0 +1,3 @@
+- [ ] JSON, TSON, JSON bytes, TSON bytes, JSON objects, TSON objects등의 관계 설정
+- [ ] 각 엔티티 관계 별 변환 함수 정리, 이름 통일
+- [ ] 

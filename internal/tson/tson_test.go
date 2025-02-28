@@ -1,7 +1,7 @@
 //
 // tson_test.go
 //
-// Tests for the tson package.
+// Unit tests for the tson package.
 //
 // Author: Karu (@karu-rress)
 //
@@ -17,11 +17,76 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//////////////////////////////////
+///////// Test cases
+//////////////////////////////////
+
+var testCases = []struct {
+	name    string
+	tson    string
+	want    Value
+	wantErr bool
+}{
+	{
+		name: "Valid TSON",
+		tson: `
+		{
+			"name" <1678886400>: "John Doe",
+			"age" <1678886400>: 30,
+			"is-married" <1678886400>: true,
+			"address": {
+				"street" <1678886400>: "123 Main St",
+				"city" <1678886400>: "Anytown"
+			},
+			"hobbies": [
+				<1678886400> "reading",
+				<1678886400> "hiking"
+			]
+		}`,
+		want: Object{
+			"name":       Leaf[string]{Value: "John Doe", Timestamp: 1678886400},
+			"age":        Leaf[float64]{Value: 30, Timestamp: 1678886400},
+			"is-married": Leaf[bool]{Value: true, Timestamp: 1678886400},
+			"address": Object{
+				"street": Leaf[string]{Value: "123 Main St", Timestamp: 1678886400},
+				"city":   Leaf[string]{Value: "Anytown", Timestamp: 1678886400},
+			},
+			"hobbies": Array{
+				Leaf[string]{Value: "reading", Timestamp: 1678886400},
+				Leaf[string]{Value: "hiking", Timestamp: 1678886400},
+			},
+		},
+		wantErr: false,
+	},
+	{
+		name:    "Invalid JSON",
+		tson:    `{ "name": "John Doe", }`,
+		want:    nil,
+		wantErr: true,
+	},
+	{
+		name:    "Missing Value",
+		tson:    `{"name" <1678886400>: }`,
+		want:    nil,
+		wantErr: true,
+	},
+	{
+		name:    "Ommitted Timestamp",
+		tson:    `{"name" <>: "John Doe"}`,
+		want:    Object{"name": Leaf[string]{Value: "John Doe", Timestamp: -1}},
+		wantErr: false,
+	},
+}
+
 const (
-	ex1 = "../../examples/example1.tson"
-	ex2 = "../../examples/example2.tson"
-	js1 = "../../examples/example1.json"
+	tson1 = "../../examples/example1.tson"
+	tson2 = "../../examples/example2.tson"
+	json1 = "../../examples/example1.json"
 )
+
+//////////////////////////////////
+///////// Test functions
+//////////////////////////////////
 
 // Testing TSON unmarshalling
 func TestUnmarshal(t *testing.T) {
@@ -45,7 +110,7 @@ func TestUnmarshal(t *testing.T) {
 func TestParsedData(t *testing.T) {
 	var (
 		parsedTson    Tson
-		stringTson, _ = os.ReadFile(ex1)
+		stringTson, _ = os.ReadFile(tson1)
 		err           = Unmarshal(stringTson, &parsedTson)
 	)
 
@@ -54,76 +119,71 @@ func TestParsedData(t *testing.T) {
 		return
 	}
 
-	// Check the type of the parsed TSON data (should be 'tson.Object')
+	// Check the type of the parsed TSON data ('tson.Object')
 	tsonType := reflect.TypeOf(parsedTson).String()
 	assert.Equal(t, tsonType, "tson.Object")
-	t.Log("Parsed TSON type:", tsonType)
 
-	// Checking the leaf
+	// Checking the leaf ("vehicleId": "ABC1234")
 	id, _ := GetValue(parsedTson, "/vehicleId")
 	assert.Equal(t, reflect.TypeOf(id).String(), "tson.Leaf[string]")
-	t.Log("Vehicle ID:", id.(Leaf[string]).Value)
+	assert.Equal(t, id.(Leaf[string]).Value, "ABC1234")
 
-	// Checking the nested object
+	// Checking the nested object (37.7749, -122.4194)
 	lat, _ := GetValue(parsedTson, "/location/latitude")
 	lon, _ := GetValue(parsedTson, "/location/longitude")
-	t.Log("Location:", lat, lon)
+	assert.Equal(t, lat.(Leaf[float64]).Value, 37.7749)
+	assert.Equal(t, lon.(Leaf[float64]).Value, -122.4194)
 
-	// Checking the nested array
+	// Checking the nested array ([32.1 31.8 32 31.9])
 	tires, _ := GetValue(parsedTson, "/tirePressure")
 	assert.Equal(t, reflect.TypeOf(tires).String(), "tson.Array")
 	tarr, _ := ToArray(tires.(Array))
-	t.Log("Tires:", tarr)
+	assert.Equal(t, tarr, []any{32.1, 31.8, 32.0, 31.9})
 }
 
 func TestGetTimestamp(t *testing.T) {
 	var (
 		parsedTson    Tson
-		stringTson, _ = os.ReadFile(ex2)
+		stringTson, _ = os.ReadFile(tson2)
 		err           = Unmarshal(stringTson, &parsedTson)
 	)
+	assert.Nil(t, err)
 
-	if err != nil {
-		t.Errorf("Parse() error = %v", err)
-		return
-	}
-
+	// Check the timestamp of the leaf node
 	timestamp := GetLatestTimestamp(parsedTson)
 	assert.Equal(t, timestamp, int64(2000000000))
-	t.Logf("Max timestamp: %d", timestamp)
 }
 
 func TestGetValue(t *testing.T) {
 	var (
 		parsedTson    Tson
-		stringTson, _ = os.ReadFile(ex1)
+		stringTson, _ = os.ReadFile(tson1)
 		err           = Unmarshal(stringTson, &parsedTson)
 	)
-
 	assert.Nil(t, err)
 
-	// Use path to retrieve the value
-	value, err := GetValue(parsedTson, "/tirePressure/0")
-	t.Log("Value:", value)
-	assert.Nil(t, err)
+	// Use path to retrieve the value ({32.1 -1})
+	value, _ := GetValue(parsedTson, "/tirePressure/0")
+	assert.Equal(t, value.(Leaf[float64]).Value, 32.1)
 }
 
 func TestToTson(t *testing.T) {
 	var j any
 
-	strJson, _ := os.ReadFile(js1)
+	strJson, _ := os.ReadFile(json1)
 	err := json.Unmarshal(strJson, &j)
 	assert.Nil(t, err)
 
-	tson, err := ToTson(j)
+	var tson Tson
+	err = ToTson(j, &tson)
 	assert.Nil(t, err)
-	t.Log(OldString(tson))
+	t.Log(DEPRECATEDString(tson))
 }
 
 func TestMarshalIndent(t *testing.T) {
 	var (
 		parsedTson    Tson
-		stringTson, _ = os.ReadFile(ex1)
+		stringTson, _ = os.ReadFile(tson1)
 		err           = Unmarshal(stringTson, &parsedTson)
 	)
 

@@ -11,6 +11,7 @@
 // represented as an object, array, or leaf.
 //
 // Author: Karu (@karu-rress)
+//
 
 package tson
 
@@ -116,8 +117,8 @@ func GetValue(t Tson, path string) (v Value, err error) {
 func Equal(j1, j2 Tson) (ret bool, err error) {
 	var (
 		o1, o2 any
-		b1, _  = ToJsonBytes(j1)
-		b2, _  = ToJsonBytes(j2)
+		b1, _  = ToCompatibleTsonBytes(j1)
+		b2, _  = ToCompatibleTsonBytes(j2)
 	)
 
 	// Check if the given TSONs are valid
@@ -138,10 +139,10 @@ func EqualWithoutTimestamp(j1, j2 Tson) (ret bool, err error) {
 	)
 
 	// Convert TSONs to JSON
-	if json1, err = ToJson(j1); err != nil {
+	if json1, err = ToJsonBytes(j1); err != nil {
 		return false, err
 	}
-	if json2, err = ToJson(j2); err != nil {
+	if json2, err = ToJsonBytes(j2); err != nil {
 		return false, err
 	}
 
@@ -189,31 +190,14 @@ func GetLatestTimestamp(t Tson) int64 {
 }
 
 //////////////////////////////////
-///////// PARSER
-//////////////////////////////////
-
-// OldString converts TSON to a string.
-func OldString(t Tson) string {
-	data, err := json.MarshalIndent(t, "", "    ")
-	if err != nil {
-		panic(fmt.Sprintf("failed to marshal TSON: %v", err))
-	}
-	return string(data)
-}
-
-//////////////////////////////////
 ///////// CONVERSIONS
 //////////////////////////////////
 
-// TODO
-// 1. Array -> []any
-// 2. Object -> map[string]any
-// ...
+// All conversion functions has 'To' prefix
 
-func ToArray(a Array) ([]any, error) {
-	length := len(a)
-	arr := make([]any, length)
-
+// ToArray converts the given TSON array to a Go slice.
+func ToArray(a Array) (arr []any, err error) {
+	arr = make([]any, len(a))
 	for i, value := range a {
 		switch v := value.(type) {
 		case Leaf[string]:
@@ -229,14 +213,36 @@ func ToArray(a Array) ([]any, error) {
 	return arr, nil
 }
 
-// Any returns the given TSON as any(interface{}) type.
-func Any(t Tson) any {
+// ToAny returns the given TSON as any type.
+func ToAny(t Tson) any {
 	return t
+}
+
+// ToCompatibleTsonBytes converts the given TSON to a JSON byte slice.
+// NOTE: The timestamp field is kept
+func ToCompatibleTsonBytes(t Tson) (j []byte, err error) {
+	return json.Marshal(t)
+}
+
+// ToCompatibleTson converts the given TSON to a JSON object.
+// NOTE: The timestamp field is kept
+func ToCompatibleTson(t Tson, o *any) error {
+	// Convert TSON to Compatible TSON (JSON with timestamp)
+	barr, err := ToCompatibleTsonBytes(t)
+	if err != nil {
+		return err
+	}
+	// Convert JSON byte slice to JSON object
+	if err = json.Unmarshal(barr, o); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ToJson converts the given TSON to a JSON byte slice.
 // NOTE: The timestamp field is removed
-func ToJson(t Tson) (b []byte, err error) {
+func ToJson(t Tson, j *any) (err error) {
 	var removeTimestamp func(o any)
 	removeTimestamp = func(o any) {
 		switch value := o.(type) {
@@ -281,24 +287,26 @@ func ToJson(t Tson) (b []byte, err error) {
 		}
 	}
 
-	var (
-		o    any
-		barr []byte
-	)
-	if barr, err = ToJsonBytes(t); err != nil {
-		return nil, err
-	}
-	if err = json.Unmarshal(barr, &o); err != nil {
-		return nil, err
-	}
+	ToCompatibleTson(t, j)
+	removeTimestamp(*j)
 
-	removeTimestamp(o)
+	return nil
+}
+
+// ToJsonBytes converts the given TSON to a JSON byte slice.
+// NOTE: The timestamp field is removed
+func ToJsonBytes(t Tson) (j []byte, err error) {
+	var o any
+	if err = ToJson(t, &o); err != nil {
+		return nil, err
+	}
 
 	return json.Marshal(o)
 }
 
 // ToTson converts the given JSON object to a TSON.
-func ToTson(o any) (t Tson, err error) {
+// NOTE: The timestamp field is added with the default(< 0) value.
+func ToTson(o any, t *Tson) (err error) {
 	var addTimestamp func(o any)
 	addTimestamp = func(o any) {
 		switch value := o.(type) {
@@ -334,9 +342,9 @@ func ToTson(o any) (t Tson, err error) {
 	addTimestamp(o)
 
 	str, err := json.Marshal(o)
-	err = Unmarshal(str, &t)
+	err = Unmarshal(str, t)
 
-	return t, err
+	return err
 }
 
 //////////////////////////////////
