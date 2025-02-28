@@ -1,4 +1,4 @@
-# This is temporary **_Logument_** repository
+# **_Logument_**
 
 ---
 
@@ -39,5 +39,7 @@
 ## Contribute
 
 - **_Logument_** interface: Sunghwan Park
-- TSON & JSON Patch implementation: Sunwoo Na ([Karu](https://github.com/karu-rress))
+- TSON & TSON Patch implementation: Sunwoo Na ([Karu](https://github.com/karu-rress))
 - Data Synchronize Framework: Sunwoo Na ([Karu](https://github.com/karu-rress))
+
+- `vss.json` from [Vehicle Signal Specification](https://github.com/COVESA/vehicle_signal_specification)`

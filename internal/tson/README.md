@@ -1,6 +1,6 @@
-# TSON
+# **_TSON_**
 
-TSON, which stands for Time-Stamped JSON, is used to store timestamps as well as data values.
+**_TSON_**, which stands for Time-Stamped JSON, is used to store timestamps as well as data values.
 
 ## BNF of TSON
 
@@ -19,3 +19,8 @@ TSON, which stands for Time-Stamped JSON, is used to store timestamps as well as
 
 <timestamp> ::= "<" <timestamp_value> ">"
 ```
+
+## VSCode Extension
+
+There is a Visual Studio Code extension, which enables **_TSON_** syntax highlighting.  
+Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-Extension) repository.
