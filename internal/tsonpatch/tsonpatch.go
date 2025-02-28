@@ -1,7 +1,7 @@
 //
-// jsonpatch.go
+// tsonpatch.go
 //
-// Defines the JSON patch type and provides functions
+// Defines the TSON patch type and provides functions
 // for TSON patching and generation.
 //
 // The TSON patch is a document that describes
@@ -14,7 +14,7 @@
 // Author: Karu (@karu-rress)
 //
 
-package jsonpatch
+package tsonpatch
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ import (
 ///////// JSON PATCH
 //////////////////////////////////
 
-// Represents the kind of JSON patch operations.
+// Represents the kind of TSON patch operations.
 type OpType string
 
 // Enums for OperationType
@@ -44,7 +44,7 @@ const (
 	OpTest    OpType = "test"
 )
 
-// Patch represents a JSON patch document.
+// Patch represents a TSON patch document.
 type Patch []Operation
 
 // String converts the Patch to a JSON string, with formatting.
@@ -54,6 +54,14 @@ func (p *Patch) String() string {
 		lines[i] = "    " + op.String()
 	}
 	return fmt.Sprintf("[\n%s\n]", strings.Join(lines, ",\n"))
+}
+
+func FromJson(j any) (Patch, error) {
+	b, err := json.Marshal(j)
+	if err != nil {
+		return nil, err
+	}
+	return Unmarshal(b)
 }
 
 // Unmarshal converts a JSON byte array to a Patch.
@@ -66,10 +74,10 @@ func Unmarshal(b []byte) (Patch, error) {
 }
 
 //////////////////////////////////
-///////// JSON PATCH OPERATIONS
+///////// TSON PATCH OPERATIONS
 //////////////////////////////////
 
-// Operation represents a single JSON patch operation.
+// Operation represents a single TSON patch operation.
 type Operation struct {
 	Op        OpType `json:"op"`
 	Path      string `json:"path"`

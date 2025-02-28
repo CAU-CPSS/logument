@@ -1,12 +1,12 @@
 //
-// jsonpatch_test.go
+// tsonpatch_test.go
 //
-// Tests for the jsonpatch package.
+// Tests for the tsonpatch package.
 //
 // Author: Karu (@karu-rress)
 //
 
-package jsonpatch
+package tsonpatch
 
 import (
 	"os"
@@ -62,8 +62,8 @@ func TestApplyPatch(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	// Check if the result is equal to the second TSON
-	b1, err = tson.ToJson(j)
-	b2, err = tson.ToJson(parsed2)
+	b1, err = tson.ToJsonBytes(j)
+	b2, err = tson.ToJsonBytes(parsed2)
 
 	t.Log(string(b1))
 	t.Log("=====================================")
