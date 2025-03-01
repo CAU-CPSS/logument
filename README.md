@@ -6,8 +6,8 @@ _Sunghwan Park (Chung-Ang Univ.), Hyun-Gul Roh (42dot Corp.), Sunwoo Na (Chung-A
 
 1. [What is **_LOGUMENT_**?](#what-is-logument)
     - [Abstract](#abstract)
-    - [Structure](#structure)
 2. [Implementation of  **_LOGUMENT_**](#implementation-of-logument)
+    - [Structure](#structure)
     - [Primitive operations](#primitive-operations)
     - [Supporting operations](#supporting-operations)
     - [Additional supporting operation](#additional-supporting-operation)
