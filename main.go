@@ -120,18 +120,20 @@ func generateVss() {
 }
 
 func runJpatch() error {
+	var original, modified tson.Tson
+
 	// Original JSON Document
-	original, _ := tson.DEPRECATEDNewTson(`{
+	tson.Unmarshal([]byte(`{
 		"name": "Alice",
 		"age": 25,
 		"address": {
 			"city": "Seoul",
 			"zipcode": "12345"
 		}
-	}`)
+	}`), &original)
 
 	// Modified JSON
-	modified, _ := tson.DEPRECATEDNewTson(`{
+	tson.Unmarshal([]byte(`{
 		"name": "Alice",
 		"age": 26,
 		"address": {
@@ -139,7 +141,7 @@ func runJpatch() error {
 			"zipcode": "67890"
 		},
 		"phone": "010-1234-5678"
-	}`)
+	}`), &modified)
 
 	// Generating JSON Patch
 	patch, err := tsonpatch.GeneratePatch(original, modified)

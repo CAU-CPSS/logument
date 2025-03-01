@@ -349,14 +349,12 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 	var origin, modified tson.Tson
 
 	b := mapToJson(vss.data.(map[string]any))
-	origin, err := tson.FromJsonBytes(b)
-	if err != nil {
+	if err := tson.FromCompatibleTsonBytes(b, &origin); err != nil {
 		panic(err)
 	}
 
 	b = mapToJson(result)
-	modified, err = tson.FromJsonBytes(b)
-	if err != nil {
+	if err := tson.FromCompatibleTsonBytes(b, &modified); err != nil {
 		panic(err)
 	}
 
