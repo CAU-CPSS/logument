@@ -14,11 +14,12 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"html/template"
+	_ "html/template"
 	"log"
 	"net/http"
 	_ "net/http"
 	"os"
+	"strconv"
 
 	"github.com/CAU-CPSS/logument/internal/logument"
 	"github.com/CAU-CPSS/logument/internal/tson"
@@ -37,54 +38,66 @@ const expPatch = `[
 
 // homeHandler handles the main page
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("index.html"))
-	tmpl.Execute(w, nil)
+	html, _ := os.ReadFile("index.html")
+	w.Header().Set("Content-Type", "text/html")
+	w.Write(html)
+	// tmpl := template.Must(template.ParseFiles("index.html"))
+	// tmpl.Execute(w, nil)
 }
 
-// AJAX request handler for patching
+func updateHandler(w http.ResponseWriter, r *http.Request) {
+	car := r.URL.Query().Get("car")
+	if patch := r.URL.Query().Get("patch"); patch == "" {
+		b, _ := os.ReadFile(fmt.Sprintf("dataset/car_%s/tson/%s_1.tson", car, car))
+		w.Write(b)
+	} else {
+		b, _ := os.ReadFile(fmt.Sprintf("dataset/car_%s/patches/%s_%s.json", car, car, patch))
+		w.Write(b)
+	}
+}
+
 func patchHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
+	var (
+		car, _          = strconv.Atoi(r.URL.Query().Get("car"))
+		maxpatch, _     = strconv.Atoi(r.URL.Query().Get("patch"))
+		originalTson, _ = os.ReadFile(fmt.Sprintf("dataset/car_%d/tson/%d_1.tson", car, car))
+		patches         = make([]tsonpatch.Patch, 0, maxpatch)
+	)
+
+	for i := 1; i <= maxpatch; i++ {
+		// Read patch file
+		patch, _ := os.ReadFile(fmt.Sprintf("dataset/car_%d/patches/%d_%d.json", car, car, i))
+
+		// patch를 변환해서 patches 뒤에 append
+		_ = patch
 	}
 
-	input1 := r.FormValue("input1")
-	input2 := r.FormValue("input2")
+	// TODO: 여기서 orignalTson에 patches를 적용함.
 
-	_ = input1
-	_ = input2
+	// TODO: REMOVE
+	_, _ = originalTson, patches
 
-	// func1 호출
-	// result := func1(input1, input2)
-
-	// 결과 반환
-	// w.Write([]byte(result))
+	w.Write( /*[]byte("") 대신 생성된 패치로 교체*/ []byte(""))
 }
 
 func main() {
 	// If the flag is set, generate VSS and exit
 	if arguments := os.Args[1:]; len(arguments) > 0 {
-		generateVss()
+		generateVss(true)
 		return
 	}
 
-	////
+	// If not set, run web server
 
-	///
+	// 1. Create dataset (cars: 5, files: 10)
+	generateVss(false)
 
-	///
-
-	//
-
-	////
-
-	///
-
+	// 2. Run web server
 	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/update", updateHandler)
+	http.HandleFunc("/patch", patchHandler)
 	fmt.Println("Server running at http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
-
-	http.HandleFunc("/compute", patchHandler) // AJAX 요청 처리
 
 	var (
 		initSnapshot tson.Tson
@@ -108,8 +121,21 @@ func main() {
 	lgm.Print()
 }
 
-func generateVss() {
-	option := vssgen.ParseArgs("internal/vssgen/vss.json")
+func generateVss(userDefined bool) {
+	const defaultDataset = "internal/vssgen/vss.json"
+	var option map[string]any
+	if userDefined {
+		// User-defined VSS generation
+		option = vssgen.ParseArgs(defaultDataset)
+	} else {
+		option = map[string]any{
+			"dataset":     defaultDataset,
+			"cars":        5,
+			"files":       10,
+			"change_rate": 0.2,
+			"size":        0.1,
+		}
+	}
 	outputDir := "./dataset"
 
 	vssgen.PrepareOutputDir(outputDir)

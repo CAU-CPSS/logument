@@ -19,40 +19,79 @@
 <body>
     <h1>Logument Test</h1>
 
-    <label for="combobox1">Select Option:</label>
-    <select id="combobox1">
-        <option value="Option1">Option 1</option>
-        <option value="Option2">Option 2</option>
-        <option value="Option3">Option 3</option>
+    <label for="original">Select car:</label>
+    <select id="original" onchange="updateView(event)">
+        <option value="car1">Car 1</option>
+        <option value="car2">Car 2</option>
+        <option value="car3">Car 3</option>
+        <option value="car4">Car 4</option>
+        <option value="car5">Car 5</option>
     </select><br>
+    <textarea name="original" id="view" readonly cols="80" rows="25">
+    </textarea><br>
 
-    <label for="form1">Input Data 1:</label>
-    <input type="text" id="form1"><br>
-
-    <label for="combobox2">Select Option:</label>
-    <select id="combobox2">
-        <option value="Option1">Option 1</option>
-        <option value="Option2">Option 2</option>
-        <option value="Option3">Option 3</option>
+    <label for="patchCombo">Patch until:</label>
+    <select id="patchCombo" onchange="updateView(event)">
+        <option value="patch1">Patch 1</option>
+        <option value="patch2">Patch 2</option>
+        <option value="patch3">Patch 3</option>
+        <option value="patch4">Patch 4</option>
+        <option value="patch5">Patch 5</option>
+        <option value="patch6">Patch 6</option>
+        <option value="patch7">Patch 7</option>
+        <option value="patch8">Patch 8</option>
+        <option value="patch9">Patch 9</option>
     </select><br>
+    <textarea name="tsonpatch" id="patch" readonly cols="80" rows="25">
+    </textarea><br>
 
-    <label for="form2">Input Data 2:</label>
-    <input type="text" id="form2"><br>
+    <label id="note1">NOTE: None of patch is applied.</label><br>
+    <label id="note2">NOTE: Patch 1 to 9 are in patch pool.</label><br>
 
-    <label for="combobox3">Select Option:</label>
-    <select id="combobox3">
-        <option value="Option1">Option 1</option>
-        <option value="Option2">Option 2</option>
-        <option value="Option3">Option 3</option>
-    </select><br>
-
-    <button onclick="sendData()">Calculate</button>
 
     <h3>Result:</h3>
-    <input type="text" id="form3" readonly>
+    <textarea name="result" id="result" readonly cols="80" rows="25">
+    </textarea>
 
 
+    <script>
+        function updateView(event) {
+            let carCombo = document.getElementById("original");
+            // Selecting a car
+            let carIdx = carCombo.selectedIndex + 1;
+            if (event == null || event.target == carCombo) {
+                fetch("/update?car=" + carIdx)
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById("view").value = data;
+                    });
+                return;
+            }
+            else {
+                let patchCombo = document.getElementById("patchCombo");
+                let patchIdx = patchCombo.selectedIndex + 2; // 1st patch is tson
+                document.getElementById("note1").textContent  = "NOTE: Patch 1 to " + (patchIdx - 1) + " are applied.";
+                if (patchIdx == 10) {
+                    document.getElementById("note2").textContent = "NOTE: All patches are applied.";
+                }
+                else {
+                    document.getElementById("note2").textContent  = "NOTE: Patch " + patchIdx + " to 9 are in patch pool.";
+                }
+                fetch(`/update?car=${carIdx}&patch=${patchIdx}`)
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById("patch").value = data;
+                    });
+                fetch(`patch?car=${carIdx}&patch=${patchIdx}`)
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById("result").value = data;
+                    });
+            }
+        }
 
+        window.onload = () => updateView(null);
+    </script>
 </body>
 </html>
 
@@ -60,6 +99,8 @@
 <!--
 
 처음 - initial document보여줌
+
+
 
 patch 1~3번부터 선택해서 패치할 수 있고...
 
