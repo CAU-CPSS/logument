@@ -91,7 +91,7 @@ func TestApply(t *testing.T) {
 	lgm.Store(Patches[1])
 	t.Log(spew.Sdump(lgm))
 
-	lgm.Apply()
+	lgm.Append()
 	t.Log(spew.Sdump(lgm))
 }
 
@@ -100,7 +100,7 @@ func TestSnapshot(t *testing.T) {
 	lgm := logument.NewLogument(initSnapshot, nil)
 	lgm.Store(Patches[0])
 	lgm.Store(Patches[1])
-	lgm.Apply()
+	lgm.Append()
 
 	// Take a snapshot already taken
 	snapshot := lgm.Snapshot(0)
@@ -115,19 +115,19 @@ func TestSnapshot(t *testing.T) {
 	// t.Log(spew.Sdump(snapshot))
 }
 
-func TestTimedSnapshot(t *testing.T) {
+func TestTemporalSnapshot(t *testing.T) {
 	t.Log("Take a timed snapshot\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
 	lgm.Store(Patches[0])
 	lgm.Store(Patches[1])
-	lgm.Apply()
+	lgm.Append()
 
 	// Take a snapshot already taken
 	// snapshot := lgm.TimedSnapshot(1700000000)
 	// t.Log(spew.Sdump(snapshot))
 
 	// Take a snapshot
-	snapshot := lgm.TimeSnapshot(1900000000)
+	snapshot := lgm.TemporalSnapshot(1900000000)
 	t.Log(spew.Sdump(snapshot))
 
 	// // Requests exceeding latest version
@@ -135,15 +135,73 @@ func TestTimedSnapshot(t *testing.T) {
 	// t.Log(spew.Sdump(snapshot))
 }
 
+func TestSlice(t *testing.T) {
+	t.Log("Slice Logument\n")
+	lgm := logument.NewLogument(initSnapshot, nil)
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
+	lgm.Append() // version 1
+	lgm.Store(Patches[2])
+	lgm.Append() // version 2
+	lgm.Store(Patches[3])
+	lgm.Append() // version 3
+
+	// Slice patches
+	lgmSubset := lgm.Slice(1, 3)
+	lgmSubset.Print()
+}
+
+func TestTrack(t *testing.T) {
+	t.Log("Track changes\n")
+	lgm := logument.NewLogument(initSnapshot, nil)
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
+	lgm.Append() // version 1
+	lgm.Store(Patches[2])
+	lgm.Append() // version 2
+	lgm.Store(Patches[3])
+	lgm.Append() // version 3
+
+	// Track changes
+	// Expected:
+	// { "op": "replace", "path": "/location/latitude", "value": 43.9409, "timestamp": 2100000000 },
+	// { "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 2100000000 },
+	// { "op": "replace", "path": "/tirePressure/2", "value": 33.7, "timestamp": 2300000000 },
+	// { "op": "replace", "path": "/speed", "value": 94.9, "timestamp": 2400000000 }
+	changes := lgm.Track(2, 3)
+	t.Log(spew.Sdump(changes))
+}
+
+func TestTemporalTrack(t *testing.T) {
+	t.Log("Track changes\n")
+	lgm := logument.NewLogument(initSnapshot, nil)
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
+	lgm.Append() // version 1
+	lgm.Store(Patches[2])
+	lgm.Append() // version 2
+	lgm.Store(Patches[3])
+	lgm.Append() // version 3
+
+	// Track changes
+	// Expected: 
+	// { "op": "replace", "path": "/tirePressure/0", "value": 35.1, "timestamp": 1900000000 },
+	// { "op": "replace", "path": "/engineOn", "value": false, "timestamp": 2000000000 },
+	// { "op": "replace", "path": "/location/latitude", "value": 43.9409, "timestamp": 2100000000 },
+	// { "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 2100000000 }
+	changes := lgm.TemporalTrack(1900000000, 2100000000)
+	t.Log(spew.Sdump(changes))
+}	
+
 func TestCompact(t *testing.T) {
 	t.Log("Compact patches\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
 	lgm.Store(Patches[0])
 	lgm.Store(Patches[1])
-	lgm.Apply()
+	lgm.Append()
 
 	lgm.Store(Patches[2])
-	lgm.Apply()
+	lgm.Append()
 
 	lgm.Compact("/location")
 	lgm.Print()
@@ -154,28 +212,12 @@ func TestHistory(t *testing.T) {
 	lgm := logument.NewLogument(initSnapshot, nil)
 	lgm.Store(Patches[0])
 	lgm.Store(Patches[1])
-	lgm.Apply()
+	lgm.Append()
 
 	lgm.Store(Patches[2])
-	lgm.Apply()
+	lgm.Append()
 
 	// Show history of the "/location"
 	his := lgm.History("/location")
 	t.Log(spew.Sdump(his))
-}
-
-func TestSlice(t *testing.T) {
-	t.Log("Slice Logument\n")
-	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
-	lgm.Apply() // version 1
-	lgm.Store(Patches[2])
-	lgm.Apply() // version 2
-	lgm.Store(Patches[3])
-	lgm.Apply() // version 3
-
-	// Slice patches
-	lgmSubset := lgm.Slice(1, 3)
-	lgmSubset.Print()
 }

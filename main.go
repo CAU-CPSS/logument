@@ -98,7 +98,7 @@ func main() {
 	// Store the patch in the PatchPool
 	lgm.Store(expPatch)
 	// Apply the patch to the PatchMap to manage the patch history
-	lgm.Apply()
+	lgm.Append()
 
 	// Make a snapshot at the target version
 	targetVesion := uint64(1)

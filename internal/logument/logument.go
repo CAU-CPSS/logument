@@ -18,20 +18,20 @@ var (
 	rfc6901Decoder = strings.NewReplacer("~1", "/", "~0", "~")
 )
 
-type Snapshot = tson.Tson
-type Patches = tsonpatch.Patch // []jsonpatch.Operation
+type tsonSnapshot = tson.Tson
+type tsonPatches = tsonpatch.Patch // []jsonpatch.Operation
 
 // Logument 구조체
 type Logument struct {
-	Version   []uint64            // Version 정보 관리
-	Snapshots map[uint64]Snapshot // 만들었던 Shanpshot 들의 map (version, snapshot)
-	PatchMap  map[uint64]Patches  // Patch 들의 map (version, patches)
-	PatchPool Patches             // Apply 되지 않은 patch
+	Version   []uint64                // Version 정보 관리
+	Snapshots map[uint64]tsonSnapshot // 만들었던 Shanpshot 들의 map (version, snapshot)
+	Patches   map[uint64]tsonPatches  // Patch 들의 map (version, patches)
+	PatchPool tsonPatches             // Apply 되지 않은 patch
 }
 
 func NewLogument(initialSnapshot any, initialPatches any) *Logument {
 	// Create a new Logument document with the given initial data
-	var snapshot Snapshot
+	var snapshot tsonSnapshot
 
 	switch initialSnapshot := initialSnapshot.(type) {
 	case string:
@@ -39,7 +39,7 @@ func NewLogument(initialSnapshot any, initialPatches any) *Logument {
 		if err != nil {
 			panic(err)
 		}
-	case Snapshot:
+	case tsonSnapshot:
 		snapshot = initialSnapshot
 	default:
 		panic("Invalid type for initialSnapshot. Must be string or tson.Tson.")
@@ -47,8 +47,8 @@ func NewLogument(initialSnapshot any, initialPatches any) *Logument {
 
 	lgm := &Logument{
 		Version:   []uint64{0},
-		Snapshots: map[uint64]Snapshot{0: snapshot},
-		PatchMap:  make(map[uint64]Patches),
+		Snapshots: map[uint64]tsonSnapshot{0: snapshot},
+		Patches:   make(map[uint64]tsonPatches),
 		PatchPool: nil,
 	}
 
@@ -98,8 +98,8 @@ func (lgm *Logument) getSortedVersionsFromSnapshot() []uint64 {
 }
 
 func (lgm *Logument) getSortedVersionsFromPatch() []uint64 {
-	versions := make([]uint64, 0, len(lgm.PatchMap))
-	for version := range lgm.PatchMap {
+	versions := make([]uint64, 0, len(lgm.Patches))
+	for version := range lgm.Patches {
 		versions = append(versions, version)
 	}
 	sort.Slice(versions, func(i, j int) bool { return versions[i] < versions[j] })
@@ -107,7 +107,7 @@ func (lgm *Logument) getSortedVersionsFromPatch() []uint64 {
 }
 
 func (lgm *Logument) Store(inputPatches any) {
-	var patches Patches
+	var patches tsonPatches
 
 	switch inputPatches := inputPatches.(type) {
 	case string:
@@ -116,10 +116,10 @@ func (lgm *Logument) Store(inputPatches any) {
 		if err != nil {
 			panic(err)
 		}
-	case Patches:
+	case tsonPatches:
 		patches = inputPatches
-	case []Patches:
-		var tempPatches Patches
+	case []tsonPatches:
+		var tempPatches tsonPatches
 		for _, patch := range inputPatches {
 			tempPatches = append(tempPatches, patch...)
 		}
@@ -135,26 +135,7 @@ func (lgm *Logument) Store(inputPatches any) {
 	}
 }
 
-// Apply PatchPool에 있는 patch를 PatchMap에 적용하고, version을 증가시킴
-func (lgm *Logument) Apply() {
-	// This operation applies a new patch $P(v_n, v_{n+1})$ to an existing Logument instance at $V_n$,
-	// resulting in an updated instance at $V_{n+1}$.
-	if !lgm.isContinuous() {
-		panic("Versions are not continuous.")
-	}
-
-	latestVersion := lgm.Version[len(lgm.Version)-1]
-
-	if _, exist := lgm.PatchMap[latestVersion+1]; exist {
-		panic("The patch for the next version already exists.")
-	}
-	lgm.PatchMap[latestVersion+1] = lgm.PatchPool
-
-	lgm.Version = append(lgm.Version, latestVersion+1)
-	lgm.PatchPool = nil
-}
-
-func (lgm *Logument) findLatest(targetVersion uint64) (latestVersion uint64, latestSnapshot Snapshot) {
+func (lgm *Logument) findLatest(targetVersion uint64) (latestVersion uint64, latestSnapshot tsonSnapshot) {
 	if !lgm.isContinuous() {
 		panic("Versions are not continuous.")
 	}
@@ -177,17 +158,36 @@ func (lgm *Logument) findLatest(targetVersion uint64) (latestVersion uint64, lat
 
 }
 
+// Append PatchPool에 있는 patch를 PatchMap에 적용하고, version을 증가시킴
+func (lgm *Logument) Append() {
+	// This operation applies a new patch $P(v_n, v_{n+1})$ to an existing Logument instance at $V_n$,
+	// resulting in an updated instance at $V_{n+1}$.
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+
+	latestVersion := lgm.Version[len(lgm.Version)-1]
+
+	if _, exist := lgm.Patches[latestVersion+1]; exist {
+		panic("The patch for the next version already exists.")
+	}
+	lgm.Patches[latestVersion+1] = lgm.PatchPool
+
+	lgm.Version = append(lgm.Version, latestVersion+1)
+	lgm.PatchPool = nil
+}
+
 // Snapshot Snapshot 생성
-func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
+func (lgm *Logument) Snapshot(targetVersion uint64) tsonSnapshot {
 	// Find the latest version before the target version
 	latestVersion, latestSnapshot := lgm.findLatest(targetVersion)
-	var timedSnapshot Snapshot
+	var timedSnapshot tsonSnapshot
 
 	if latestVersion != targetVersion {
 		// Apply patches from the latest version to the target version
 		for i := latestVersion + 1; i <= targetVersion; i++ {
 			var err error
-			timedSnapshot, err = tsonpatch.ApplyPatch(latestSnapshot, lgm.PatchMap[i])
+			timedSnapshot, err = tsonpatch.ApplyPatch(latestSnapshot, lgm.Patches[i])
 			if err != nil {
 				panic("Failed to make a snapshot with the given version. Error: " + err.Error())
 			}
@@ -216,7 +216,7 @@ func (lgm *Logument) Snapshot(targetVersion uint64) Snapshot {
 	return snapshot
 }
 
-func (lgm *Logument) TimeSnapshot(targetTime int64) Snapshot {
+func (lgm *Logument) TemporalSnapshot(tsk int64) tsonSnapshot {
 	if !lgm.isContinuous() {
 		panic("Versions are not continuous.")
 	}
@@ -228,7 +228,7 @@ func (lgm *Logument) TimeSnapshot(targetTime int64) Snapshot {
 	for _, version := range versions {
 		s := lgm.Snapshots[version]
 		lts := tson.GetLatestTimestamp(s)
-		if lts <= targetTime {
+		if lts <= tsk {
 			latestVersion = version
 		} else {
 			break
@@ -240,15 +240,15 @@ func (lgm *Logument) TimeSnapshot(targetTime int64) Snapshot {
 
 	if latestVersion > lgm.Version[len(lgm.Version)-1] {
 		if lgm.PatchPool != nil {
-			lgm.Apply()
+			lgm.Append()
 		} else {
 			return latestSnapshot
 		}
 	}
 
-	var latestPatches Patches
-	for _, p := range lgm.PatchMap[latestVersion+1] {
-		if p.Timestamp <= targetTime {
+	var latestPatches tsonPatches
+	for _, p := range lgm.Patches[latestVersion+1] {
+		if p.Timestamp <= tsk {
 			latestPatches = append(latestPatches, p)
 		}
 	}
@@ -262,6 +262,223 @@ func (lgm *Logument) TimeSnapshot(targetTime int64) Snapshot {
 	return timedSnapshot
 }
 
+func (lgm *Logument) Slice(vi, vj uint64) *Logument {
+	// Slice the Logument to make a subset of the Logument
+	// The subset should contain the snapshots and patches from vi to vj
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+
+	if vi > vj {
+		panic("Start version should be smaller than the end version." +
+			"\nStart version: " + strconv.FormatUint(vi, 10) +
+			"\nEnd version: " + strconv.FormatUint(vj, 10))
+	}
+
+	if vi > lgm.Version[len(lgm.Version)-1] || vj > lgm.Version[len(lgm.Version)-1] {
+		panic("Start version and end version should be smaller than the latest version." +
+			"\nStart version: " + strconv.FormatUint(vi, 10) +
+			"\nEnd version: " + strconv.FormatUint(vj, 10) +
+			"\nLatest version: " + strconv.FormatUint(lgm.Version[len(lgm.Version)-1], 10))
+	}
+
+	var SlicedVersions []uint64
+
+	versionsFromSnapshot := lgm.getSortedVersionsFromSnapshot()
+	SlicedSnapshots := make(map[uint64]tsonSnapshot)
+	for _, version := range versionsFromSnapshot {
+		if version >= vi && version <= vj {
+			SlicedSnapshots[version] = lgm.Snapshots[version]
+		}
+	}
+
+	versionsFromPatch := lgm.getSortedVersionsFromPatch()
+	SlicedPatches := make(map[uint64]tsonPatches)
+	for _, version := range versionsFromPatch {
+		if version >= vi && version <= vj {
+			// SlicedVersions always includes all versions between the start and end versions
+			// because lgm.Version and lgm.PatchMap are continuous.
+			// However, lgm.Snapshots may not be continuous,
+			// so the following line works correctly only in this loop.
+			SlicedVersions = append(SlicedVersions, version)
+			SlicedPatches[version] = lgm.Patches[version]
+		}
+	}
+
+	// Add the snapshot at the start version if it does not exist
+	if len(SlicedSnapshots) == 0 {
+		SlicedSnapshots[vi] = lgm.Snapshot(vi)
+	}
+
+	slicedLgm := &Logument{
+		Version:   SlicedVersions,
+		Snapshots: SlicedSnapshots,
+		Patches:   SlicedPatches,
+		PatchPool: nil,
+	}
+
+	return slicedLgm
+}
+
+func (lgm *Logument) TemporalSlice(startTime, endTime int64) *Logument {
+	// TimeSlice the Logument to make a subset of the Logument based on the timestamp
+	// The subset should contain the snapshots and patches from the start time to the end time
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+	if startTime > endTime {
+		panic("Start time should be smaller than the end time." +
+			"\nStart time: " + strconv.FormatInt(startTime, 10) +
+			"\nEnd time: " + strconv.FormatInt(endTime, 10))
+	}
+
+	var SlicedVersions []uint64
+
+	versionsFromSnapshot := lgm.getSortedVersionsFromSnapshot()
+	SlicedSnapshots := make(map[uint64]tsonSnapshot)
+	for _, version := range versionsFromSnapshot {
+		snapshot := lgm.Snapshots[version]
+		latestTimestamp := tson.GetLatestTimestamp(snapshot)
+		if latestTimestamp >= startTime && latestTimestamp <= endTime {
+			SlicedSnapshots[version] = snapshot
+		}
+	}
+
+	versionsFromPatch := lgm.getSortedVersionsFromPatch()
+	SlicedPatches := make(map[uint64]tsonPatches)
+	for _, version := range versionsFromPatch {
+		patches := lgm.Patches[version]
+		for _, patch := range patches {
+			if patch.Timestamp >= startTime && patch.Timestamp <= endTime {
+				// SlicedVersions always includes all versions between the start and end times
+				// because lgm.Version and lgm.PatchMap are continuous.
+				// However, lgm.Snapshots may not be continuous,
+				// so the following line works correctly only in this loop.
+				SlicedVersions = append(SlicedVersions, version)
+				SlicedPatches[version] = append(SlicedPatches[version], patch)
+			}
+		}
+	}
+
+	// Add the snapshot at the start version if it does not exist
+	if len(SlicedSnapshots) == 0 {
+		startVersion := SlicedVersions[0]
+		SlicedSnapshots[startVersion] = lgm.TemporalSnapshot(startTime)
+	}
+
+	slicedLgm := &Logument{
+		Version:   SlicedVersions,
+		Snapshots: SlicedSnapshots,
+		Patches:   SlicedPatches,
+		PatchPool: nil,
+	}
+
+	return slicedLgm
+}
+
+func (lgm *Logument) Track(vi, vj uint64) map[uint64]tsonPatches {
+	// Track the Logument document to make a patch that contains all the changes
+	// from the version vi to the version vj
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+
+	if lgm.Version[len(lgm.Version)-1] < vi || lgm.Version[len(lgm.Version)-1] < vj {
+		panic("Target versions should be smaller than the latest version." +
+			"\nTarget version vi: " + strconv.FormatUint(vi, 10) +
+			"\nTarget version vj: " + strconv.FormatUint(vj, 10) +
+			"\nLatest version: " + strconv.FormatUint(lgm.Version[len(lgm.Version)-1], 10))
+	}
+
+	if vi > vj {
+		panic("Target version vi should be smaller than or equal to target version vj." +
+			"\nTarget version vi: " + strconv.FormatUint(vi, 10) +
+			"\nTarget version vj: " + strconv.FormatUint(vj, 10))
+	}
+
+	versions := lgm.getSortedVersionsFromPatch()
+	packedPatches := make(map[uint64]tsonPatches)
+	for _, version := range versions {
+		if vi <= version && version <= vj {
+			packedPatches[version] = lgm.Patches[version]
+		}
+	}
+
+	latestValues := make(map[string]any)
+
+	paths := make([]uint64, 0, len(packedPatches))
+	for path := range packedPatches {
+		paths = append(paths, path)
+	}
+	sort.Slice(paths, func(i, j int) bool { return paths[i] < paths[j] })
+
+	for _, path := range paths {
+		patches := packedPatches[path]
+		compactPatches := make(tsonPatches, 0, len(patches))
+		for _, patch := range patches {
+			// Compare to previous value if it exists at the same path
+			if prev, exists := latestValues[patch.Path]; exists {
+				// If value has changed, keep the patch and update the status
+				if prev != patch.Value {
+					compactPatches = append(compactPatches, patch)
+					latestValues[patch.Path] = patch.Value
+				}
+				// Skip if value is the same
+			} else {
+				// Always keep the patch when it appears for the first time
+				compactPatches = append(compactPatches, patch)
+				latestValues[patch.Path] = patch.Value
+			}
+		}
+		lgm.Patches[path] = compactPatches
+	}
+
+	return packedPatches
+}
+
+func (lgm *Logument) TemporalTrack(tsi, tsj int64) map[uint64]tsonPatches {
+    if !lgm.isContinuous() {
+        panic("Versions are not continuous.")
+    }
+
+    if tsi > tsj {
+        panic("Start timestamp tsi should be smaller than or equal to end timestamp tsj." +
+            "\nStart timestamp: " + strconv.FormatInt(tsi, 10) +
+            "\nEnd timestamp: " + strconv.FormatInt(tsj, 10))
+    }
+
+    trackedPatches := make(map[uint64]tsonPatches)
+    latestValues := make(map[string]any)
+
+    versions := lgm.getSortedVersionsFromPatch()
+    for _, version := range versions {
+        ps := lgm.Patches[version]
+        compactPatches := make(tsonPatches, 0, len(ps))
+        for _, p := range ps {
+            if p.Timestamp >= tsi && p.Timestamp <= tsj {
+                // Compare to previous value if it exists at the same path
+                if prev, exists := latestValues[p.Path]; exists {
+                    // If value has changed, keep the patch and update the status
+                    if prev != p.Value {
+                        compactPatches = append(compactPatches, p)
+                        latestValues[p.Path] = p.Value
+                    }
+                    // Skip if value is the same
+                } else {
+                    // Always keep the patch when it appears for the first time
+                    compactPatches = append(compactPatches, p)
+                    latestValues[p.Path] = p.Value
+                }
+            }
+        }
+        if len(compactPatches) > 0 {
+            trackedPatches[version] = compactPatches
+        }
+    }
+
+    return trackedPatches
+}
+
 func (lgm *Logument) Compact(targetPath string) {
 	// Compact the Logument document
 	// Remove the patches that have changed only the value without changing the TIMESTAMP ts
@@ -273,8 +490,8 @@ func (lgm *Logument) Compact(targetPath string) {
 
 	versions := lgm.getSortedVersionsFromPatch()
 	for _, version := range versions {
-		ps := lgm.PatchMap[version]
-		compactPatches := make(Patches, 0, len(ps))
+		ps := lgm.Patches[version]
+		compactPatches := make(tsonPatches, 0, len(ps))
 		for _, p := range ps {
 			pt := rfc6901Decoder.Replace(p.Path)
 			if strings.HasPrefix(pt, targetPath) {
@@ -296,178 +513,11 @@ func (lgm *Logument) Compact(targetPath string) {
 				compactPatches = append(compactPatches, p)
 			}
 		}
-		lgm.PatchMap[version] = compactPatches
+		lgm.Patches[version] = compactPatches
 	}
 }
 
-func (lgm *Logument) Slice(startVersion, endVersion uint64) *Logument {
-	// Slice the Logument to make a subset of the Logument
-	// The subset should contain the snapshots and patches from the start version to the end version
-	if !lgm.isContinuous() {
-		panic("Versions are not continuous.")
-	}
-
-	if startVersion > endVersion {
-		panic("Start version should be smaller than the end version." +
-			"\nStart version: " + strconv.FormatUint(startVersion, 10) +
-			"\nEnd version: " + strconv.FormatUint(endVersion, 10))
-	}
-
-	if startVersion > lgm.Version[len(lgm.Version)-1] || endVersion > lgm.Version[len(lgm.Version)-1] {
-		panic("Start version and end version should be smaller than the latest version." +
-			"\nStart version: " + strconv.FormatUint(startVersion, 10) +
-			"\nEnd version: " + strconv.FormatUint(endVersion, 10) +
-			"\nLatest version: " + strconv.FormatUint(lgm.Version[len(lgm.Version)-1], 10))
-	}
-
-	var SlicedVersions []uint64
-
-	versionsFromSnapshot := lgm.getSortedVersionsFromSnapshot()
-	SlicedSnapshots := make(map[uint64]Snapshot)
-	for _, version := range versionsFromSnapshot {
-		if version >= startVersion && version <= endVersion {
-			SlicedSnapshots[version] = lgm.Snapshots[version]
-		}
-	}
-
-	versionsFromPatch := lgm.getSortedVersionsFromPatch()
-	SlicedPatches := make(map[uint64]Patches)
-	for _, version := range versionsFromPatch {
-		if version >= startVersion && version <= endVersion {
-			// SlicedVersions always includes all versions between the start and end versions
-			// because lgm.Version and lgm.PatchMap are continuous.
-			// However, lgm.Snapshots may not be continuous,
-			// so the following line works correctly only in this loop.
-			SlicedVersions = append(SlicedVersions, version)
-			SlicedPatches[version] = lgm.PatchMap[version]
-		}
-	}
-
-	// Add the snapshot at the start version if it does not exist
-	if len(SlicedSnapshots) == 0 {
-		SlicedSnapshots[startVersion] = lgm.Snapshot(startVersion)
-	}
-
-	slicedLgm := &Logument{
-		Version:   SlicedVersions,
-		Snapshots: SlicedSnapshots,
-		PatchMap:  SlicedPatches,
-		PatchPool: nil,
-	}
-
-	return slicedLgm
-}
-
-func (lgm *Logument) TimeSlice(startTime, endTime int64) *Logument {
-	// TimeSlice the Logument to make a subset of the Logument based on the timestamp
-	// The subset should contain the snapshots and patches from the start time to the end time
-	if !lgm.isContinuous() {
-		panic("Versions are not continuous.")
-	}
-	if startTime > endTime {
-		panic("Start time should be smaller than the end time." +
-			"\nStart time: " + strconv.FormatInt(startTime, 10) +
-			"\nEnd time: " + strconv.FormatInt(endTime, 10))
-	}
-
-	var SlicedVersions []uint64
-
-	versionsFromSnapshot := lgm.getSortedVersionsFromSnapshot()
-	SlicedSnapshots := make(map[uint64]Snapshot)
-	for _, version := range versionsFromSnapshot {
-		snapshot := lgm.Snapshots[version]
-		latestTimestamp := tson.GetLatestTimestamp(snapshot)
-		if latestTimestamp >= startTime && latestTimestamp <= endTime {
-			SlicedSnapshots[version] = snapshot
-		}
-	}
-
-	versionsFromPatch := lgm.getSortedVersionsFromPatch()
-	SlicedPatches := make(map[uint64]Patches)
-	for _, version := range versionsFromPatch {
-		patches := lgm.PatchMap[version]
-		for _, patch := range patches {
-			if patch.Timestamp >= startTime && patch.Timestamp <= endTime {
-				// SlicedVersions always includes all versions between the start and end times
-				// because lgm.Version and lgm.PatchMap are continuous.
-				// However, lgm.Snapshots may not be continuous,
-				// so the following line works correctly only in this loop.
-				SlicedVersions = append(SlicedVersions, version)
-				SlicedPatches[version] = append(SlicedPatches[version], patch)
-			}
-		}
-	}
-
-	// Add the snapshot at the start version if it does not exist
-	if len(SlicedSnapshots) == 0 {
-		startVersion := SlicedVersions[0]
-		SlicedSnapshots[startVersion] = lgm.TimeSnapshot(startTime)
-	}
-
-	slicedLgm := &Logument{
-		Version:   SlicedVersions,
-		Snapshots: SlicedSnapshots,
-		PatchMap:  SlicedPatches,
-		PatchPool: nil,
-	}
-
-	return slicedLgm
-}
-
-func (lgm *Logument) Pack(targetVersion uint64) map[uint64]Patches {
-	// Pack the Logument document to make a patch that contains all the changes
-	// from the target version to the latest version
-	if !lgm.isContinuous() {
-		panic("Versions are not continuous.")
-	}
-
-	if lgm.Version[len(lgm.Version)-1] < targetVersion {
-		panic("Target version should be smaller than the latest version." +
-			"\nTarget version: " + strconv.FormatUint(targetVersion, 10) +
-			"\nLatest version: " + strconv.FormatUint(lgm.Version[len(lgm.Version)-1], 10))
-	}
-
-	versions := lgm.getSortedVersionsFromPatch()
-	packedPatches := make(map[uint64]Patches)
-	for _, version := range versions {
-		if targetVersion <= version {
-			packedPatches[version] = lgm.PatchMap[version]
-		}
-	}
-
-	latestValues := make(map[string]any)
-
-	paths := make([]uint64, 0, len(packedPatches))
-	for path := range packedPatches {
-		paths = append(paths, path)
-	}
-	sort.Slice(paths, func(i, j int) bool { return paths[i] < paths[j] })
-
-	for _, path := range paths {
-		patches := packedPatches[path]
-		compactPatches := make(Patches, 0, len(patches))
-		for _, patch := range patches {
-			// Compare to previous value if it exists at the same path
-			if prev, exists := latestValues[patch.Path]; exists {
-				// If value has changed, keep the patch and update the status
-				if prev != patch.Value {
-					compactPatches = append(compactPatches, patch)
-					latestValues[patch.Path] = patch.Value
-				}
-				// Skip if value is the same
-			} else {
-				// Always keep the patch when it appears for the first time
-				compactPatches = append(compactPatches, patch)
-				latestValues[patch.Path] = patch.Value
-			}
-		}
-		lgm.PatchMap[path] = compactPatches
-	}
-
-	return packedPatches
-}
-
-func (lgm *Logument) History(targetPath string) map[string]Patches {
+func (lgm *Logument) History(targetPath string) map[string]tsonPatches {
 	// Get the history of the changes at the target path
 	// The history should contain all the patches that have changed the value at the target path
 	// The patches should be sorted by the timestamp in ascending order
@@ -477,8 +527,8 @@ func (lgm *Logument) History(targetPath string) map[string]Patches {
 
 	lgm.Compact(targetPath)
 
-	historyPatches := make(map[string]Patches)
-	for _, patches := range lgm.PatchMap {
+	historyPatches := make(map[string]tsonPatches)
+	for _, patches := range lgm.Patches {
 		for _, patch := range patches {
 			path := rfc6901Decoder.Replace(patch.Path)
 			if strings.HasPrefix(path, targetPath) {
