@@ -123,11 +123,11 @@ NOTE: [TSON on VSCode Marketplace](https://marketplace.visualstudio.com/items?it
 `go run main.go [ARGUMENTS...]`
 
 **Parameters:**
-- cars <int>: \[required\] the number of cars
-- files <int>: \[required\] the number of files per each car
-- change_rate <float64>: Change rate for each file
-- size <float64>: Dataset size ratio (0.5: Use 50% attributes of VSS)
-- dataset <string>: Path to VSS JSON dataset
+- `cars <int>`: \[required\] the number of cars
+- `files <int>`: \[required\] the number of files per each car
+- `change_rate <float64>`: Change rate for each file
+- `size <float64>`: Dataset size ratio (0.5: Use 50% attributes of VSS)
+- `dataset <string>`: Path to VSS JSON dataset
 
 ---
 

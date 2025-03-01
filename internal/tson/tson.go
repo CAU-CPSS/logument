@@ -341,8 +341,11 @@ func ToTson(o any, t *Tson) (err error) {
 
 	addTimestamp(o)
 
+	// Step 1: Convert TSON(any) to CompatibleTSON(JSON with timestamp)
 	str, err := json.Marshal(o)
-	err = Unmarshal(str, t)
+
+	// Step 2: Convert CompatibleTSON to TSON
+	*t, err = FromJsonBytes(str)
 
 	return err
 }
