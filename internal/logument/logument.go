@@ -107,6 +107,25 @@ func (lgm *Logument) getSortedVersionsFromPatch() []uint64 {
 	return versions
 }
 
+func (lgm *Logument) applyPatch(snapshot tsonSnapshot, patches tsonPatches) tsonSnapshot {
+	// Apply patches to the snapshot
+	// If the snapshot is nil, return the snapshot after applying the patches
+	// Otherwise, return the snapshot after applying the patches to the given snapshot
+	if snapshot == nil {
+		panic("Snapshot is nil.")
+	}
+
+	for _, patch := range patches {
+		var err error
+		snapshot, err = tsonpatch.ApplyPatch(snapshot, tsonPatches{patch})
+		if err != nil {
+			panic("Failed to apply the patch to the snapshot. Error: " + err.Error())
+		}
+	}
+
+	return snapshot
+}
+
 func (lgm *Logument) Store(inputPatches any) {
 	var patches tsonPatches
 
@@ -197,11 +216,9 @@ func (lgm *Logument) Snapshot(vk uint64) tsonSnapshot {
 		timedSnapshot = latestSnapshot
 	}
 
-	lgm.Snapshots[vk] = timedSnapshot
-	fmt.Print("Snapshot: ")
-	fmt.Println(timedSnapshot)
-	fmt.Print("Snapshot: ")
-	fmt.Println(lgm.Snapshots[vk])
+	if _, exists := lgm.Snapshots[vk]; !exists {
+		lgm.Snapshots[vk] = timedSnapshot
+	}
 
 	jsonSnapshot, err := tson.ToJsonBytes(timedSnapshot)
 	if err != nil {
@@ -444,46 +461,46 @@ func (lgm *Logument) Track(vi, vj uint64) map[uint64]tsonPatches {
 }
 
 func (lgm *Logument) TemporalTrack(tsi, tsj int64) map[uint64]tsonPatches {
-    if !lgm.isContinuous() {
-        panic("Versions are not continuous.")
-    }
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
 
-    if tsi > tsj {
-        panic("Start timestamp tsi should be smaller than or equal to end timestamp tsj." +
-            "\nStart timestamp: " + strconv.FormatInt(tsi, 10) +
-            "\nEnd timestamp: " + strconv.FormatInt(tsj, 10))
-    }
+	if tsi > tsj {
+		panic("Start timestamp tsi should be smaller than or equal to end timestamp tsj." +
+			"\nStart timestamp: " + strconv.FormatInt(tsi, 10) +
+			"\nEnd timestamp: " + strconv.FormatInt(tsj, 10))
+	}
 
-    trackedPatches := make(map[uint64]tsonPatches)
-    latestValues := make(map[string]any)
+	trackedPatches := make(map[uint64]tsonPatches)
+	latestValues := make(map[string]any)
 
-    versions := lgm.getSortedVersionsFromPatch()
-    for _, version := range versions {
-        ps := lgm.Patches[version]
-        compactPatches := make(tsonPatches, 0, len(ps))
-        for _, p := range ps {
-            if p.Timestamp >= tsi && p.Timestamp <= tsj {
-                // Compare to previous value if it exists at the same path
-                if prev, exists := latestValues[p.Path]; exists {
-                    // If value has changed, keep the patch and update the status
-                    if prev != p.Value {
-                        compactPatches = append(compactPatches, p)
-                        latestValues[p.Path] = p.Value
-                    }
-                    // Skip if value is the same
-                } else {
-                    // Always keep the patch when it appears for the first time
-                    compactPatches = append(compactPatches, p)
-                    latestValues[p.Path] = p.Value
-                }
-            }
-        }
-        if len(compactPatches) > 0 {
-            trackedPatches[version] = compactPatches
-        }
-    }
+	versions := lgm.getSortedVersionsFromPatch()
+	for _, version := range versions {
+		ps := lgm.Patches[version]
+		compactPatches := make(tsonPatches, 0, len(ps))
+		for _, p := range ps {
+			if p.Timestamp >= tsi && p.Timestamp <= tsj {
+				// Compare to previous value if it exists at the same path
+				if prev, exists := latestValues[p.Path]; exists {
+					// If value has changed, keep the patch and update the status
+					if prev != p.Value {
+						compactPatches = append(compactPatches, p)
+						latestValues[p.Path] = p.Value
+					}
+					// Skip if value is the same
+				} else {
+					// Always keep the patch when it appears for the first time
+					compactPatches = append(compactPatches, p)
+					latestValues[p.Path] = p.Value
+				}
+			}
+		}
+		if len(compactPatches) > 0 {
+			trackedPatches[version] = compactPatches
+		}
+	}
 
-    return trackedPatches
+	return trackedPatches
 }
 
 func (lgm *Logument) Set(vk uint64, op tsonpatch.OpType, path string, value any) {
@@ -497,37 +514,26 @@ func (lgm *Logument) Set(vk uint64, op tsonpatch.OpType, path string, value any)
 	}
 
 	if _, exists := lgm.Snapshots[vk]; !exists {
-		s := lgm.Snapshot(vk)
-		lgm.Snapshots[vk] = s
+		_ = lgm.Snapshot(vk)
 	}
 
 	snapshot := lgm.Snapshots[vk]
-	
-	fmt.Println(snapshot)
+
+	fmt.Println("snapshot: ", snapshot)
 
 	patch := tsonpatch.Operation{
 		Op:        op,
-		Path:	   path,
+		Path:      path,
 		Value:     value,
-		Timestamp: time.Now().Unix(), // 
+		Timestamp: time.Now().Unix(), //
 	}
 
-	
-
 	lgm.Patches[vk] = append(lgm.Patches[vk], patch)
-	
+
 	if next, exists := lgm.Snapshots[vk+1]; exists {
-		next_snapshot, err := tsonpatch.ApplyPatch(next, tsonPatches{patch})
-		if err != nil {
-			panic("Failed to make a snapshot with the given version. Error: " + err.Error())
-		}
-		lgm.Snapshots[vk+1] = next_snapshot
+		lgm.Snapshots[vk+1] = lgm.applyPatch(next, tsonPatches{patch})
 	} else {
-		next_snapshot, err := tsonpatch.ApplyPatch(snapshot, tsonPatches{patch})
-		if err != nil {
-			panic("Failed to make a snapshot with the given version. Error: " + err.Error())
-		}
-		lgm.Snapshots[vk+1] = next_snapshot
+		lgm.Snapshots[vk+1] = lgm.applyPatch(snapshot, tsonPatches{patch})
 	}
 }
 
@@ -546,8 +552,7 @@ func (lgm *Logument) TestSet(vk uint64, op tsonpatch.OpType, path string, value 
 	}
 
 	if _, exists := lgm.Snapshots[vk]; !exists {
-		s := lgm.Snapshot(vk)
-		lgm.Snapshots[vk] = s	
+		_ = lgm.Snapshot(vk)
 	}
 
 	exist_value, err := tson.GetValue(lgm.Snapshots[vk], path)
@@ -555,11 +560,72 @@ func (lgm *Logument) TestSet(vk uint64, op tsonpatch.OpType, path string, value 
 		panic("Failed to get the value from the snapshot. Error: " + err.Error())
 	}
 
+	fmt.Print("Exist Value is", exist_value)
+
 	if exist_value == value {
 		return
 	}
 
 	lgm.Set(vk, op, path, value)
+
+}
+
+func (lgm *Logument) Unset(vk uint64, op tsonpatch.OpType, path string) {
+	// Unset the value at the target path in the snapshot at the target version
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+
+	if op != tsonpatch.OpRemove {
+		return
+	}
+
+	if _, exists := lgm.Snapshots[vk]; !exists {
+		_ = lgm.Snapshot(vk)
+	}
+
+	snapshot := lgm.Snapshots[vk]
+
+	patch := tsonpatch.Operation{
+		Op:        op,
+		Path: 	   path,
+		Value:     nil,
+		Timestamp: time.Now().Unix(),
+	}
+
+	lgm.Patches[vk] = append(lgm.Patches[vk], patch)
+
+	if next, exists := lgm.Snapshots[vk+1]; exists {
+		lgm.Snapshots[vk+1] = lgm.applyPatch(next, tsonPatches{patch})
+	} else {
+		lgm.Snapshots[vk+1] = lgm.applyPatch(snapshot, tsonPatches{patch})
+	}
+}
+
+func (lgm *Logument) TestUnset(vk uint64, op tsonpatch.OpType, path string) {
+	// Unset the value at the target path in the snapshot at the target timestamp
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+
+	if op != tsonpatch.OpRemove {	
+		return
+	}	
+	
+	if _, exists := lgm.Snapshots[vk]; !exists {
+		_ = lgm.Snapshot(vk)
+	}
+
+	exist_value, err := tson.GetValue(lgm.Snapshots[vk], path)
+	if err != nil {
+		panic("Failed to get the value from the snapshot. Error: " + err.Error())
+	}
+
+	if exist_value == nil {
+		return
+	}
+
+	lgm.Unset(vk, op, path)
 
 }
 

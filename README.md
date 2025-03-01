@@ -64,13 +64,13 @@ Through discussions on implementation and concurrent synchronization, we demonst
 
 ### Supporting operations
 
-- **Set(vk uint64, op tsonpatch.OpType, path string, value any)**: Update the state with a JSON-supported _value_, and append the patch of which _op_ is either `add` or `replace`
+- **Set(vk uint64, op tsonpatch.OpType, path string, value any)**: Update the state with a JSON-supported _value_, and create the patch of which _op_ is either `add` or `replace`
 
-- **Unset**: 
+- **Unset(vk uint64, op tsonpatch.OpType, path string)**: Remove the specific path, and create the patch that _op_ is `remove`
 
 - **TestSet(vk uint64, op tsonpatch.OpType, path string, value any)**: `Set` only if _value_ has changed
 
-- **TestUnset**:
+- **TestUnset(vk uint64, op tsonpatch.OpType, path string)**: `Unset` only if _path_ has removed
 
 - **TemporalTrack(tsi, tsj int64)**: Extract patches between the tsi and the tsj, enabling to query the evolution and history of data over time
 

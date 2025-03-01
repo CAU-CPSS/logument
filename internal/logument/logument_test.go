@@ -220,7 +220,21 @@ func TestSet(t *testing.T) {
 	lgm.Store(Patches[2])
 	lgm.Append()
 
-	lgm.Set(2, "replace", "/location/latitude", 42.4242)
+	lgm.Set(2, "replace", "/location/latitude", 43.9409)
+	lgm.Print()
+}
+
+func TestValidSet(t *testing.T) {
+	t.Log("Set a value\n")
+	lgm := logument.NewLogument(initSnapshot, nil)
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
+	lgm.Append()
+
+	lgm.Store(Patches[2])
+	lgm.Append()
+
+	lgm.TestSet(2, "replace", "/location/latitude", 42.4242)
 	lgm.Print()
 }
 
