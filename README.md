@@ -43,8 +43,8 @@ The prospective usages of _TSON_ and _LOGUMENT_ in the vehicle digital twin.
 ### Structure
 
 - **Version _[]uint64_**: An array of versions that _LOGUMENT_ manages; should be continuos
-- **Snapshot _map[uint64]tson.Tson_**: A map which contains an initial Snapshot (by `Create`) and Snapshots from `Snapshot` Function (version, Snapshot)
-- **Patches _map[uint64]tsonpatch.Patch_**: A map of Patches managed internally in _LOGUMENT_ (version, Patches)
+- **Snapshot _map[uint64]tson.Tson_**: A map which contains an initial Snapshot (by `Create`) and Snapshots from `Snapshot` Function {version: Snapshot}
+- **Patches _map[uint64]tsonpatch.Patch_**: A map of Patches managed internally in _LOGUMENT_ {version: Patches}
 - **PatchPool _tsonpatch.Patch_**: Patches to be managed in _LOGUMENT_
 
 ### Primitive operations
