@@ -9,20 +9,35 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
+//	const initSnapshot = `{
+//	    "vehicleId": { "value": "ABC1234", "timestamp": 1700000000 },
+//	    "speed": { "value": 72.5, "timestamp": 1700000000 },
+//	    "engineOn": { "value": true, "timestamp": 1700000000 },
+//	    "location": {
+//			"latitude": { "value": 37.7749, "timestamp": 1700000000 },
+//	        "longitude": { "value": -122.4194, "timestamp": 1700000000 }
+//		},
+//	    "tirePressure": [
+//	        { "value": 32.1, "timestamp": 1700000000 },
+//	        { "value": 31.8, "timestamp": 1700000000 },
+//	        { "value": 32.0, "timestamp": 1700000000 },
+//	        { "value": 31.9, "timestamp": 1700000000 }
+//	    ] }`
 const initSnapshot = `{
-    "vehicleId": { "value": "ABC1234", "timestamp": 1700000000 },
-    "speed": { "value": 72.5, "timestamp": 1700000000 },
-    "engineOn": { "value": true, "timestamp": 1700000000 },
+    "vehicleId" <1700000000>: "ABC1234",
+    "speed" <1700000000>: 72.5,
+    "engineOn" <1700000000>: true,
     "location": {
-		"latitude": { "value": 37.7749, "timestamp": 1700000000 },
-        "longitude": { "value": -122.4194, "timestamp": 1700000000 }
-	},
+        "latitude" <1700000000>: 37.7749,
+        "longitude" <1700000000>: -122.4194
+    },
     "tirePressure": [
-        { "value": 32.1, "timestamp": 1700000000 },
-        { "value": 31.8, "timestamp": 1700000000 },
-        { "value": 32.0, "timestamp": 1700000000 },
-        { "value": 31.9, "timestamp": 1700000000 }
-    ] }`
+        <> 32.1,
+        <> 31.8,
+        <1700000000> 32.0,
+        <1700000000> 31.9
+    ]
+}`
 
 var Patches = []string{
 	`[
@@ -101,6 +116,8 @@ func TestSnapshot(t *testing.T) {
 	lgm.Store(Patches[0])
 	lgm.Store(Patches[1])
 	lgm.Append()
+
+	lgm.Print()
 
 	// Take a snapshot already taken
 	snapshot := lgm.Snapshot(0)
@@ -184,14 +201,28 @@ func TestTemporalTrack(t *testing.T) {
 	lgm.Append() // version 3
 
 	// Track changes
-	// Expected: 
+	// Expected:
 	// { "op": "replace", "path": "/tirePressure/0", "value": 35.1, "timestamp": 1900000000 },
 	// { "op": "replace", "path": "/engineOn", "value": false, "timestamp": 2000000000 },
 	// { "op": "replace", "path": "/location/latitude", "value": 43.9409, "timestamp": 2100000000 },
 	// { "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 2100000000 }
 	changes := lgm.TemporalTrack(1900000000, 2100000000)
 	t.Log(spew.Sdump(changes))
-}	
+}
+
+func TestSet(t *testing.T) {
+	t.Log("Set a value\n")
+	lgm := logument.NewLogument(initSnapshot, nil)
+	lgm.Store(Patches[0])
+	lgm.Store(Patches[1])
+	lgm.Append()
+
+	lgm.Store(Patches[2])
+	lgm.Append()
+
+	lgm.Set(2, "replace", "/location/latitude", 42.4242)
+	lgm.Print()
+}
 
 func TestCompact(t *testing.T) {
 	t.Log("Compact patches\n")
