@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/CAU-CPSS/logument/internal/tson"
 	"github.com/CAU-CPSS/logument/internal/tsonpatch"
@@ -178,14 +179,14 @@ func (lgm *Logument) Append() {
 }
 
 // Snapshot Snapshot 생성
-func (lgm *Logument) Snapshot(targetVersion uint64) tsonSnapshot {
+func (lgm *Logument) Snapshot(vk uint64) tsonSnapshot {
 	// Find the latest version before the target version
-	latestVersion, latestSnapshot := lgm.findLatest(targetVersion)
+	latestVersion, latestSnapshot := lgm.findLatest(vk)
 	var timedSnapshot tsonSnapshot
 
-	if latestVersion != targetVersion {
+	if latestVersion != vk {
 		// Apply patches from the latest version to the target version
-		for i := latestVersion + 1; i <= targetVersion; i++ {
+		for i := latestVersion + 1; i <= vk; i++ {
 			var err error
 			timedSnapshot, err = tsonpatch.ApplyPatch(latestSnapshot, lgm.Patches[i])
 			if err != nil {
@@ -195,6 +196,12 @@ func (lgm *Logument) Snapshot(targetVersion uint64) tsonSnapshot {
 	} else {
 		timedSnapshot = latestSnapshot
 	}
+
+	lgm.Snapshots[vk] = timedSnapshot
+	fmt.Print("Snapshot: ")
+	fmt.Println(timedSnapshot)
+	fmt.Print("Snapshot: ")
+	fmt.Println(lgm.Snapshots[vk])
 
 	jsonSnapshot, err := tson.ToJsonBytes(timedSnapshot)
 	if err != nil {
@@ -320,16 +327,16 @@ func (lgm *Logument) Slice(vi, vj uint64) *Logument {
 	return slicedLgm
 }
 
-func (lgm *Logument) TemporalSlice(startTime, endTime int64) *Logument {
+func (lgm *Logument) TemporalSlice(tsi, tsj int64) *Logument {
 	// TimeSlice the Logument to make a subset of the Logument based on the timestamp
 	// The subset should contain the snapshots and patches from the start time to the end time
 	if !lgm.isContinuous() {
 		panic("Versions are not continuous.")
 	}
-	if startTime > endTime {
+	if tsi > tsj {
 		panic("Start time should be smaller than the end time." +
-			"\nStart time: " + strconv.FormatInt(startTime, 10) +
-			"\nEnd time: " + strconv.FormatInt(endTime, 10))
+			"\nStart time: " + strconv.FormatInt(tsi, 10) +
+			"\nEnd time: " + strconv.FormatInt(tsj, 10))
 	}
 
 	var SlicedVersions []uint64
@@ -339,7 +346,7 @@ func (lgm *Logument) TemporalSlice(startTime, endTime int64) *Logument {
 	for _, version := range versionsFromSnapshot {
 		snapshot := lgm.Snapshots[version]
 		latestTimestamp := tson.GetLatestTimestamp(snapshot)
-		if latestTimestamp >= startTime && latestTimestamp <= endTime {
+		if latestTimestamp >= tsi && latestTimestamp <= tsj {
 			SlicedSnapshots[version] = snapshot
 		}
 	}
@@ -349,7 +356,7 @@ func (lgm *Logument) TemporalSlice(startTime, endTime int64) *Logument {
 	for _, version := range versionsFromPatch {
 		patches := lgm.Patches[version]
 		for _, patch := range patches {
-			if patch.Timestamp >= startTime && patch.Timestamp <= endTime {
+			if patch.Timestamp >= tsi && patch.Timestamp <= tsj {
 				// SlicedVersions always includes all versions between the start and end times
 				// because lgm.Version and lgm.PatchMap are continuous.
 				// However, lgm.Snapshots may not be continuous,
@@ -363,7 +370,7 @@ func (lgm *Logument) TemporalSlice(startTime, endTime int64) *Logument {
 	// Add the snapshot at the start version if it does not exist
 	if len(SlicedSnapshots) == 0 {
 		startVersion := SlicedVersions[0]
-		SlicedSnapshots[startVersion] = lgm.TemporalSnapshot(startTime)
+		SlicedSnapshots[startVersion] = lgm.TemporalSnapshot(tsi)
 	}
 
 	slicedLgm := &Logument{
@@ -477,6 +484,83 @@ func (lgm *Logument) TemporalTrack(tsi, tsj int64) map[uint64]tsonPatches {
     }
 
     return trackedPatches
+}
+
+func (lgm *Logument) Set(vk uint64, op tsonpatch.OpType, path string, value any) {
+	// Set the value at the target path in the snapshot at the target version
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+
+	if op != tsonpatch.OpReplace && op != tsonpatch.OpAdd {
+		return
+	}
+
+	if _, exists := lgm.Snapshots[vk]; !exists {
+		s := lgm.Snapshot(vk)
+		lgm.Snapshots[vk] = s
+	}
+
+	snapshot := lgm.Snapshots[vk]
+	
+	fmt.Println(snapshot)
+
+	patch := tsonpatch.Operation{
+		Op:        op,
+		Path:	   path,
+		Value:     value,
+		Timestamp: time.Now().Unix(), // 
+	}
+
+	
+
+	lgm.Patches[vk] = append(lgm.Patches[vk], patch)
+	
+	if next, exists := lgm.Snapshots[vk+1]; exists {
+		next_snapshot, err := tsonpatch.ApplyPatch(next, tsonPatches{patch})
+		if err != nil {
+			panic("Failed to make a snapshot with the given version. Error: " + err.Error())
+		}
+		lgm.Snapshots[vk+1] = next_snapshot
+	} else {
+		next_snapshot, err := tsonpatch.ApplyPatch(snapshot, tsonPatches{patch})
+		if err != nil {
+			panic("Failed to make a snapshot with the given version. Error: " + err.Error())
+		}
+		lgm.Snapshots[vk+1] = next_snapshot
+	}
+}
+
+func (lgm *Logument) TestSet(vk uint64, op tsonpatch.OpType, path string, value any) {
+	// Set the value at the target path in the snapshot at the target timestamp
+	if !lgm.isContinuous() {
+		panic("Versions are not continuous.")
+	}
+
+	if op != tsonpatch.OpReplace && op != tsonpatch.OpAdd {
+		return
+	}
+
+	if op == tsonpatch.OpAdd {
+		lgm.Set(vk, op, path, value)
+	}
+
+	if _, exists := lgm.Snapshots[vk]; !exists {
+		s := lgm.Snapshot(vk)
+		lgm.Snapshots[vk] = s	
+	}
+
+	exist_value, err := tson.GetValue(lgm.Snapshots[vk], path)
+	if err != nil {
+		panic("Failed to get the value from the snapshot. Error: " + err.Error())
+	}
+
+	if exist_value == value {
+		return
+	}
+
+	lgm.Set(vk, op, path, value)
+
 }
 
 func (lgm *Logument) Compact(targetPath string) {

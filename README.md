@@ -64,11 +64,11 @@ Through discussions on implementation and concurrent synchronization, we demonst
 
 ### Supporting operations
 
-- **Set**:
+- **Set(vk uint64, op tsonpatch.OpType, path string, value any)**: Update the state with a JSON-supported _value_, and append the patch of which _op_ is either `add` or `replace`
 
-- **Unset**:
+- **Unset**: 
 
-- **TestSet**:
+- **TestSet(vk uint64, op tsonpatch.OpType, path string, value any)**: `Set` only if _value_ has changed
 
 - **TestUnset**:
 
