@@ -1,5 +1,20 @@
 # **_LOGUMENT_**
 
+## Contents
+
+1. [What is **_LOGUMENT_**?](#what-is-logument)
+    - [Abstract](#abstract)
+    - [Structure](#structure)
+2. [Interface for **_LOGUMENT_**](#interface-for-logument)
+    - [Primitive operations](#primitive-operations)
+    - [Supporting operations](#supporting-operations)
+    - [Additional supporting operation](#additional-supporting-operation)
+3. [About **_TSON_**](#about-tson)
+    - [BNF of **_TSON_**](#bnf-of-tson)
+    - [VSCode Extension](#vscode-extension)
+4. [Usage](#usage)
+5. [Contributions](#contributions)
+
 ---
 
 ## What is **_LOGUMENT_**?
@@ -33,7 +48,7 @@ Through discussions on implementation and concurrent synchronization, we demonst
 
 - **Create(snapshot tson.Tson, patches jsonpatch.Patch)**: Make a new _LOGUMENT_ using an initial snapshot (**_Note_**: The function name in the implementation is `NewLogument`)
 
-- **Store(patches jsonpatch.Patch)**: Store new patches in the PatchPool temporarily; These patches are queued and will be later integrated into the Logument state via the `Append` operation
+- **Store(patches jsonpatch.Patch)**: Store new patches in the PatchPool temporarily; These patches are queued and will be later integrated into the _LOGUMENT_ state via the `Append` operation
 
 - **Append()**: Incorporate all pending patches from the PatchPool into the Patches, update(increase) the version, and clear the PatchPool
 
@@ -71,13 +86,52 @@ Through discussions on implementation and concurrent synchronization, we demonst
 
 ---
 
-## About TSON
+## About **_TSON_**
 
-For more about **_TSON_**, please refer to [internal/tson/README.md].
+**_TSON_**, which stands for Time-Stamped JSON, is used to store timestamps as well as data values.
+
+### BNF of **_TSON_**
+
+```ebnf
+<tson> ::= <object> | <array> | <value>
+
+<object> ::= "{" <members>? "}"
+<members> ::= <pair> ("," <pair>)*
+<pair> ::= <string> <timestamp>? ":" <value>
+
+<array> ::= "[" <elements>? "]"
+<elements> ::= <value> ("," <value>)*
+
+<value> ::= <primitive> <timestamp>? | <object> | <array> | "null"
+<primitive> ::= <string> | <number> | <boolean>
+
+<timestamp> ::= "<" <timestamp_value> ">"
+```
+
+### VSCode Extension
+
+There is a Visual Studio Code extension, which enables **_TSON_** syntax highlighting.  
+Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-Extension) repository.
+
+NOTE: [TSON on VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=rollingress.tson)
+
 
 ---
 
-## Contribute
+## Usage
+
+`go run main.go [ARGUMENTS...]`
+
+**Parameters:**
+- cars <int>: \[required\] the number of cars
+- files <int>: \[required\] the number of files per each car
+- change_rate <float64>: Change rate for each file
+- size <float64>: Dataset size ratio (0.5: Use 50% attributes of VSS)
+- dataset <string>: Path to VSS JSON dataset
+
+---
+
+## Contributions
 
 - **_LOGUMENT_** interface: Sunghwan Park
 - **_TSON & TSON Patch_** implementation: Sunwoo Na ([Karu](https://github.com/karu-rress))
