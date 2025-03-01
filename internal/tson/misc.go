@@ -2,14 +2,15 @@ package tson
 
 import "encoding/json"
 
-// FromJsonBytes converts a JSON byte array (with leaf nodes as { "value": ..., "timestamp": ... })
+// FromCompatibleTsonBytes converts a JSON byte array (with leaf nodes as { "value": ..., "timestamp": ... })
 // into a Tson object.
-func FromJsonBytes(data []byte) (Tson, error) {
+func FromCompatibleTsonBytes(data []byte, t *Tson) error {
 	var intermediate interface{}
 	if err := json.Unmarshal(data, &intermediate); err != nil {
-		return nil, err
+		return err
 	}
-	return convertJSONToTson(intermediate), nil
+	*t = convertJSONToTson(intermediate)
+	return nil
 }
 
 func convertJSONToTson(v interface{}) Value {
@@ -56,10 +57,10 @@ func convertJSONToTson(v interface{}) Value {
 	}
 }
 
-func JsonToTson(o any) (Tson, error) {
+func JsonToTson(o any, t *Tson) error {
 	data, err := json.Marshal(o)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return FromJsonBytes(data)
+	return FromCompatibleTsonBytes(data, t)
 }

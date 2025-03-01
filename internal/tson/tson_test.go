@@ -175,9 +175,9 @@ func TestToTson(t *testing.T) {
 	assert.Nil(t, err)
 
 	var tson Tson
-	err = ToTson(j, &tson)
+	err = FromJson(j, &tson)
 	assert.Nil(t, err)
-	t.Log(DEPRECATEDString(tson))
+	t.Log(ToCompatibleTsonString(tson))
 }
 
 func TestMarshalIndent(t *testing.T) {

@@ -232,7 +232,7 @@ func (lgm *Logument) Snapshot(vk uint64) tsonSnapshot {
 	}
 
 	var snapshot tson.Tson
-	err = tson.ToTson(unmarshaledJsonSnapshot, &snapshot)
+	err = tson.FromJson(unmarshaledJsonSnapshot, &snapshot)
 	if err != nil {
 		panic("Failed to convert the snapshot to Tson. Error: " + err.Error())
 	}
@@ -518,8 +518,8 @@ func (lgm *Logument) Set(vk uint64, op tsonpatch.OpType, path string, value any)
 	}
 
 	snapshot := lgm.Snapshots[vk]
-
-	fmt.Println("snapshot: ", snapshot)
+	
+	fmt.Println(snapshot)
 
 	patch := tsonpatch.Operation{
 		Op:        op,
@@ -552,7 +552,8 @@ func (lgm *Logument) TestSet(vk uint64, op tsonpatch.OpType, path string, value 
 	}
 
 	if _, exists := lgm.Snapshots[vk]; !exists {
-		_ = lgm.Snapshot(vk)
+		s := lgm.Snapshot(vk)
+		lgm.Snapshots[vk] = s	
 	}
 
 	exist_value, err := tson.GetValue(lgm.Snapshots[vk], path)

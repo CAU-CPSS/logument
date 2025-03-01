@@ -15,8 +15,8 @@ import (
 	"strconv"
 )
 
-// DEPRECATEDString converts TSON to a string.
-func DEPRECATEDString(t Tson) string {
+// ToCompatibleTsonString converts TSON to a string.
+func ToCompatibleTsonString(t Tson) string {
 	data, err := json.MarshalIndent(t, "", "    ")
 	if err != nil {
 		panic(fmt.Sprintf("failed to marshal TSON: %v", err))
@@ -451,12 +451,6 @@ func Unmarshal(data []byte, t *Tson) (err error) {
 	p := &Parser{input: data, pos: 0}
 	*t, err = p.parseTson()
 	return err
-}
-
-// DEPRECATEDNewTson creates a new TSON from the given TSON string.
-func DEPRECATEDNewTson(tson string) (t Tson, err error) {
-	err = Unmarshal([]byte(tson), &t)
-	return t, err
 }
 
 // wrapIfPrimitive wraps a raw primitive with a timestamp.

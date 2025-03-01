@@ -304,9 +304,9 @@ func ToJsonBytes(t Tson) (j []byte, err error) {
 	return json.Marshal(o)
 }
 
-// ToTson converts the given JSON object to a TSON.
+// FromJson converts the given JSON object to a TSON.
 // NOTE: The timestamp field is added with the default(< 0) value.
-func ToTson(o any, t *Tson) (err error) {
+func FromJson(o any, t *Tson) (err error) {
 	var addTimestamp func(o any)
 	addTimestamp = func(o any) {
 		switch value := o.(type) {
@@ -345,9 +345,7 @@ func ToTson(o any, t *Tson) (err error) {
 	str, err := json.Marshal(o)
 
 	// Step 2: Convert CompatibleTSON to TSON
-	*t, err = FromJsonBytes(str)
-
-	return err
+	return FromCompatibleTsonBytes(str, t)
 }
 
 //////////////////////////////////
