@@ -1,11 +1,13 @@
-# **_LOGUMENT_**
+# **_LOGUMENT_**: "WHEN, What, and How has it happened in Vehicles?"
+
+_Sunghwan Park (Chung-Ang Univ.), Hyun-Gul Roh (42dot Corp.), Sunwoo Na (Chung-Ang Univ.), Sangho Park (Chung-Ang Univ.), Yeseul Chang (Chung-Ang Univ.), and Jaewoo Lee (Chung-Ang Univ.)_
 
 ## Contents
 
 1. [What is **_LOGUMENT_**?](#what-is-logument)
     - [Abstract](#abstract)
+2. [Implementation of  **_LOGUMENT_**](#implementation-of-logument)
     - [Structure](#structure)
-2. [Interface for **_LOGUMENT_**](#interface-for-logument)
     - [Primitive operations](#primitive-operations)
     - [Supporting operations](#supporting-operations)
     - [Additional supporting operation](#additional-supporting-operation)
@@ -31,64 +33,65 @@ To deal with these challenges, we propose **_LOGUMENT_**, a novel data type that
 By defining their operations, we materialize not only efficient logging, synchronizing, storing ever-changing data, but also practical temporal queries.
 Through discussions on implementation and concurrent synchronization, we demonstrate that _LOGUMENT_ serves as a foundation to manage real-time evolving data from a wider range of IoT devices.
 
+![Digital_twin_usage](./paper/logument.png)
+The prospective usages of _TSON_ and _LOGUMENT_ in the vehicle digital twin.
+
 ---
+
+## Implementation of **_LOGUMENT_**
 
 ### Structure
 
-- **Version** []uint64: An array of versions that **_LOGUMENT_** manages; should be continuos
-- **Snapshot** map[uint64]tson.Tson: A map which contains an initial Snapshot (by `Create`) and Snapshots from `Snapshot` Function (version, Snapshot)
-- **Patches** map[uint64]tsonpatch.Patch: A map of Patches managed internally in _LOGUMENT_ (version, Patches)
-- **PatchPool** tsonpatch.Patch: Patches to be managed in **_LOGUMENT_**
-
----
-
-## Interface for **_LOGUMENT_**
+- **Version _[]uint64_**: An array of versions that _LOGUMENT_ manages; should be continuos
+- **Snapshot _map[uint64]tson.Tson_**: A map which contains an initial Snapshot (by `Create`) and Snapshots from `Snapshot` Function {version: Snapshot}
+- **Patches _map[uint64]tsonpatch.Patch_**: A map of Patches managed internally in _LOGUMENT_ {version: Patches}
+- **PatchPool _tsonpatch.Patch_**: Patches to be managed in _LOGUMENT_
 
 ### Primitive operations
 
-- **Create(snapshot tson.Tson, patches jsonpatch.Patch)**: Make a new _LOGUMENT_ using an initial snapshot (**_Note_**: The function name in the implementation is `NewLogument`)
+- **Create(_snapshot tson.Tson, patches tsonpatch.Patch_)**: Make a new _LOGUMENT_ using an initial snapshot (**_Note_**: The function name in the implementation is `NewLogument`)
 
-- **Store(patches jsonpatch.Patch)**: Store new patches in the PatchPool temporarily; These patches are queued and will be later integrated into the _LOGUMENT_ state via the `Append` operation
+- **Store(_patches tsonpatch.Patch_)**: Store new patches in the PatchPool temporarily; These patches are queued and will be later integrated into the _LOGUMENT_ state via the `Append` operation
 
 - **Append()**: Incorporate all pending patches from the PatchPool into the Patches, update(increase) the version, and clear the PatchPool
 
-> 💡 Implementation detail
->
-> Append, as defined in the _LOGUMENT_ paper, is implemented by sequentially executing `Store` and `Append`.
+  > 💡 Implementation detail
+  >
+  > Append, as defined in the _LOGUMENT_ paper, is implemented by sequentially executing `Store` and `Append`.
 
-- **Track(vi, vj uint64)**: Extract patches that have changed _Values_ between the vi and the vj, preparing them for transmission
+- **Track(_vi, vj uint64_)**: Extract patches that have changed _Values_ between the vi and the vj, preparing them for transmission
 
-- **Snapshot(vk uint64)**: Generate a snapshot representing the _LOGUMENT_ state at the specified version by applying the corresponding patches to the nearest previous snapshot
+- **Snapshot(_vk uint64_)**: Generate a snapshot representing the _LOGUMENT_ state at the specified version by applying the corresponding patches to the nearest previous snapshot
 
-- **Slice(vi, vj uint64)**: Extract a subset of the _LOGUMENT_ that includes all snapshots and patches between the version vi and vj (inclusive)
+- **Slice(_vi, vj uint64_)**: Extract a subset of the _LOGUMENT_ that includes all snapshots and patches between the version vi and vj (inclusive)
 
 ### Supporting operations
 
-- **Set(vk uint64, op tsonpatch.OpType, path string, value any)**: Update the state with a JSON-supported _value_, and create the patch of which _op_ is either `add` or `replace`
+- **Set(_vk uint64, op tsonpatch.OpType, path string, value any_)**: Update the state with a JSON-supported _value_, and create the patch of which _op_ is either `add` or `replace`
 
-- **Unset(vk uint64, op tsonpatch.OpType, path string)**: Remove the specific path, and create the patch that _op_ is `remove`
+- **Unset(_vk uint64, op tsonpatch.OpType, path string_)**: Remove the specific path, and create the patch that _op_ is `remove`
 
-- **TestSet(vk uint64, op tsonpatch.OpType, path string, value any)**: `Set` only if _value_ has changed
+- **TestSet(_vk uint64, op tsonpatch.OpType, path string, value any_)**: `Set` only if _value_ has changed
 
-- **TestUnset(vk uint64, op tsonpatch.OpType, path string)**: `Unset` only if _path_ has removed
+- **TestUnset(_vk uint64, op tsonpatch.OpType, path string_)**: `Unset` only if _path_ has removed
 
-- **TemporalTrack(tsi, tsj int64)**: Extract patches between the tsi and the tsj, enabling to query the evolution and history of data over time
+- **TemporalTrack(_tsi, tsj int64_)**: Extract patches between the tsi and the tsj, enabling to query the evolution and history of data over time
 
-- **TemporalSnapshot(tsk int64)**: Create a snapshot based on a target timestamp
+- **TemporalSnapshot(_tsk int64_)**: Create a snapshot based on a target timestamp
 
-- **TemporalSlice(tsi, tsj int64)**: Extract a subset of the _LOGUMENT_ document based on the specified start and end timestamps
+- **TemporalSlice(_tsi, tsj int64_)**: Extract a subset of the _LOGUMENT_ document based on the specified start and end timestamps
 
 ### Additional supporting operation
 
-- **Compact(targetPath string)**: For the specified targetPath, remove patches where only the timestamp has changed (i.e., retain only those patches where the _Value_ has actually been modified)
+- **Compact(_path string_)**: For the specified targetPath, remove patches where only the timestamp has changed (i.e., retain only those patches where the _Value_ has actually been modified)
 
-- **History(targetPath string)**: Retrieve the history of changes at the specified target path; This includes all patches that have modified the value at the target path
+- **History(_path string_)**: Retrieve the history of changes at the specified target path; This includes all patches that have modified the value at the target path
 
 ---
 
 ## About **_TSON_**
 
-**_TSON_**, which stands for Time-Stamped JSON, is used to store timestamps as well as data values.
+_TSON_, which stands for Time-Stamped JSON, is used to store timestamps as well as data values.
 
 ### BNF of **_TSON_**
 
@@ -110,7 +113,7 @@ Through discussions on implementation and concurrent synchronization, we demonst
 
 ### VSCode Extension
 
-There is a Visual Studio Code extension, which enables **_TSON_** syntax highlighting.  
+There is a Visual Studio Code extension, which enables _TSON_ syntax highlighting.  
 Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-Extension) repository.
 
 NOTE: [TSON on VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=rollingress.tson)
@@ -123,6 +126,7 @@ NOTE: [TSON on VSCode Marketplace](https://marketplace.visualstudio.com/items?it
 `go run main.go [ARGUMENTS...]`
 
 **Parameters:**
+
 - `cars <int>`: \[required\] the number of cars
 - `files <int>`: \[required\] the number of files per each car
 - `change_rate <float64>`: Change rate for each file
@@ -133,8 +137,9 @@ NOTE: [TSON on VSCode Marketplace](https://marketplace.visualstudio.com/items?it
 
 ## Contributions
 
-- **_LOGUMENT_** interface: Sunghwan Park
-- **_TSON & TSON Patch_** implementation: Sunwoo Na ([Karu](https://github.com/karu-rress))
+- Supervising: Hyun-Gul Roh and Jaewoo Lee
+- _LOGUMENT_ interface: Sunghwan Park
+- _TSON & TSON Patch_ implementation: Sunwoo Na ([Karu](https://github.com/karu-rress))
 - Data Synchronize Framework: Sunwoo Na ([Karu](https://github.com/karu-rress))
 
-- `vss.json` from [Vehicle Signal Specification](https://github.com/COVESA/vehicle_signal_specification)`
+- `vss.json` from [Vehicle Signal Specification](https://github.com/COVESA/vehicle_signal_specification)
