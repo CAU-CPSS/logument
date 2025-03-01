@@ -2,7 +2,18 @@
 
 ## Contents
 
-1. [What is **_LOGUMENT_**?](#What-is-**_LOGUMENT_**?)
+1. [What is **_LOGUMENT_**?](#what-is-logument)
+    - [Abstract](#abstract)
+    - [Structure](#structure)
+2. [Interface for **_LOGUMENT_**](#interface-for-logument)
+    - [Primitive operations](#primitive-operations)
+    - [Supporting operations](#supporting-operations)
+    - [Additional supporting operation](#additional-supporting-operation)
+3. [About **_TSON_**](#about-tson)
+    - [BNF of **_TSON_**](#bnf-of-tson)
+    - [VSCode Extension](#vscode-extension)
+4. [Usage](#usage)
+5. [Contributions](#contributions)
 
 ---
 
@@ -97,10 +108,12 @@ Through discussions on implementation and concurrent synchronization, we demonst
 <timestamp> ::= "<" <timestamp_value> ">"
 ```
 
-## VSCode Extension
+### VSCode Extension
 
 There is a Visual Studio Code extension, which enables **_TSON_** syntax highlighting.  
 Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-Extension) repository.
+
+NOTE: [TSON on VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=rollingress.tson)
 
 
 ---
@@ -118,7 +131,7 @@ Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-
 
 ---
 
-## Contribute
+## Contributions
 
 - **_LOGUMENT_** interface: Sunghwan Park
 - **_TSON & TSON Patch_** implementation: Sunwoo Na ([Karu](https://github.com/karu-rress))
