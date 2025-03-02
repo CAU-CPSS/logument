@@ -25,16 +25,16 @@ _Sunghwan Park (Chung-Ang Univ.), Hyun-Gul Roh (42dot Corp.), Sunwoo Na (Chung-A
 
 Modern vehicles generate vast amounts of data from a growing number of sensors and actuators, and continuous reflection of evolving vehicle states is highly demanded in the automotive and mobility industries.
 Although the digital twin is a key enabling technology, few studies examine how to handle their evolving states.
-To address the issue, we first adopt JSON, a widely used document format, and explore its support for logging, synchronization, storing, and temporal queries in digital twins.
+To address the issue, we first adopt [JSON](https://www.json.org/json-en.html), a widely used document format, and explore its support for logging, synchronization, storing, and temporal queries in digital twins.
 While a naive approach of transmitting entire snapshots of JSONs can achieve the synchronization of digital twins, it incurs redundancy and inefficiency.
 Instead, transmitting partial changes using JSON Patch improves the efficiency in synchronizing and storing vehicle state.
 Meanwhile, most applications in digital twins demand temporal queries about "_WHEN, what, and how has an event occurred in vehicles?_".
-To deal with these challenges, we propose **_LOGUMENT_**, a novel data type that integrates TSON and TSON Patch, which _Time-Stamped_ JSON and JSON Patch, respectively.
+To deal with these challenges, we propose **_LOGUMENT_**, a novel data type that integrates _**TSON**_ and _**TSON**_ Patch, which are _Time-Stamped_ JSON and JSON Patch, respectively.
 By defining their operations, we materialize not only efficient logging, synchronizing, storing ever-changing data, but also practical temporal queries.
 Through discussions on implementation and concurrent synchronization, we demonstrate that _LOGUMENT_ serves as a foundation to manage real-time evolving data from a wider range of IoT devices.
 
 ![Digital_twin_usage](./paper/logument.png)
-The prospective usages of _TSON_ and _LOGUMENT_ in the vehicle digital twin.
+The prospective usages of **_TSON_** and **_LOGUMENT_** in the vehicle digital twin.
 
 ---
 
@@ -91,7 +91,7 @@ The prospective usages of _TSON_ and _LOGUMENT_ in the vehicle digital twin.
 
 ## About **_TSON_**
 
-_TSON_, which stands for Time-Stamped JSON, is used to store timestamps as well as data values.
+**_TSON_**, which stands for _Time-Stamped_ JSON, is used to store timestamps as well as data values.
 
 ### BNF of **_TSON_**
 
@@ -113,10 +113,10 @@ _TSON_, which stands for Time-Stamped JSON, is used to store timestamps as well 
 
 ### VSCode Extension
 
-There is a Visual Studio Code extension, which enables _TSON_ syntax highlighting.  
+There is a Visual Studio Code extension, which enables **_TSON_** syntax highlighting.  
 Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-Extension) repository.
 
-NOTE: [TSON on VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=rollingress.tson)
+Please check out [**_TSON_** extension for VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=rollingress.tson)
 
 
 ---
@@ -138,8 +138,8 @@ NOTE: [TSON on VSCode Marketplace](https://marketplace.visualstudio.com/items?it
 ## Contributions
 
 - Supervising: Hyun-Gul Roh and Jaewoo Lee
-- _LOGUMENT_ interface: Sunghwan Park
-- _TSON & TSON Patch_ implementation: Sunwoo Na ([Karu](https://github.com/karu-rress))
+- **_LOGUMENT_** interface: Sunghwan Park
+- **_TSON & TSON Patch_** implementation: Sunwoo Na ([Karu](https://github.com/karu-rress))
 - Data Synchronize Framework: Sunwoo Na ([Karu](https://github.com/karu-rress))
 
 - `vss.json` from [Vehicle Signal Specification](https://github.com/COVESA/vehicle_signal_specification)
