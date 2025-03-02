@@ -114,12 +114,22 @@ The prospective usages of **_TSON_** and **_LOGUMENT_** in the vehicle digital t
 ### VSCode Extension
 
 There is a Visual Studio Code extension, which enables **_TSON_** syntax highlighting.  
-Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-Extension) repository, and [**_TSON_** extension for VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=rollingress.tson)
+Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-Extension) repository, and [**_TSON_** extension on VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=rollingress.tson)
 
 
 ---
 
 ## Usage
+
+### _**LOGUMENT**_ Visualization
+
+```bash
+go run main.go
+```
+
+Then navigate to `localhost:8080` to interact.
+
+### _**TSON**_ & _**TSON Patch**_ Generation with VSS dataset
 
 `go run main.go [ARGUMENTS...]`
 
