@@ -168,13 +168,14 @@ func TestGetValue(t *testing.T) {
 }
 
 func TestToTson(t *testing.T) {
-	var j any
-
-	strJson, _ := os.ReadFile(json1)
-	err := json.Unmarshal(strJson, &j)
+	var (
+		j          any
+		tson       Tson
+		strJson, _ = os.ReadFile(json1)
+		err        = json.Unmarshal(strJson, &j)
+	)
 	assert.Nil(t, err)
 
-	var tson Tson
 	err = FromJson(j, &tson)
 	assert.Nil(t, err)
 	t.Log(ToCompatibleTsonString(tson))
@@ -186,11 +187,7 @@ func TestMarshalIndent(t *testing.T) {
 		stringTson, _ = os.ReadFile(tson1)
 		err           = Unmarshal(stringTson, &parsedTson)
 	)
-
-	if err != nil {
-		t.Errorf("Parse() error = %v", err)
-		return
-	}
+	assert.Nil(t, err)
 
 	b, _ := MarshalIndent(parsedTson, "", "  ")
 	t.Log(string(b))

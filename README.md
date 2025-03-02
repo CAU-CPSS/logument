@@ -121,7 +121,7 @@ Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-
 
 ## Usage
 
-### _**LOGUMENT**_ Visualization
+### _**LOGUMENT**_ Demo
 
 ```bash
 go run main.go
@@ -131,7 +131,9 @@ Then navigate to `localhost:8080` to interact.
 
 ### _**TSON**_ & _**TSON Patch**_ Generation with VSS dataset
 
-`go run main.go [ARGUMENTS...]`
+```bash
+go run main.go [ARGUMENTS...]
+```
 
 **Parameters:**
 

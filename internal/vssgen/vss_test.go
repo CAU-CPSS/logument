@@ -26,13 +26,13 @@ const (
 
 var v = &VssJson{
 	initialized: false,
-	data: map[string]interface{}{
+	data: map[string]any{
 		"a": "A",
 		"b": "B",
-		"c": map[string]interface{}{
+		"c": map[string]any{
 			"c1": "C1",
 			"c2": "C2",
-			"c3": map[string]interface{}{
+			"c3": map[string]any{
 				"c3_1": "C3_1",
 				"c3_2": "C3_2",
 			},
@@ -44,13 +44,13 @@ var v = &VssJson{
 
 var v_next = &VssJson{
 	initialized: false,
-	data: map[string]interface{}{
+	data: map[string]any{
 		"a": "A`",
 		"b": "B`",
-		"c": map[string]interface{}{
+		"c": map[string]any{
 			"c1": "C1",
 			"c2": "C2",
-			"c3": map[string]interface{}{
+			"c3": map[string]any{
 				"c3_1": "C3_1",
 				"c3_2": "C3_2",
 			},
@@ -71,13 +71,13 @@ func TestNewVssJson(t *testing.T) {
 func TestRemoveKeys(t *testing.T) {
 	v.removeKeys("a", "c1", "c3_1")
 
-	if _, ok := v.data.(map[string]interface{})["a"]; ok {
+	if _, ok := v.data.(map[string]any)["a"]; ok {
 		t.Errorf("removeKeys failed to remove key 'a'")
 	}
-	if _, ok := v.data.(map[string]interface{})["c"].(map[string]interface{})["c1"]; ok {
+	if _, ok := v.data.(map[string]any)["c"].(map[string]any)["c1"]; ok {
 		t.Errorf("removeKeys failed to remove key 'c1'")
 	}
-	if _, ok := v.data.(map[string]interface{})["c"].(map[string]interface{})["c3"].(map[string]interface{})["c3_1"]; ok {
+	if _, ok := v.data.(map[string]any)["c"].(map[string]any)["c3"].(map[string]any)["c3_1"]; ok {
 		t.Errorf("removeKeys failed to remove key 'c3_1'")
 	}
 }
@@ -202,44 +202,44 @@ func TestJsonPatch(t *testing.T) {
 }
 
 func TestCase(t *testing.T) {
-	// 예제 1: 일반 JSON 형식의 데이터 (map[string]interface{})
-	jsonData := map[string]interface{}{
-		"vehicleId": map[string]interface{}{
+	// 예제 1: 일반 JSON 형식의 데이터 (map[string]any)
+	jsonData := map[string]any{
+		"vehicleId": map[string]any{
 			"value":     "ABC1234",
 			"timestamp": 1700000000,
 		},
-		"speed": map[string]interface{}{
+		"speed": map[string]any{
 			"value":     72.5,
 			"timestamp": 1700000000,
 		},
-		"engineOn": map[string]interface{}{
+		"engineOn": map[string]any{
 			"value":     true,
 			"timestamp": 1700000000,
 		},
-		"location": map[string]interface{}{
-			"latitude": map[string]interface{}{
+		"location": map[string]any{
+			"latitude": map[string]any{
 				"value":     37.7749,
 				"timestamp": 1700000000,
 			},
-			"longitude": map[string]interface{}{
+			"longitude": map[string]any{
 				"value":     -122.4194,
 				"timestamp": 1700000000,
 			},
 		},
-		"tirePressure": []interface{}{
-			map[string]interface{}{
+		"tirePressure": []any{
+			map[string]any{
 				"value":     32.1,
 				"timestamp": 1700000000,
 			},
-			map[string]interface{}{
+			map[string]any{
 				"value":     31.8,
 				"timestamp": 1700000000,
 			},
-			map[string]interface{}{
+			map[string]any{
 				"value":     32.0,
 				"timestamp": 1700000000,
 			},
-			map[string]interface{}{
+			map[string]any{
 				"value":     31.9,
 				"timestamp": 1700000000,
 			},

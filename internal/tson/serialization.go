@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // ToCompatibleTsonString converts TSON to a string.
@@ -102,54 +103,59 @@ func marshalTson(v Value, ctx int) (string, error) {
 
 // marshalObject marshals an Object into a TSON object string.
 func marshalObject(obj Object) (string, error) {
-	s := "{"
-	first := true
+	var (
+		s     strings.Builder
+		first = true
+	)
+	s.WriteString("{")
 	for key, value := range obj {
 		if !first {
-			s += ", "
+			s.WriteString(", ")
 		} else {
 			first = false
 		}
-		keyStr := fmt.Sprintf("%q", key)
-		tsStr := ""
+		s.WriteString(fmt.Sprintf("%q", key))
 		switch leaf := value.(type) {
 		case Leaf[string]:
 			if leaf.Timestamp >= 0 {
-				tsStr = fmt.Sprintf(" <%d>", leaf.Timestamp)
+				s.WriteString(fmt.Sprintf(" <%d>", leaf.Timestamp))
 			} else {
-				tsStr = " <>"
+				s.WriteString(" <>")
 			}
 		case Leaf[float64]:
 			if leaf.Timestamp >= 0 {
-				tsStr = fmt.Sprintf(" <%d>", leaf.Timestamp)
+				s.WriteString(fmt.Sprintf(" <%d>", leaf.Timestamp))
 			} else {
-				tsStr = " <>"
+				s.WriteString(" <>")
 			}
 		case Leaf[bool]:
 			if leaf.Timestamp >= 0 {
-				tsStr = fmt.Sprintf(" <%d>", leaf.Timestamp)
+				s.WriteString(fmt.Sprintf(" <%d>", leaf.Timestamp))
 			} else {
-				tsStr = " <>"
+				s.WriteString(" <>")
 			}
 		}
-		s += keyStr + tsStr + ": "
+		s.WriteString(": ")
 		marshaledValue, err := marshalTson(value, object)
 		if err != nil {
 			return "", err
 		}
-		s += marshaledValue
+		s.WriteString(marshaledValue)
 	}
-	s += "}"
-	return s, nil
+	s.WriteString("}")
+	return s.String(), nil
 }
 
 // marshalArray marshals an Array into a TSON array string.
 func marshalArray(arr Array) (string, error) {
-	s := "["
-	first := true
+	var (
+		s     strings.Builder
+		first = true
+	)
+	s.WriteString("[")
 	for _, elem := range arr {
 		if !first {
-			s += ", "
+			s.WriteString(", ")
 		} else {
 			first = false
 		}
@@ -157,10 +163,10 @@ func marshalArray(arr Array) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		s += marshaledElem
+		s.WriteString(marshaledElem)
 	}
-	s += "]"
-	return s, nil
+	s.WriteString("]")
+	return s.String(), nil
 }
 
 // MarshalIndent serializes a JSON-like or Tson document into a TSON-formatted byte slice,
@@ -212,11 +218,12 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 				return fmt.Sprintf("%s <>", primStr), nil
 			}
 		}
-		s := "{\n"
+		var s strings.Builder
+		s.WriteString("{\n")
 		first := true
 		for key, val := range t {
 			if !first {
-				s += ",\n"
+				s.WriteString(",\n")
 			}
 			first = false
 			keyStr := strconv.Quote(key)
@@ -226,11 +233,11 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 					if err != nil {
 						return "", err
 					}
-					s += currentIndent + indent + keyStr + " <"
+					s.WriteString(currentIndent + indent + keyStr + " <")
 					if ts >= 0 {
-						s += strconv.FormatInt(ts, 10)
+						s.WriteString(strconv.FormatInt(ts, 10))
 					}
-					s += ">: " + primStr
+					s.WriteString(">: " + primStr)
 					continue
 				}
 			}
@@ -238,10 +245,10 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 			if err != nil {
 				return "", err
 			}
-			s += currentIndent + indent + keyStr + ": " + valStr
+			s.WriteString(currentIndent + indent + keyStr + ": " + valStr)
 		}
-		s += "\n" + currentIndent + "}"
-		return s, nil
+		s.WriteString("\n" + currentIndent + "}")
+		return s.String(), nil
 
 	case []any:
 		s := "[\n"
@@ -276,85 +283,87 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 		return s, nil
 
 	case Object:
-		s := "{\n"
+		var s strings.Builder
+		s.WriteString("{\n")
 		first := true
 		for key, val := range t {
 			if !first {
-				s += ",\n"
+				s.WriteString(",\n")
 			}
 			first = false
 			keyStr := strconv.Quote(key)
 			// Tson의 값이 Leaf라면, key 뒤에 timestamp를 붙여 출력
 			switch leaf := val.(type) {
 			case Leaf[string]:
-				s += currentIndent + indent + keyStr + " <"
+				s.WriteString(currentIndent + indent + keyStr + " <")
 				if leaf.Timestamp >= 0 {
-					s += strconv.FormatInt(leaf.Timestamp, 10)
+					s.WriteString(strconv.FormatInt(leaf.Timestamp, 10))
 				}
-				s += ">: " + strconv.Quote(leaf.Value)
+				s.WriteString(">: " + strconv.Quote(leaf.Value))
 			case Leaf[float64]:
-				s += currentIndent + indent + keyStr + " <"
+				s.WriteString(currentIndent + indent + keyStr + " <")
 				if leaf.Timestamp >= 0 {
-					s += strconv.FormatInt(leaf.Timestamp, 10)
+					s.WriteString(strconv.FormatInt(leaf.Timestamp, 10))
 				}
-				s += ">: " + fmt.Sprintf("%v", leaf.Value)
+				s.WriteString(">: " + fmt.Sprintf("%v", leaf.Value))
 			case Leaf[bool]:
-				s += currentIndent + indent + keyStr + " <"
+				s.WriteString(currentIndent + indent + keyStr + " <")
 				if leaf.Timestamp >= 0 {
-					s += strconv.FormatInt(leaf.Timestamp, 10)
+					s.WriteString(strconv.FormatInt(leaf.Timestamp, 10))
 				}
-				s += ">: " + fmt.Sprintf("%v", leaf.Value)
+				s.WriteString(">: " + fmt.Sprintf("%v", leaf.Value))
 			default:
 				valStr, err := marshalIndentValue(val, currentIndent+indent, indent, object)
 				if err != nil {
 					return "", err
 				}
-				s += currentIndent + indent + keyStr + ": " + valStr
+				s.WriteString(currentIndent + indent + keyStr + ": " + valStr)
 			}
 		}
-		s += "\n" + currentIndent + "}"
-		return s, nil
+		s.WriteString("\n" + currentIndent + "}")
+		return s.String(), nil
 
 	case Array:
-		s := "[\n"
+		var s strings.Builder
+		s.WriteString("[\n")
 		first := true
 		for _, elem := range t {
 			if !first {
-				s += ",\n"
+				s.WriteString(",\n")
 			}
 			first = false
 			switch leaf := elem.(type) {
 			case Leaf[string]:
-				s += currentIndent + indent
+				s.WriteString(currentIndent + indent)
 				if leaf.Timestamp >= 0 {
-					s += fmt.Sprintf("<%d> %s", leaf.Timestamp, strconv.Quote(leaf.Value))
+					s.WriteString(fmt.Sprintf("<%d> %s", leaf.Timestamp, strconv.Quote(leaf.Value)))
 				} else {
-					s += fmt.Sprintf("<> %s", strconv.Quote(leaf.Value))
+					s.WriteString(fmt.Sprintf("<> %s", strconv.Quote(leaf.Value)))
 				}
 			case Leaf[float64]:
-				s += currentIndent + indent
+				s.WriteString(currentIndent + indent)
 				if leaf.Timestamp >= 0 {
-					s += fmt.Sprintf("<%d> %v", leaf.Timestamp, leaf.Value)
+					s.WriteString(fmt.Sprintf("<%d> %v", leaf.Timestamp, leaf.Value))
 				} else {
-					s += fmt.Sprintf("<> %v", leaf.Value)
+					s.WriteString(fmt.Sprintf("<> %v", leaf.Value))
 				}
 			case Leaf[bool]:
-				s += currentIndent + indent
+				s.WriteString(currentIndent + indent)
 				if leaf.Timestamp >= 0 {
-					s += fmt.Sprintf("<%d> %v", leaf.Timestamp, leaf.Value)
+					s.WriteString(fmt.Sprintf("<%d> %v", leaf.Timestamp, leaf.Value))
 				} else {
-					s += fmt.Sprintf("<> %v", leaf.Value)
+					s.WriteString(fmt.Sprintf("<> %v", leaf.Value))
 				}
 			default:
 				elemStr, err := marshalIndentValue(elem, currentIndent+indent, indent, array)
 				if err != nil {
 					return "", err
 				}
-				s += currentIndent + indent + elemStr
+				s.WriteString(currentIndent + indent + elemStr)
 			}
 		}
-		s += "\n" + currentIndent + "]"
-		return s, nil
+		s.WriteString("\n" + currentIndent + "]")
+		return s.String(), nil
 
 	case Leaf[string]:
 		primStr := strconv.Quote(t.Value)
@@ -402,25 +411,6 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 	default:
 		return "", fmt.Errorf("unsupported type: %T", v)
 	}
-}
-
-// checkLeaf determines whether m (map[string]any) is a leaf node.
-func checkLeaf(m map[string]any) (bool, any, int64) {
-	if len(m) == 2 {
-		val, okVal := m["value"]
-		tsVal, okTs := m["timestamp"]
-		if okVal && okTs {
-			switch t := tsVal.(type) {
-			case float64:
-				return true, val, int64(t)
-			case int:
-				return true, val, int64(t)
-			case int64:
-				return true, val, t
-			}
-		}
-	}
-	return false, nil, 0
 }
 
 // formatPrimitive converts a primitive value (string, float64, bool) into its string representation.

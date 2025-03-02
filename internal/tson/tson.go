@@ -4,11 +4,8 @@
 // Defines the TSON type and provides functions
 // for TSON manipulation.
 //
-// TSON (Time-Stamped jsON) is a data format that
+// TSON (Time-Stamped JSON) is a data format that
 // extends JSON by adding a timestamp to each leaf value.
-//
-// TSON is a recursive data structure that can be
-// represented as an object, array, or leaf.
 //
 // Author: Karu (@karu-rress)
 //
@@ -61,16 +58,14 @@ const DefaultTimestamp int64 = -1
 func GetValue(t Tson, path string) (v Value, err error) {
 	var getValue func(t Tson, parts []string) (Value, error)
 	getValue = func(t Tson, parts []string) (Value, error) {
-		if len(parts) == 1 {
-			// If j is an Object, return the value of the key
+		if len(parts) == 1 { // If Object, return the value of the key
 			if obj, ok := t.(Object); ok {
 				if value, ok := obj[parts[0]]; ok {
 					return value, nil
 				} else {
 					return nil, fmt.Errorf("key not found: %s", parts[0])
 				}
-			} else if arr, ok := t.(Array); ok {
-				// If j is an Array, return the value of the index
+			} else if arr, ok := t.(Array); ok { // If Array, return the value of the index
 				index, err := strconv.Atoi(parts[0])
 				if err != nil {
 					return nil, fmt.Errorf("invalid index: %s", parts[0])
@@ -79,20 +74,18 @@ func GetValue(t Tson, path string) (v Value, err error) {
 					return nil, fmt.Errorf("index out of range: %d", index)
 				}
 				return arr[index], nil
-			} else {
+			} else { // If neither Object nor Array, return error
 				return nil, fmt.Errorf("invalid type: %T", t)
 			}
 		}
 
-		// If j is an Object, get the value of the key and call getValue recursively
-		if obj, ok := t.(Object); ok {
+		if obj, ok := t.(Object); ok { // If Object, call getValue recursively using the key
 			if value, ok := obj[parts[0]]; ok {
 				return getValue(value, parts[1:])
 			} else {
 				return nil, fmt.Errorf("key not found: %s", parts[0])
 			}
-		} else if arr, ok := t.(Array); ok {
-			// If j is an Array, get the value of the index and call getValue recursively
+		} else if arr, ok := t.(Array); ok { // If Array, call getValue recursively using the index
 			index, err := strconv.Atoi(parts[0])
 			if err != nil {
 				return nil, fmt.Errorf("invalid index: %s", parts[0])
@@ -114,11 +107,11 @@ func GetValue(t Tson, path string) (v Value, err error) {
 }
 
 // Equal checks if two TSONs are equal, including timestamps.
-func Equal(j1, j2 Tson) (ret bool, err error) {
+func Equal(t1, t2 Tson) (ret bool, err error) {
 	var (
 		o1, o2 any
-		b1, _  = ToCompatibleTsonBytes(j1)
-		b2, _  = ToCompatibleTsonBytes(j2)
+		b1, _  = ToCompatibleTsonBytes(t1)
+		b2, _  = ToCompatibleTsonBytes(t2)
 	)
 
 	// Check if the given TSONs are valid
@@ -132,25 +125,18 @@ func Equal(j1, j2 Tson) (ret bool, err error) {
 }
 
 // EqualWithoutTimestamp checks if two TSONs are equal, excluding timestamps.
-func EqualWithoutTimestamp(j1, j2 Tson) (ret bool, err error) {
+func EqualWithoutTimestamp(t1, t2 Tson) (ret bool, err error) {
 	var (
-		o1, o2       any
-		json1, json2 []byte
+		o1, o2 any
+		j1, _  = ToJsonBytes(t1)
+		j2, _  = ToJsonBytes(t2)
 	)
 
-	// Convert TSONs to JSON
-	if json1, err = ToJsonBytes(j1); err != nil {
+	// Check if the given TSONs (and converted JSONs) are valid
+	if err = json.Unmarshal(j1, &o1); err != nil {
 		return false, err
 	}
-	if json2, err = ToJsonBytes(j2); err != nil {
-		return false, err
-	}
-
-	// Check if the given TSONs are equal
-	if err = json.Unmarshal(json1, &o1); err != nil {
-		return false, err
-	}
-	if err = json.Unmarshal(json2, &o2); err != nil {
+	if err = json.Unmarshal(j2, &o2); err != nil {
 		return false, err
 	}
 
@@ -193,7 +179,7 @@ func GetLatestTimestamp(t Tson) int64 {
 ///////// CONVERSIONS
 //////////////////////////////////
 
-// All conversion functions has 'To' prefix
+// Every conversion functions has 'To' or 'From' prefix
 
 // ToArray converts the given TSON array to a Go slice.
 func ToArray(a Array) (arr []any, err error) {
@@ -222,6 +208,49 @@ func ToAny(t Tson) any {
 // NOTE: The timestamp field is kept
 func ToCompatibleTsonBytes(t Tson) (j []byte, err error) {
 	return json.Marshal(t)
+}
+
+// FromCompatibleTsonBytes converts a JSON byte array (with leaf nodes as { "value": ..., "timestamp": ... })
+// into a Tson object.
+func FromCompatibleTsonBytes(data []byte, t *Tson) error {
+	var convert func(v any) Value
+	convert = func(v any) Value {
+		switch t := v.(type) {
+		case map[string]any:
+			if isLeaf, leafVal, ts := checkLeaf(t); isLeaf {
+				switch leafVal.(type) {
+				case string:
+					return Leaf[string]{Value: leafVal.(string), Timestamp: ts}
+				case float64:
+					return Leaf[float64]{Value: leafVal.(float64), Timestamp: ts}
+				case bool:
+					return Leaf[bool]{Value: leafVal.(bool), Timestamp: ts}
+				default:
+					return nil // NOT supported
+				}
+			}
+			obj := Object{}
+			for key, val := range t {
+				obj[key] = convert(val)
+			}
+			return obj
+		case []any:
+			arr := Array{}
+			for _, elem := range t {
+				arr = append(arr, convert(elem))
+			}
+			return arr
+		default:
+			panic("FromCompatibleTsonBytes: Not a compatible TSON data")
+		}
+	}
+
+	var intermediate any
+	if err := json.Unmarshal(data, &intermediate); err != nil {
+		return err
+	}
+	*t = convert(intermediate)
+	return nil
 }
 
 // ToCompatibleTson converts the given TSON to a JSON object.
@@ -256,8 +285,8 @@ func ToJson(t Tson, j *any) (err error) {
 				case Leaf[bool]:
 					value[k] = leaf.Value
 				case map[string]any:
-					if isLeaf(leaf) {
-						value[k] = leaf["value"]
+					if isLeaf, leafVal, _ := checkLeaf(leaf); isLeaf {
+						value[k] = leafVal
 					} else {
 						removeTimestamp(v)
 					}
@@ -275,8 +304,8 @@ func ToJson(t Tson, j *any) (err error) {
 				case Leaf[bool]:
 					value[i] = leaf.Value
 				case map[string]any:
-					if isLeaf(leaf) {
-						value[i] = leaf["value"]
+					if isLeaf, leafVal, _ := checkLeaf(leaf); isLeaf {
+						value[i] = leafVal
 					} else {
 						removeTimestamp(leaf)
 					}
@@ -291,17 +320,6 @@ func ToJson(t Tson, j *any) (err error) {
 	removeTimestamp(*j)
 
 	return nil
-}
-
-// ToJsonBytes converts the given TSON to a JSON byte slice.
-// NOTE: The timestamp field is removed
-func ToJsonBytes(t Tson) (j []byte, err error) {
-	var o any
-	if err = ToJson(t, &o); err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(o)
 }
 
 // FromJson converts the given JSON object to a TSON.
@@ -348,6 +366,28 @@ func FromJson(o any, t *Tson) (err error) {
 	return FromCompatibleTsonBytes(str, t)
 }
 
+// ToJsonBytes converts the given TSON to a JSON byte slice.
+// NOTE: The timestamp field is removed
+func ToJsonBytes(t Tson) (j []byte, err error) {
+	var o any
+	if err = ToJson(t, &o); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(o)
+}
+
+// FromJsonBytes converts the given JSON byte slice to a TSON.
+// NOTE: The timestamp field is added with the default(< 0) value.
+func FromJsonBytes(j []byte, t *Tson) error {
+	var o any
+	if err := json.Unmarshal(j, &o); err != nil {
+		return err
+	}
+
+	return FromJson(o, t)
+}
+
 //////////////////////////////////
 ///////// PRIVATE
 //////////////////////////////////
@@ -358,7 +398,7 @@ func parseValue(raw any) (Value, error) {
 	case nil:
 		return nil, nil
 	case map[string]any:
-		if isLeaf(v) { // type is a TSON leaf
+		if isLeaf, _, _ := checkLeaf(v); isLeaf {
 			return parseLeaf(v)
 		} else { // type is a TSON object
 			return parseObject(v)
@@ -418,19 +458,21 @@ func parseLeaf(raw map[string]any) (Value, error) {
 	}
 }
 
-// isLeaf checks if the given map is a TSON leaf.
-func isLeaf(m map[string]any) bool {
-	// A TSON Object is a Leaf when
-	//  1: it has "value" and "timestamp" keys
-	//  2: no other keys exist
-	_, ok1 := m["value"]
-	ts, ok2 := m["timestamp"]
-	if !ok1 || !ok2 || len(m) != 2 {
-		return false
+// checkLeaf determines whether m (map[string]any) is a leaf node.
+func checkLeaf(m map[string]any) (bool, any, int64) {
+	if len(m) == 2 {
+		val, okVal := m["value"]
+		tsVal, okTs := m["timestamp"]
+		if okVal && okTs {
+			switch t := tsVal.(type) {
+			case float64:
+				return true, val, int64(t)
+			case int:
+				return true, val, int64(t)
+			case int64:
+				return true, val, t
+			}
+		}
 	}
-
-	if _, ok := ts.(float64); !ok {
-		panic(fmt.Sprintf("invalid timestamp type: %T (expected float64)", ts))
-	}
-	return true
+	return false, nil, 0
 }
