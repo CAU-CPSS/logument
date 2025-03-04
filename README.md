@@ -135,4 +135,4 @@ go run main.go [ARGUMENTS...]
 
 ## LICENSE
 
-**_LOGUMENT_** is [APACHE-2.0 LICENSED](/LICENSE)
+**_LOGUMENT_** and all related projects are [APACHE-2.0 licensed](/LICENSE).
