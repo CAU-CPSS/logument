@@ -132,3 +132,7 @@ go run main.go [ARGUMENTS...]
 - Data Synchronize Framework: Sunwoo Na ([Karu](https://github.com/karu-rress))
 
 - `vss.json` from [Vehicle Signal Specification](https://github.com/COVESA/vehicle_signal_specification)
+
+## LICENSE
+
+**_LOGUMENT_** is [APACHE-2.0 LICENSED](/LICENSE)
