@@ -9,20 +9,6 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-//	const initSnapshot = `{
-//	    "vehicleId": { "value": "ABC1234", "timestamp": 1700000000 },
-//	    "speed": { "value": 72.5, "timestamp": 1700000000 },
-//	    "engineOn": { "value": true, "timestamp": 1700000000 },
-//	    "location": {
-//			"latitude": { "value": 37.7749, "timestamp": 1700000000 },
-//	        "longitude": { "value": -122.4194, "timestamp": 1700000000 }
-//		},
-//	    "tirePressure": [
-//	        { "value": 32.1, "timestamp": 1700000000 },
-//	        { "value": 31.8, "timestamp": 1700000000 },
-//	        { "value": 32.0, "timestamp": 1700000000 },
-//	        { "value": 31.9, "timestamp": 1700000000 }
-//	    ] }`
 const initSnapshot = `{
     "vehicleId" <1700000000>: "ABC1234",
     "speed" <1700000000>: 72.5,
@@ -106,7 +92,10 @@ func TestApply(t *testing.T) {
 	lgm.Store(Patches[1])
 	t.Log(spew.Sdump(lgm))
 
-	lgm.Append()
+	err := lgm.Append()
+	if err != nil {
+		t.Error(err)
+	}
 	t.Log(spew.Sdump(lgm))
 }
 
@@ -116,6 +105,7 @@ func TestSnapshot(t *testing.T) {
 	lgm.Store(Patches[0])
 	lgm.Store(Patches[1])
 	lgm.Append()
+
 
 	lgm.Print()
 
@@ -139,6 +129,7 @@ func TestTemporalSnapshot(t *testing.T) {
 	lgm.Store(Patches[1])
 	lgm.Append()
 
+
 	// Take a snapshot already taken
 	// snapshot := lgm.TimedSnapshot(1700000000)
 	// t.Log(spew.Sdump(snapshot))
@@ -147,7 +138,7 @@ func TestTemporalSnapshot(t *testing.T) {
 	snapshot := lgm.TemporalSnapshot(1900000000)
 	t.Log(spew.Sdump(snapshot))
 
-	// // Requests exceeding latest version
+	// Requests exceeding latest version
 	// snapshot = lgm.TimedSnapshot(2100000000)
 	// t.Log(spew.Sdump(snapshot))
 }
@@ -157,11 +148,20 @@ func TestSlice(t *testing.T) {
 	lgm := logument.NewLogument(initSnapshot, nil)
 	lgm.Store(Patches[0])
 	lgm.Store(Patches[1])
-	lgm.Append() // version 1
+	err := lgm.Append() // version 1
+	if err != nil {
+		t.Error(err)
+	} 
 	lgm.Store(Patches[2])
-	lgm.Append() // version 2
+	err = lgm.Append() // version 2
+	if err != nil {
+		t.Error(err)
+	}
 	lgm.Store(Patches[3])
-	lgm.Append() // version 3
+	err = lgm.Append() // version 3
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Slice patches
 	lgmSubset := lgm.Slice(1, 3)
