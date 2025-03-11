@@ -106,7 +106,6 @@ func TestSnapshot(t *testing.T) {
 	lgm.Store(Patches[1])
 	lgm.Append()
 
-
 	lgm.Print()
 
 	// Take a snapshot already taken
@@ -129,7 +128,6 @@ func TestTemporalSnapshot(t *testing.T) {
 	lgm.Store(Patches[1])
 	lgm.Append()
 
-
 	// Take a snapshot already taken
 	// snapshot := lgm.TimedSnapshot(1700000000)
 	// t.Log(spew.Sdump(snapshot))
@@ -151,7 +149,7 @@ func TestSlice(t *testing.T) {
 	err := lgm.Append() // version 1
 	if err != nil {
 		t.Error(err)
-	} 
+	}
 	lgm.Store(Patches[2])
 	err = lgm.Append() // version 2
 	if err != nil {
