@@ -100,9 +100,15 @@ Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-
 
 ## Usage
 
+### Working environment
+
+- go 1.23.5
+- jsonpatch@appscode v1.0.1
+
 ### _**LOGUMENT**_ Demo
 
 ```bash
+go get -u
 go run main.go -car 5 -files 10 && go run main.go
 ```
 

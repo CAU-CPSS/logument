@@ -1,96 +1,388 @@
 <!--
-//
-// index.html
-//
-// Web-based visualizer for the Logument project.
-//
-// Demo web page: Karu (@karu-rress)
-//
+Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
+
+Copyright [2025] [CAU CPSS LAB.; 42dot Corp.]
+
+Web-based visualizer for the Logument project.
+
+Demo web page: Sunghwan Park; Karu (@karu-rress)
 -->
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Logument Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
     <style>
+        body {
+            background-color: #a8c094;
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
 
-    </style>
-</head>
-<body>
-    <h1>Logument Demo</h1>
+        h1 {
+            margin-bottom: 1rem;
+            font-size: 3rem;
+            font-weight: bold;
+            font-family: 'Roboto', sans-serif;
+            font-variant: small-caps;
+        }
 
-    <label for="original">Select car:</label>
-    <select id="original" onchange="updateView(event)">
-        <option value="car1">Car 1</option>
-        <option value="car2">Car 2</option>
-        <option value="car3">Car 3</option>
-        <option value="car4">Car 4</option>
-        <option value="car5">Car 5</option>
-    </select><br>
-    <textarea name="original" id="view" readonly cols="80" rows="25">
-    </textarea><br>
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
 
-    <label for="patchCombo">Patch until:</label>
-    <select id="patchCombo" onchange="updateView(event)">
-        <option value="patch1" disabled="true">Patch 1</option>
-        <option value="patch2">Patch 2</option>
-        <option value="patch3">Patch 3</option>
-        <option value="patch4">Patch 4</option>
-        <option value="patch5">Patch 5</option>
-        <option value="patch6">Patch 6</option>
-        <option value="patch7">Patch 7</option>
-        <option value="patch8">Patch 8</option>
-        <option value="patch9">Patch 9</option>
-    </select><br>
-    <textarea name="tsonpatch" id="patch" readonly cols="80" rows="25">
-    </textarea><br>
+        .left-col {
+            width: 700px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-    <label id="note1">NOTE: None of patch is applied.</label><br>
-    <label id="note2">NOTE: Patch 1 to 9 are in patch pool.</label><br>
+        .left-col .box {
+            height: 300px;
+        }
 
+        .right-col {
+            flex: 1;
+        }
 
-    <h3>Result:</h3>
-    <textarea name="result" id="result" readonly cols="80" rows="25">
-    </textarea>
+        .right-col .box {
+            height: 625px;
+        }
 
+        .box {
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 20px;
+            padding: 0;
+            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
 
-    <script>
-        function updateView(event) {
-            let carCombo = document.getElementById("original");
-            // Selecting a car
-            let carIdx = carCombo.selectedIndex + 1;
-            if (event == null || event.target == carCombo) {
-                fetch("/update?car=" + carIdx)
-                    .then(response => response.text())
-                    .then(data => {
-                        document.getElementById("view").value = data;
-                    });
-                return;
+        .box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            border-bottom: 3px solid #000;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 0.5rem 1rem;
+            font-weight: bold;
+        }
+
+        .snapshot-box {
+            margin-top: 20px;
+            height: 600px;
+        }
+
+        .title-text {
+            font-size: 1rem;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.2rem 0.5rem;
+        }
+
+        .toggle-btn:hover {
+            background: #eaeaea;
+        }
+
+        .box-content {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            overflow-x: auto;
+            overflow-y: auto;
+            font-family: "JetBrains Mono", Courier, monospace;
+        }
+
+        .string {
+            color: #c41a16;
+        }
+
+        .number {
+            color: #1c00cf;
+        }
+
+        .boolean {
+            color: #aa0d91;
+        }
+
+        .null {
+            color: #808080;
+        }
+
+        .key {
+            color: #0b7500;
+            font-weight: bold;
+        }
+
+        @media (max-width: 800px) {
+            .left-col,
+            .right-col {
+                flex: 100%;
             }
-            else {
-                let patchCombo = document.getElementById("patchCombo");
-                let patchIdx = patchCombo.selectedIndex + 2; // 1st patch is tson
-                document.getElementById("note1").textContent  = "NOTE: Patch 1 to " + (patchIdx - 1) + " are applied.";
-                if (patchIdx == 10) {
-                    document.getElementById("note2").textContent = "NOTE: All patches are applied.";
-                }
-                else {
-                    document.getElementById("note2").textContent  = "NOTE: Patch " + patchIdx + " to 9 are in patch pool.";
-                }
-                fetch(`/update?car=${carIdx}&patch=${patchIdx}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        document.getElementById("patch").value = data;
-                    });
-                fetch(`patch?car=${carIdx}&patch=${patchIdx}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        document.getElementById("result").value = data;
-                    });
+
+            .right-col .box {
+                height: 300px;
             }
         }
 
-        window.onload = () => updateView(null);
+        select {
+            margin: 0.5rem 0;
+            font-size: 1rem;
+        }
+
+        label {
+            font-weight: bold;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Logument Demo</h1>
+
+    <div class="container">
+        <!-- 왼쪽: Vehicle State, Patches -->
+        <div class="left-col">
+            <!-- Vehicle State 박스 -->
+            <div class="box">
+                <div class="box-header">
+                    <div class="title-text">Vehicle State</div>
+                    <!-- 차량 선택 -->
+                    <!-- <label for="carSelect">Select car:</label> -->
+                    <select id="carSelect" onchange="updateVehicle()">
+                        <option value="1">Car 1</option>
+                        <option value="2">Car 2</option>
+                        <option value="3">Car 3</option>
+                        <option value="4">Car 4</option>
+                        <option value="5">Car 5</option>
+                    </select>
+                </div>
+                <div class="box-content">
+                    <!-- 원본 TSON 표시 -->
+                    <pre><code id="view"></code></pre>
+                </div>
+            </div>
+
+            <!-- Patches 박스 -->
+            <div class="box">
+                <div class="box-header">
+                    <div class="title-text">Patches</div>
+                    <!-- 패치 선택 -->
+                    <!-- <label for="patchSelect">Select patch:</label> -->
+                    <select id="patchSelect" onchange="updatePatch()">
+                        <!-- patchIdx는 2부터 9 사이(또는 실제 데이터셋 기준) -->
+                        <option value="2">Patch 1</option>
+                        <option value="3">Patch 2</option>
+                        <option value="4">Patch 3</option>
+                        <option value="5">Patch 4</option>
+                        <option value="6">Patch 5</option>
+                        <option value="7">Patch 6</option>
+                        <option value="8">Patch 7</option>
+                        <option value="9">Patch 8</option>
+                    </select>
+                </div>
+                <div class="box-content">
+                    <pre><code id="patch"></code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽: Result -->
+        <div class="right-col">
+            <div class="box">
+                <div class="box-header">
+                    <div class="title-text">Result of Append Patches</div>
+                    <!-- <button class="toggle-btn" onclick="applyPatches()">Append</button> -->
+                    <button class="toggle-btn" id="appendSnapshotBtn" onclick="onAppendSnapshotClicked()">
+                        Append
+                    </button>
+                </div>
+                <div class="box-content">
+                    <!-- 결과 JSON 표시 -->
+                    <pre><code id="result"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Snapshots -->
+    <div class="box snapshot-box">
+        <div class="box-header">
+            <div class="title-text">Saved Snapshots</div>
+            <select id="snapshotSelect" onchange="updateSnapshotView()">
+                <!-- 동적으로 추가됨 -->
+            </select>
+        </div>
+        <div class="box-content">
+            <pre><code id="snapshotView"></code></pre>
+        </div>
+    </div>
+
+    <script>
+        let isAppended = false;
+
+        function syntaxHighlight(jsonString) {
+            if (typeof jsonString !== "string") {
+                jsonString = JSON.stringify(jsonString, null, 2);
+            }
+            jsonString = jsonString
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+            return jsonString.replace(
+                /("(\\u[a-zA-Z0-9]{2}|\\[^u]|[^"\\])*"(\s*:)?|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/g,
+                function (match) {
+                    let cls = "number";
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = "key";
+                        } else {
+                            cls = "string";
+                        }
+                    } else if (/true|false/.test(match)) {
+                        cls = "boolean";
+                    } else if (/null/.test(match)) {
+                        cls = "null";
+                    }
+                    return '<span class="' + cls + '">' + match + "</span>";
+                }
+            );
+        }
+
+        // 서버에서 받아온 텍스트를 파싱 후, syntaxHighlight 적용해 <code> 요소에 표시
+        function setCodeBlockContent(elementId, textData) {
+            const codeBlock = document.getElementById(elementId);
+            try {
+                const parsed = JSON.parse(textData);
+                const pretty = JSON.stringify(parsed, null, 2);
+                codeBlock.innerHTML = syntaxHighlight(pretty);
+            } catch (e) {
+                // JSON.parse 실패 시에도 그대로 문법 강조 시도
+                codeBlock.innerHTML = syntaxHighlight(textData);
+            }
+        }
+
+        // 차량 선택이 바뀌면, 해당 car의 원본 TSON을 fetch
+        function updateVehicle() {
+            const car = document.getElementById("carSelect").value;
+            fetch(`/update?car=${car}`)
+                .then((res) => res.text())
+                .then((data) => {
+                    setCodeBlockContent("view", data);
+                    updatePatch();
+                });
+        }
+
+        function updatePatch() {
+            const car = document.getElementById("carSelect").value;
+            const patch = document.getElementById("patchSelect").value;
+            fetch(`/update?car=${car}&patch=${patch}`)
+                .then((res) => res.text())
+                .then((data) => {
+                    setCodeBlockContent("patch", data);
+                });
+        }
+
+        function updateVehicleAndReset() {
+            isAppended = false;
+            document.getElementById("appendSnapshotBtn").textContent = "Append";
+            updateVehicle();
+        }
+        function updatePatchAndReset() {
+            isAppended = false;
+            document.getElementById("appendSnapshotBtn").textContent = "Append";
+            updatePatch();
+        }
+
+        // Apply 버튼을 누르면, /patch?car=X&patch=Y 로 fetch 후 결과 표시
+        function applyPatches() {
+            const car = document.getElementById("carSelect").value;
+            const patch = document.getElementById("patchSelect").value;
+            /*
+            patchHandler는 patch=Y라면, #2부터 #Y까지 순차 적용하므로
+            실제로 patch=1은 원본 TSON, patch=2부터 누적
+           */
+            fetch(`/patch?car=${car}&patch=${patch}`)
+                .then((res) => res.text())
+                .then((data) => {
+                    setCodeBlockContent("result", data);
+                });
+        }
+
+        const snapshots = {};
+
+        function saveSnapshot() {
+            const car = document.getElementById("carSelect").value;
+            const patch = document.getElementById("patchSelect").value;
+            const snapshotText = document.getElementById("result").textContent;
+            const snapshotName = `car_${car}_patch_${patch - 1} Snapshot`;
+
+            snapshots[snapshotName] = snapshotText;
+
+            // select 목록에 추가 (중복 방지)
+            const sel = document.getElementById("snapshotSelect");
+            if (![...sel.options].some((o) => o.value === snapshotName)) {
+                const opt = document.createElement("option");
+                opt.value = snapshotName;
+                opt.text = snapshotName;
+                sel.add(opt);
+            }
+
+            sel.value = snapshotName;
+            updateSnapshotView();
+        }
+
+        // 선택된 snapshot 내용을 아래에 표시
+        function updateSnapshotView() {
+            const sel = document.getElementById("snapshotSelect");
+            const snapshotName = sel.value;
+            if (snapshotName && snapshots[snapshotName]) {
+                setCodeBlockContent("snapshotView", snapshots[snapshotName]);
+            }
+        }
+
+        function onAppendSnapshotClicked() {
+            const btn = document.getElementById("appendSnapshotBtn");
+            if (!isAppended) {
+                // 아직 append 안 했다면
+                applyPatches();
+                isAppended = true;
+                btn.textContent = "Snapshot";
+            } else {
+                // 이미 append 된 상태라면 -> snapshot을 저장
+                saveSnapshot();
+                isAppended = false;
+                btn.textContent = "Append";
+            }
+        }
+
+        // 페이지 처음 로드 시, 기본 값으로 차량1, patch2 표시
+        window.onload = () => {
+            document.getElementById("carSelect").value = "1";
+            document.getElementById("patchSelect").value = "2";
+            updateVehicle(); // Car1의 원본 TSON 가져옴
+            updatePatch(); // Patch2 JSON 가져옴
+        };
     </script>
 </body>
+
 </html>

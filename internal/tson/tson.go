@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -475,4 +476,59 @@ func checkLeaf(m map[string]any) (bool, any, int64) {
 		}
 	}
 	return false, nil, 0
+}
+
+// ToCompatibleTsonBytesSorted converts the TSON to a JSON byte slice
+// but ensures that keys in objects are sorted (stable ordering).
+func ToCompatibleTsonBytesSorted(t Tson) ([]byte, error) {
+	v, err := toSortedInterface(t)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(v)
+}
+
+// toSortedInterface recursively converts TSON -> map/slice with sorted keys.
+func toSortedInterface(t Tson) (any, error) {
+	switch val := t.(type) {
+	case Leaf[string]:
+		return map[string]any{"value": val.Value, "timestamp": val.Timestamp}, nil
+	case Leaf[float64]:
+		return map[string]any{"value": val.Value, "timestamp": val.Timestamp}, nil
+	case Leaf[bool]:
+		return map[string]any{"value": val.Value, "timestamp": val.Timestamp}, nil
+
+	case Object:
+		// 1. 수집된 key들을 사전순으로 정렬
+		keys := make([]string, 0, len(val))
+		for k := range val {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		// 2. 각 key 순서대로 재귀 변환
+		result := make(map[string]any, len(val))
+		for _, k := range keys {
+			child, err := toSortedInterface(val[k])
+			if err != nil {
+				return nil, err
+			}
+			result[k] = child
+		}
+		return result, nil
+
+	case Array:
+		arr := make([]any, len(val))
+		for i, child := range val {
+			conv, err := toSortedInterface(child)
+			if err != nil {
+				return nil, err
+			}
+			arr[i] = conv
+		}
+		return arr, nil
+
+	default:
+		return nil, fmt.Errorf("unexpected type in toSortedInterface: %T", t)
+	}
 }
