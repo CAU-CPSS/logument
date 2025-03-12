@@ -3,19 +3,14 @@
 //
 // Web-based visualizer for the Logument project.
 //
-// Authors:
-//   Karu (@karu-rress)
-//   Sunghwan Park (@tjdghks994)
+// Author: Karu (@karu-rress)
 //
 
 package main
 
 import (
-	_ "embed"
 	"fmt"
-	_ "html/template"
 	"net/http"
-	_ "net/http"
 	"os"
 	"strconv"
 
@@ -36,7 +31,6 @@ func main() {
 		generateVss(true)
 		return
 	}
-
 	// Otherwise, run web server
 
 	// 1. Create dataset with default settings
@@ -48,29 +42,6 @@ func main() {
 	http.HandleFunc("/patch", patchHandler)
 	fmt.Println("Server running at http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
-
-	/*
-		var (
-			initSnapshot tson.Tson
-			j            = expSnapshot
-		)
-
-		tson.Unmarshal(j, &initSnapshot)
-
-		// Make a new Logument document
-		lgm := logument.NewLogument(initSnapshot, nil)
-		// Store the patch in the PatchPool
-		lgm.Store(expPatch)
-		// Apply the patch to the PatchMap to manage the patch history
-		lgm.Append()
-
-		// Make a snapshot at the target version
-		targetVesion := uint64(1)
-		lgm.Snapshot(targetVesion)
-
-		// Print the Logument document
-		lgm.Print()
-	*/
 }
 
 func generateVss(userDefined bool) {
@@ -102,8 +73,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	html, _ := os.ReadFile("index.html")
 	w.Header().Set("Content-Type", "text/html")
 	w.Write(html)
-	// tmpl := template.Must(template.ParseFiles("index.html"))
-	// tmpl.Execute(w, nil)
 }
 
 // updateHandler handles the update request, sending the TSON or Patch
@@ -113,13 +82,13 @@ func updateHandler(w http.ResponseWriter, r *http.Request) {
 		// Send the TSON snapshot
 		b, _ := os.ReadFile(fmt.Sprintf("dataset/car_%s/tson/%s_1.tson", car, car))
 		w.Write(b)
-	} else {
-		// Send the patch
+	} else { // Send the patch
 		b, _ := os.ReadFile(fmt.Sprintf("dataset/car_%s/patches/%s_%s.json", car, car, patch))
 		w.Write(b)
 	}
 }
 
+// patchHandler handles the patch request, sending the patched TSON
 func patchHandler(w http.ResponseWriter, r *http.Request) {
 	var (
 		car, _          = strconv.Atoi(r.URL.Query().Get("car"))
