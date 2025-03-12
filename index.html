@@ -32,7 +32,7 @@
 
     <label for="patchCombo">Patch until:</label>
     <select id="patchCombo" onchange="updateView(event)">
-        <option value="patch1">Patch 1</option>
+        <option value="patch1" disabled="true">Patch 1</option>
         <option value="patch2">Patch 2</option>
         <option value="patch3">Patch 3</option>
         <option value="patch4">Patch 4</option>
@@ -94,25 +94,3 @@
     </script>
 </body>
 </html>
-
-
-<!--
-
-처음 - initial document보여줌
-
-
-
-patch 1~3번부터 선택해서 패치할 수 있고...
-
-Patchpool에 아직 apply되지 않은 patch들을 보여줌.
-----
-Demo 페이지에 처음 들어가면 기본적으로 딱 뜨는 환경은
-JSON document가 (version 0) 떠야 함. initial snapshot 담은 거.
-
-그 후 patch pool 버튼을 클릭했을 때 toggle로 뜨든 list로 뜨든 그렇게 해서
-현재 append 가능한 patch list들이 쭉 뜨면 좋겠음.
-patch version 1~N까지.
-
-
-
--->

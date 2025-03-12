@@ -39,6 +39,11 @@ func NewLogument(initialSnapshot any, initialPatches any) *Logument {
 		if err != nil {
 			panic(err)
 		}
+	case []byte:
+		err := tson.Unmarshal(initialSnapshot, &snapshot)
+		if err != nil {
+			panic(err)
+		}
 	case tsonSnapshot:
 		snapshot = initialSnapshot
 	default:
@@ -117,6 +122,12 @@ func (lgm *Logument) Store(inputPatches any) {
 	case string:
 		var err error
 		patches, err = tsonpatch.Unmarshal([]byte(inputPatches))
+		if err != nil {
+			panic(err)
+		}
+	case []byte:
+		var err error
+		patches, err = tsonpatch.Unmarshal(inputPatches)
 		if err != nil {
 			panic(err)
 		}
