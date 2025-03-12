@@ -61,9 +61,7 @@ var v_next = &VssJson{
 }
 
 func TestNewVssJson(t *testing.T) {
-	v := NewVssJson(file)
-
-	if v == nil {
+	if v := NewVssJson(file); v == nil {
 		t.Errorf("NewVssJson(%s) returned nil", file)
 	}
 }
@@ -84,21 +82,18 @@ func TestRemoveKeys(t *testing.T) {
 
 func TestPrint(t *testing.T) {
 	stdout := os.Stdout
-
 	r, w, _ := os.Pipe()
+
 	os.Stdout = w
-
 	v.Print()
-
 	w.Close()
 	os.Stdout = stdout
 
 	var buf bytes.Buffer
 	buf.ReadFrom(r)
 	captured := buf.String()
-
 	expected := `{
-    "a": "A",
+    "a": "A",\n
     "b": "B",
     "c": {
         "c1": "C1",
@@ -115,7 +110,6 @@ func TestPrint(t *testing.T) {
     }
 }
 `
-
 	if captured != expected {
 		t.Errorf("Expected: \n%s, got \n%s", expected, captured)
 	}
@@ -123,19 +117,16 @@ func TestPrint(t *testing.T) {
 
 func TestPrintWithIndex(t *testing.T) {
 	stdout := os.Stdout
-
 	r, w, _ := os.Pipe()
+
 	os.Stdout = w
-
 	v.PrintWithIndex()
-
 	w.Close()
 	os.Stdout = stdout
 
 	var buf bytes.Buffer
 	buf.ReadFrom(r)
 	captured := buf.String()
-
 	expected := `00001: {
 00002:     "a": "A",
 00003:     "b": "B",
@@ -154,16 +145,13 @@ func TestPrintWithIndex(t *testing.T) {
 00016:     }
 00017: }
 `
-
 	if captured != expected {
 		t.Errorf("Expected: \n%s, got \n%s", expected, captured)
 	}
 }
 
 func TestLeafNodes(t *testing.T) {
-	result := v.LeafNodes()
-
-	if len(result) != 8 {
+	if result := v.LeafNodes(); len(result) != 8 {
 		t.Errorf("Expected 8 leaf nodes, got %d", len(result))
 	}
 }
@@ -180,9 +168,7 @@ func TestGenerateNext(t *testing.T) {
 
 	j, patch := v.GenerateNext(0.5, 1, 2)
 	_ = j
-
 	patch.Print()
-
 }
 
 func TestSave(t *testing.T) {
@@ -202,7 +188,7 @@ func TestJsonPatch(t *testing.T) {
 }
 
 func TestCase(t *testing.T) {
-	// 예제 1: 일반 JSON 형식의 데이터 (map[string]any)
+	// Case 1: JSON-styled data (map[string]any)
 	jsonData := map[string]any{
 		"vehicleId": map[string]any{
 			"value":     "ABC1234",
@@ -246,7 +232,7 @@ func TestCase(t *testing.T) {
 		},
 	}
 
-	// 예제 2: Tson 타입을 사용한 데이터
+	// Example 2: Tson data
 	tsonData := tson.Object{
 		"vehicleId": tson.Leaf[string]{Value: "ABC1234", Timestamp: 1700000000},
 		"speed":     tson.Leaf[float64]{Value: 72.5, Timestamp: 1700000000},
@@ -263,16 +249,16 @@ func TestCase(t *testing.T) {
 		},
 	}
 
-	fmt.Println("=== JSON 데이터 ===")
-	data, err := tson.MarshalIndent(jsonData, "", "  ")
+	fmt.Println("=== JSON Data ===")
+	data, err := tson.MarshalIndent(jsonData, "", "    ")
 	if err != nil {
 		fmt.Println("Error during MarshalIndent:", err)
 		return
 	}
 	fmt.Println(string(data))
 
-	fmt.Println("\n=== Tson 데이터 ===")
-	data2, err := tson.MarshalIndent(tsonData, "", "  ")
+	fmt.Println("\n=== Tson Data ===")
+	data2, err := tson.MarshalIndent(tsonData, "", "    ")
 	if err != nil {
 		fmt.Println("Error during MarshalIndent:", err)
 		return
