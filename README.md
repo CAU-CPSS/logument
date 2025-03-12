@@ -103,7 +103,7 @@ Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-
 ### _**LOGUMENT**_ Demo
 
 ```bash
-go run main.go
+go run main.go -car 5 -files 10 && go run main.go
 ```
 
 Then navigate to `localhost:8080` to interact.
