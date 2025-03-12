@@ -109,7 +109,7 @@ func (lgm *Logument) getSortedVersions(source string) []uint64 {
 	default:
 		panic("Invalid source. Must be 'snapshot' or 'patch'.")
 	}
-	
+
 	sort.Slice(versions, func(i, j int) bool { return versions[i] < versions[j] })
 
 	return versions
@@ -184,7 +184,7 @@ func (lgm *Logument) Append() error {
 	lgm.Patches[latestVersion+1] = lgm.PatchPool
 	lgm.Version = append(lgm.Version, latestVersion+1)
 	lgm.PatchPool = nil
-	
+
 	return nil
 }
 

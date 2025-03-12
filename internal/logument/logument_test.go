@@ -25,7 +25,7 @@ const initSnapshot = `{
     ]
 }`
 
-var Patches = []string{
+var patches = []string{
 	`[
 		{ "op": "replace", "path": "/location/latitude", "value": 43.9409, "timestamp": 1800000000 },
 		{ "op": "replace", "path": "/location/longitude", "value": -150.4194, "timestamp": 1800000000 },
@@ -49,7 +49,7 @@ func TestCreate(t *testing.T) {
 
 	// use only string format
 	t.Log("Make a Logument with string format\n")
-	lgm := logument.NewLogument(initSnapshot, Patches[0])
+	lgm := logument.NewLogument(initSnapshot, patches[0])
 	t.Log(spew.Sdump(lgm))
 
 	// use Snapshot and Patches format
@@ -58,7 +58,7 @@ func TestCreate(t *testing.T) {
 	if err := tson.Unmarshal([]byte(initSnapshot), &ss); err != nil {
 		panic(err)
 	}
-	pp, err := tsonpatch.Unmarshal([]byte(Patches[0]))
+	pp, err := tsonpatch.Unmarshal([]byte(patches[0]))
 	if err != nil {
 		t.Error(err)
 	}
@@ -67,7 +67,7 @@ func TestCreate(t *testing.T) {
 
 	// use []Patches format
 	t.Log("Make a Logument with []Patches format\n")
-	pp2, err := tsonpatch.Unmarshal([]byte(Patches[1]))
+	pp2, err := tsonpatch.Unmarshal([]byte(patches[1]))
 	if err != nil {
 		t.Error(err)
 	}
@@ -79,21 +79,21 @@ func TestStore(t *testing.T) {
 	t.Log("Store patches to the pool\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
 
-	lgm.Store(Patches[0])
+	lgm.Store(patches[0])
 	t.Log(spew.Sdump(lgm))
-	lgm.Store(Patches[1])
+
+	lgm.Store(patches[1])
 	t.Log(spew.Sdump(lgm))
 }
 
 func TestApply(t *testing.T) {
 	t.Log("Apply patches\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
+	lgm.Store(patches[0])
+	lgm.Store(patches[1])
 	t.Log(spew.Sdump(lgm))
 
-	err := lgm.Append()
-	if err != nil {
+	if err := lgm.Append(); err != nil {
 		t.Error(err)
 	}
 	t.Log(spew.Sdump(lgm))
@@ -102,8 +102,8 @@ func TestApply(t *testing.T) {
 func TestSnapshot(t *testing.T) {
 	t.Log("Take a snapshot\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
+	lgm.Store(patches[0])
+	lgm.Store(patches[1])
 	lgm.Append()
 
 	lgm.Print()
@@ -124,8 +124,8 @@ func TestSnapshot(t *testing.T) {
 func TestTemporalSnapshot(t *testing.T) {
 	t.Log("Take a timed snapshot\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
+	lgm.Store(patches[0])
+	lgm.Store(patches[1])
 	lgm.Append()
 
 	// Take a snapshot already taken
@@ -144,20 +144,19 @@ func TestTemporalSnapshot(t *testing.T) {
 func TestSlice(t *testing.T) {
 	t.Log("Slice Logument\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
-	err := lgm.Append() // version 1
-	if err != nil {
+	lgm.Store(patches[0])
+	lgm.Store(patches[1])
+	if err := lgm.Append(); err != nil { // version 1
 		t.Error(err)
 	}
-	lgm.Store(Patches[2])
-	err = lgm.Append() // version 2
-	if err != nil {
+
+	lgm.Store(patches[2])
+	if err := lgm.Append(); err != nil { // version 2
 		t.Error(err)
 	}
-	lgm.Store(Patches[3])
-	err = lgm.Append() // version 3
-	if err != nil {
+
+	lgm.Store(patches[3])
+	if err := lgm.Append(); err != nil { // version 3
 		t.Error(err)
 	}
 
@@ -169,12 +168,12 @@ func TestSlice(t *testing.T) {
 func TestTrack(t *testing.T) {
 	t.Log("Track changes\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
+	lgm.Store(patches[0])
+	lgm.Store(patches[1])
 	lgm.Append() // version 1
-	lgm.Store(Patches[2])
+	lgm.Store(patches[2])
 	lgm.Append() // version 2
-	lgm.Store(Patches[3])
+	lgm.Store(patches[3])
 	lgm.Append() // version 3
 
 	// Track changes
@@ -190,12 +189,12 @@ func TestTrack(t *testing.T) {
 func TestTemporalTrack(t *testing.T) {
 	t.Log("Track changes\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
+	lgm.Store(patches[0])
+	lgm.Store(patches[1])
 	lgm.Append() // version 1
-	lgm.Store(Patches[2])
+	lgm.Store(patches[2])
 	lgm.Append() // version 2
-	lgm.Store(Patches[3])
+	lgm.Store(patches[3])
 	lgm.Append() // version 3
 
 	// Track changes
@@ -211,11 +210,11 @@ func TestTemporalTrack(t *testing.T) {
 func TestSet(t *testing.T) {
 	t.Log("Set a value\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
+	lgm.Store(patches[0])
+	lgm.Store(patches[1])
 	lgm.Append()
 
-	lgm.Store(Patches[2])
+	lgm.Store(patches[2])
 	lgm.Append()
 
 	lgm.Set(2, "replace", "/location/latitude", 43.9409)
@@ -225,11 +224,11 @@ func TestSet(t *testing.T) {
 func TestValidSet(t *testing.T) {
 	t.Log("Set a value\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
+	lgm.Store(patches[0])
+	lgm.Store(patches[1])
 	lgm.Append()
 
-	lgm.Store(Patches[2])
+	lgm.Store(patches[2])
 	lgm.Append()
 
 	lgm.TestSet(2, "replace", "/location/latitude", 42.4242)
@@ -239,11 +238,11 @@ func TestValidSet(t *testing.T) {
 func TestCompact(t *testing.T) {
 	t.Log("Compact patches\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
+	lgm.Store(patches[0])
+	lgm.Store(patches[1])
 	lgm.Append()
 
-	lgm.Store(Patches[2])
+	lgm.Store(patches[2])
 	lgm.Append()
 
 	lgm.Compact("/location")
@@ -253,11 +252,11 @@ func TestCompact(t *testing.T) {
 func TestHistory(t *testing.T) {
 	t.Log("Show history\n")
 	lgm := logument.NewLogument(initSnapshot, nil)
-	lgm.Store(Patches[0])
-	lgm.Store(Patches[1])
+	lgm.Store(patches[0])
+	lgm.Store(patches[1])
 	lgm.Append()
 
-	lgm.Store(Patches[2])
+	lgm.Store(patches[2])
 	lgm.Append()
 
 	// Show history of the "/location"
