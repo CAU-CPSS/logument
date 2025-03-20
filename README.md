@@ -4,16 +4,22 @@ _Sunghwan Park (Chung-Ang Univ.), Hyun-Gul Roh (42dot Corp.), Sunwoo Na (Chung-A
 
 ## Contents
 
-1. [Implementation of  **_LOGUMENT_**](#implementation-of-logument)
+- [**_LOGUMENT_**: "WHEN, What, and How has it happened in Vehicles?"](#logument-when-what-and-how-has-it-happened-in-vehicles)
+  - [Contents](#contents)
+  - [Implementation of **_LOGUMENT_**](#implementation-of-logument)
     - [Structure](#structure)
     - [Primitive operations](#primitive-operations)
     - [Supporting operations](#supporting-operations)
     - [Additional supporting operation](#additional-supporting-operation)
-2. [About **_TSON_**](#about-tson)
+  - [About **_TSON_**](#about-tson)
     - [BNF of **_TSON_**](#bnf-of-tson)
     - [VSCode Extension](#vscode-extension)
-3. [Usage](#usage)
-4. [Contributions](#contributions)
+  - [Usage](#usage)
+    - [Working environment](#working-environment)
+    - [_**LOGUMENT**_ Demo](#logument-demo)
+    - [_**TSON**_ \& _**TSON Patch**_ Generation with VSS dataset](#tson--tson-patch-generation-with-vss-dataset)
+  - [Contributions](#contributions)
+  - [LICENSE](#license)
 
 ---
 
@@ -108,8 +114,7 @@ Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-
 ### _**LOGUMENT**_ Demo
 
 ```bash
-go get -u
-go run main.go -car 5 -files 10 && go run main.go
+go get -u && go run main.go
 ```
 
 Then navigate to `localhost:8080` to interact.
