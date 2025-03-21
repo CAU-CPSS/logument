@@ -16,9 +16,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/igrmk/treemap/v2"
 )
 
 // Tson stores a TSON document.
@@ -28,9 +29,13 @@ type Tson = Value
 type Value interface{ isValue() }
 
 // Object stores an object of TSON.
-type Object map[string]Value
+type Object struct{ treemap.TreeMap[string, Value] }
 
 func (Object) isValue() {} // Marks Object as a Value
+
+func NewObject() Object {
+	return Object{*treemap.New[string, Value]()}
+}
 
 // Array stores an array of TSON.
 type Array []Value
@@ -61,7 +66,7 @@ func GetValue(t Tson, path string) (v Value, err error) {
 	getValue = func(t Tson, parts []string) (Value, error) {
 		if len(parts) == 1 { // If Object, return the value of the key
 			if obj, ok := t.(Object); ok {
-				if value, ok := obj[parts[0]]; ok {
+				if value, ok := obj.Get(parts[0]); ok {
 					return value, nil
 				} else {
 					return nil, fmt.Errorf("key not found: %s", parts[0])
@@ -81,7 +86,7 @@ func GetValue(t Tson, path string) (v Value, err error) {
 		}
 
 		if obj, ok := t.(Object); ok { // If Object, call getValue recursively using the key
-			if value, ok := obj[parts[0]]; ok {
+			if value, ok := obj.Get(parts[0]); ok {
 				return getValue(value, parts[1:])
 			} else {
 				return nil, fmt.Errorf("key not found: %s", parts[0])
@@ -162,8 +167,8 @@ func GetLatestTimestamp(t Tson) int64 {
 	case Object, Array:
 		max := int64(0)
 		if obj, ok := v.(Object); ok { // v is Object
-			for _, value := range obj {
-				updateMax(&max, GetLatestTimestamp(value))
+			for it := obj.Iterator(); it.Valid(); it.Next() {
+				updateMax(&max, GetLatestTimestamp(it.Value()))
 			}
 		} else { // v is Array
 			for _, value := range v.(Array) {
@@ -232,7 +237,7 @@ func FromCompatibleTsonBytes(data []byte, t *Tson) error {
 			}
 			obj := Object{}
 			for key, val := range t {
-				obj[key] = convert(val)
+				obj.Set(key, convert(val))
 			}
 			return obj
 		case []any:
@@ -413,13 +418,13 @@ func parseValue(raw any) (Value, error) {
 
 // parseObject parses the given map as a TSON object.
 func parseObject(raw map[string]any) (obj Object, err error) {
-	obj = make(Object)
+	obj = NewObject()
 	for key, value := range raw {
 		val, err := parseValue(value)
 		if err != nil {
-			return nil, err
+			return Object{}, err
 		}
-		obj[key] = val
+		obj.Set(key, val)
 	}
 	return obj, nil
 }
@@ -476,59 +481,4 @@ func checkLeaf(m map[string]any) (bool, any, int64) {
 		}
 	}
 	return false, nil, 0
-}
-
-// ToCompatibleTsonBytesSorted converts the TSON to a JSON byte slice
-// but ensures that keys in objects are sorted (stable ordering).
-func ToCompatibleTsonBytesSorted(t Tson) ([]byte, error) {
-	v, err := toSortedInterface(t)
-	if err != nil {
-		return nil, err
-	}
-	return json.Marshal(v)
-}
-
-// toSortedInterface recursively converts TSON -> map/slice with sorted keys.
-func toSortedInterface(t Tson) (any, error) {
-	switch val := t.(type) {
-	case Leaf[string]:
-		return map[string]any{"value": val.Value, "timestamp": val.Timestamp}, nil
-	case Leaf[float64]:
-		return map[string]any{"value": val.Value, "timestamp": val.Timestamp}, nil
-	case Leaf[bool]:
-		return map[string]any{"value": val.Value, "timestamp": val.Timestamp}, nil
-
-	case Object:
-		// 1. 수집된 key들을 사전순으로 정렬
-		keys := make([]string, 0, len(val))
-		for k := range val {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-
-		// 2. 각 key 순서대로 재귀 변환
-		result := make(map[string]any, len(val))
-		for _, k := range keys {
-			child, err := toSortedInterface(val[k])
-			if err != nil {
-				return nil, err
-			}
-			result[k] = child
-		}
-		return result, nil
-
-	case Array:
-		arr := make([]any, len(val))
-		for i, child := range val {
-			conv, err := toSortedInterface(child)
-			if err != nil {
-				return nil, err
-			}
-			arr[i] = conv
-		}
-		return arr, nil
-
-	default:
-		return nil, fmt.Errorf("unexpected type in toSortedInterface: %T", t)
-	}
 }
