@@ -81,6 +81,7 @@ func TestRemoveKeys(t *testing.T) {
 }
 
 func TestPrint(t *testing.T) {
+	v.Print()
 	stdout := os.Stdout
 	r, w, _ := os.Pipe()
 
@@ -233,21 +234,20 @@ func TestCase(t *testing.T) {
 	}
 
 	// Example 2: Tson data
-	tsonData := tson.Object{
-		"vehicleId": tson.Leaf[string]{Value: "ABC1234", Timestamp: 1700000000},
-		"speed":     tson.Leaf[float64]{Value: 72.5, Timestamp: 1700000000},
-		"engineOn":  tson.Leaf[bool]{Value: true, Timestamp: 1700000000},
-		"location": tson.Object{
-			"latitude":  tson.Leaf[float64]{Value: 37.7749, Timestamp: 1700000000},
-			"longitude": tson.Leaf[float64]{Value: -122.4194, Timestamp: 1700000000},
-		},
-		"tirePressure": tson.Array{
-			tson.Leaf[float64]{Value: 32.1, Timestamp: 1700000000},
-			tson.Leaf[float64]{Value: 31.8, Timestamp: 1700000000},
-			tson.Leaf[float64]{Value: 32.0, Timestamp: 1700000000},
-			tson.Leaf[float64]{Value: 31.9, Timestamp: 1700000000},
-		},
-	}
+	tsonData := tson.NewObject()
+	tsonData.Set("vehicleId", tson.Leaf[string]{Value: "ABC1234", Timestamp: 1700000000})
+	tsonData.Set("speed", tson.Leaf[float64]{Value: 72.5, Timestamp: 1700000000})
+	tsonData.Set("engineOn", tson.Leaf[bool]{Value: true, Timestamp: 1700000000})
+	loc := tson.NewObject()
+	loc.Set("latitude", tson.Leaf[float64]{Value: 37.7749, Timestamp: 1700000000})
+	loc.Set("longitude", tson.Leaf[float64]{Value: -122.4194, Timestamp: 1700000000})
+	tsonData.Set("location", loc)
+	tsonData.Set("tirePressure", tson.Array{
+		tson.Leaf[float64]{Value: 32.1, Timestamp: 1700000000},
+		tson.Leaf[float64]{Value: 31.8, Timestamp: 1700000000},
+		tson.Leaf[float64]{Value: 32.0, Timestamp: 1700000000},
+		tson.Leaf[float64]{Value: 31.9, Timestamp: 1700000000},
+	})
 
 	fmt.Println("=== JSON Data ===")
 	data, err := tson.MarshalIndent(jsonData, "", "    ")

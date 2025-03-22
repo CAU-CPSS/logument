@@ -170,18 +170,18 @@ func applyTraverse(doc tson.Tson, parts []string, op Operation) (t tson.Tson, er
 		if len(parts) == 1 { // Only a single part of path left
 			switch op.Op { // switch by operation type
 			case OpAdd, OpReplace:
-				switch j[part].(type) {
+				switch jp, _ := j.Get(part); jp.(type) {
 				case tson.Leaf[string]:
-					j[part] = tson.Leaf[string]{Value: op.Value.(string), Timestamp: op.Timestamp}
+					j.Set(part, tson.Leaf[string]{Value: op.Value.(string), Timestamp: op.Timestamp})
 				case tson.Leaf[float64]:
-					j[part] = tson.Leaf[float64]{Value: op.Value.(float64), Timestamp: op.Timestamp}
+					j.Set(part, tson.Leaf[float64]{Value: op.Value.(float64), Timestamp: op.Timestamp})
 				case tson.Leaf[bool]:
-					j[part] = tson.Leaf[bool]{Value: op.Value.(bool), Timestamp: op.Timestamp}
+					j.Set(part, tson.Leaf[bool]{Value: op.Value.(bool), Timestamp: op.Timestamp})
 				default:
 					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for op.Value", op.Value)
 				}
 			case OpRemove:
-				delete(j, part)
+				j.Del(part)
 			case OpMove, OpCopy, OpTest:
 				panic(fmt.Sprintf("applyTraverse(): Operation %s not implemented", op.Op))
 			default:
@@ -190,13 +190,16 @@ func applyTraverse(doc tson.Tson, parts []string, op Operation) (t tson.Tson, er
 			return j, nil
 		}
 
-		switch value := j[part].(type) { // Recursively traverse the TSON document
+		jp, _ := j.Get(part)
+		switch value := jp.(type) { // Recursively traverse the TSON document
 		case tson.Leaf[string], tson.Leaf[float64], tson.Leaf[bool]:
 			panic("applyTraverse(): Leaf[T] should not be here")
 		case tson.Object:
-			if j[part], err = applyTraverse(value, parts[1:], op); err != nil {
+			var jp tson.Tson
+			if jp, err = applyTraverse(value, parts[1:], op); err != nil {
 				return nil, err
 			}
+			j.Set(part, jp)
 		case tson.Array:
 			idx, err := getIndex(parts[1])
 			if err != nil {
@@ -214,14 +217,16 @@ func applyTraverse(doc tson.Tson, parts []string, op Operation) (t tson.Tson, er
 				case tson.Leaf[bool]:
 					value[idx] = tson.Leaf[bool]{Value: op.Value.(bool), Timestamp: op.Timestamp}
 				case tson.Object, tson.Array:
-					if j[part], err = applyTraverse(value[idx], parts[1:], op); err != nil {
+					var jp tson.Tson
+					if jp, err = applyTraverse(value[idx], parts[1:], op); err != nil {
 						return nil, err
 					}
+					j.Set(part, jp)
 				default:
 					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for elem", elem)
 				}
 			case OpRemove:
-				j[part] = append(value[:idx], value[idx+1:]...)
+				j.Set(part, append(value[:idx], value[idx+1:]...))
 			default:
 				return nil, fmt.Errorf("applyTraverse(): Unknown operation %s", op.Op)
 			}
@@ -264,12 +269,12 @@ func makePath(path string, newPart any) string {
 
 // diff returns the (recursive) difference between a and b.
 func diff(origin, modified tson.Object, path string, patch Patch) (Patch, error) {
-	for key, modValue := range modified {
-		p := makePath(path, key)
-		origValue, ok := origin[key]
+	for modIt := modified.Iterator(); modIt.Valid(); modIt.Next() {
+		p := makePath(path, modIt.Key())
+		origValue, ok := origin.Get(modIt.Key())
 		// "add": Only exists in 'modified'
 		if !ok {
-			switch modLeaf := modValue.(type) {
+			switch modLeaf := modIt.Value().(type) {
 			case tson.Leaf[string]:
 				patch = append(patch, NewOperation(OpAdd, p, modLeaf.Value, modLeaf.Timestamp))
 			case tson.Leaf[float64]:
@@ -277,13 +282,13 @@ func diff(origin, modified tson.Object, path string, patch Patch) (Patch, error)
 			case tson.Leaf[bool]:
 				patch = append(patch, NewOperation(OpAdd, p, modLeaf.Value, modLeaf.Timestamp))
 			default:
-				return nil, fmt.Errorf("diff(): Unknown type %T for modValue", modValue)
+				return nil, fmt.Errorf("diff(): Unknown type %T for modValue", modIt.Value())
 			}
 			continue
 		}
 		// "replace": Type has changed
-		if reflect.TypeOf(origValue) != reflect.TypeOf(modValue) {
-			switch modLeaf := modValue.(type) {
+		if reflect.TypeOf(origValue) != reflect.TypeOf(modIt.Value()) {
+			switch modLeaf := modIt.Value().(type) {
 			case tson.Leaf[string]:
 				patch = append(patch, NewOperation(OpReplace, p, modLeaf.Value, modLeaf.Timestamp))
 			case tson.Leaf[float64]:
@@ -291,23 +296,23 @@ func diff(origin, modified tson.Object, path string, patch Patch) (Patch, error)
 			case tson.Leaf[bool]:
 				patch = append(patch, NewOperation(OpReplace, p, modLeaf.Value, modLeaf.Timestamp))
 			default:
-				return nil, fmt.Errorf("diff(): Unknown type %T for modValue", modValue)
+				return nil, fmt.Errorf("diff(): Unknown type %T for modValue", modIt.Value())
 			}
 			continue
 		}
 		// Types are the same, compare values
 		var err error
-		patch, err = handleValues(origValue, modValue, p, patch)
+		patch, err = handleValues(origValue, modIt.Value(), p, patch)
 		if err != nil {
 			return nil, err
 		}
 	}
 	// "remove": Only exists in 'origin'
-	for key := range origin {
-		_, found := modified[key]
+	for orgIt := origin.Iterator(); orgIt.Valid(); orgIt.Next() {
+		_, found := modified.Get(orgIt.Key())
 		if !found {
-			p := makePath(path, key)
-			origValue := origin[key]
+			p := makePath(path, orgIt.Key())
+			origValue, _ := origin.Get(orgIt.Key())
 			switch origLeaf := origValue.(type) {
 			case tson.Leaf[string]:
 				patch = append(patch, NewOperation(OpRemove, p, nil, origLeaf.Timestamp))
@@ -420,13 +425,17 @@ func matchesValue(origin, modified tson.Value) bool {
 		}
 	case tson.Object:
 		modObj := modified.(tson.Object)
-		for key := range org {
-			if !matchesValue(org[key], modObj[key]) {
+		for orgIt := org.Iterator(); orgIt.Valid(); orgIt.Next() {
+			ov, _ := org.Get(orgIt.Key())
+			mv, _ := modObj.Get(orgIt.Key())
+			if !matchesValue(ov, mv) {
 				return false
 			}
 		}
-		for key := range modObj {
-			if !matchesValue(org[key], modObj[key]) {
+		for modIt := org.Iterator(); modIt.Valid(); modIt.Next() {
+			ov, _ := org.Get(modIt.Key())
+			mv, _ := modObj.Get(modIt.Key())
+			if !matchesValue(ov, mv) {
 				return false
 			}
 		}

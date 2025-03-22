@@ -235,7 +235,7 @@ func FromCompatibleTsonBytes(data []byte, t *Tson) error {
 					return nil // NOT supported
 				}
 			}
-			obj := Object{}
+			obj := NewObject()
 			for key, val := range t {
 				obj.Set(key, convert(val))
 			}
@@ -422,7 +422,7 @@ func parseObject(raw map[string]any) (obj Object, err error) {
 	for key, value := range raw {
 		val, err := parseValue(value)
 		if err != nil {
-			return Object{}, err
+			return NewObject(), err
 		}
 		obj.Set(key, val)
 	}

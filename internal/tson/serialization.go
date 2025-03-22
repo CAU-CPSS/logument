@@ -108,14 +108,14 @@ func marshalObject(obj Object) (string, error) {
 		first = true
 	)
 	s.WriteString("{")
-	for key, value := range obj {
+	for it := obj.Iterator(); it.Valid(); it.Next() {
 		if !first {
 			s.WriteString(", ")
 		} else {
 			first = false
 		}
-		s.WriteString(fmt.Sprintf("%q", key))
-		switch leaf := value.(type) {
+		s.WriteString(fmt.Sprintf("%q", it.Key()))
+		switch leaf := it.Value().(type) {
 		case Leaf[string]:
 			if leaf.Timestamp >= 0 {
 				s.WriteString(fmt.Sprintf(" <%d>", leaf.Timestamp))
@@ -136,7 +136,7 @@ func marshalObject(obj Object) (string, error) {
 			}
 		}
 		s.WriteString(": ")
-		marshaledValue, err := marshalTson(value, object)
+		marshaledValue, err := marshalTson(it.Value(), object)
 		if err != nil {
 			return "", err
 		}
@@ -178,8 +178,6 @@ func MarshalIndent(j any, prefix, indent string) ([]byte, error) {
 	}
 	return []byte(s), nil
 }
-
-
 
 // marshalIndentValue recursively serializes the value with pretty-printing.
 // ctx indicates the context ("top", "object", or "array") which affects where the timestamp is printed.
@@ -253,11 +251,12 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 		return s.String(), nil
 
 	case []any:
-		s := "[\n"
+		var s strings.Builder
+		s.WriteString("[\n")
 		first := true
 		for _, elem := range t {
 			if !first {
-				s += ",\n"
+				s.WriteString(",\n")
 			}
 			first = false
 			if m, ok := elem.(map[string]any); ok {
@@ -266,11 +265,11 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 					if err != nil {
 						return "", err
 					}
-					s += currentIndent + indent
+					s.WriteString(currentIndent + indent)
 					if ts >= 0 {
-						s += fmt.Sprintf("<%d> %s", ts, primStr)
+						s.WriteString(fmt.Sprintf("<%d> %s", ts, primStr))
 					} else {
-						s += fmt.Sprintf("<> %s", primStr)
+						s.WriteString(fmt.Sprintf("<> %s", primStr))
 					}
 					continue
 				}
@@ -279,23 +278,23 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 			if err != nil {
 				return "", err
 			}
-			s += currentIndent + indent + elemStr
+			s.WriteString(currentIndent + indent + elemStr)
 		}
-		s += "\n" + currentIndent + "]"
-		return s, nil
+		s.WriteString("\n" + currentIndent + "]")
+		return s.String(), nil
 
 	case Object:
 		var s strings.Builder
 		s.WriteString("{\n")
 		first := true
-		for key, val := range t {
+		for it := t.Iterator(); it.Valid(); it.Next() {
 			if !first {
 				s.WriteString(",\n")
 			}
 			first = false
-			keyStr := strconv.Quote(key)
+			keyStr := strconv.Quote(it.Key())
 			// Tson의 값이 Leaf라면, key 뒤에 timestamp를 붙여 출력
-			switch leaf := val.(type) {
+			switch leaf := it.Value().(type) {
 			case Leaf[string]:
 				s.WriteString(currentIndent + indent + keyStr + " <")
 				if leaf.Timestamp >= 0 {
@@ -315,7 +314,7 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 				}
 				s.WriteString(">: " + fmt.Sprintf("%v", leaf.Value))
 			default:
-				valStr, err := marshalIndentValue(val, currentIndent+indent, indent, object)
+				valStr, err := marshalIndentValue(it.Value(), currentIndent+indent, indent, object)
 				if err != nil {
 					return "", err
 				}
@@ -699,7 +698,7 @@ func (p *Parser) parseObject() (Value, error) {
 	if err := p.expect('{'); err != nil {
 		return nil, err
 	}
-	obj := Object{}
+	obj := NewObject()
 	p.skipWhitespace()
 	if p.peek() == '}' {
 		p.pos++
@@ -730,7 +729,7 @@ func (p *Parser) parseObject() (Value, error) {
 		if err != nil {
 			return nil, err
 		}
-		obj[key] = wrapIfPrimitive(val, ts)
+		obj.Set(key, wrapIfPrimitive(val, ts))
 		p.skipWhitespace()
 		if p.peek() == ',' {
 			p.pos++

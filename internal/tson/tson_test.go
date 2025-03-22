@@ -24,7 +24,7 @@ import (
 var testCases = []struct {
 	name    string
 	tson    string
-	want    Value
+	want    map[string]any
 	wantErr bool
 }{
 	{
@@ -43,11 +43,11 @@ var testCases = []struct {
 				<1678886400> "hiking"
 			]
 		}`,
-		want: Object{
+		want: map[string]any{
 			"name":       Leaf[string]{Value: "John Doe", Timestamp: 1678886400},
 			"age":        Leaf[float64]{Value: 30, Timestamp: 1678886400},
 			"is-married": Leaf[bool]{Value: true, Timestamp: 1678886400},
-			"address": Object{
+			"address": map[string]any{
 				"street": Leaf[string]{Value: "123 Main St", Timestamp: 1678886400},
 				"city":   Leaf[string]{Value: "Anytown", Timestamp: 1678886400},
 			},
@@ -73,7 +73,7 @@ var testCases = []struct {
 	{
 		name:    "Ommitted Timestamp",
 		tson:    `{"name" <>: "John Doe"}`,
-		want:    Object{"name": Leaf[string]{Value: "John Doe", Timestamp: -1}},
+		want:    map[string]any{"name": Leaf[string]{Value: "John Doe", Timestamp: -1}},
 		wantErr: false,
 	},
 }
@@ -89,6 +89,7 @@ const (
 //////////////////////////////////
 
 // Testing TSON unmarshalling
+// **NOTE: Not working after changing the Object to TreeMap
 func TestUnmarshal(t *testing.T) {
 	// Test cases are in 'testcases.go' file.
 	for _, tc := range testCases {

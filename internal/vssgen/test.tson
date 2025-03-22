@@ -1,0 +1,1766 @@
+{
+    "Vehicle": {
+        "CurbWeight" <1742624799303732800>: 21,
+        "ADAS": {
+            "TCS": {
+                "IsError" <1742624799303732800>: false,
+                "IsEngaged" <1742624799303732800>: true,
+                "IsEnabled" <1742624799303732800>: false
+            },
+            "DMS": {
+                "IsWarning" <1742624799303732800>: false,
+                "IsEnabled" <1742624799303732800>: false,
+                "IsError" <1742624799303732800>: false
+            },
+            "LaneDepartureDetection": {
+                "IsError" <1742624799303732800>: false,
+                "IsWarning" <1742624799303732800>: true,
+                "IsEnabled" <1742624799303732800>: true
+            },
+            "ABS": {
+                "IsError" <1742624799303732800>: true,
+                "IsEngaged" <1742624799303732800>: true,
+                "IsEnabled" <1742624799303732800>: false
+            },
+            "IsAutoPowerOptimize" <1742624799303732800>: false,
+            "ObstacleDetection": {
+                "IsWarning" <1742624799303732800>: false,
+                "IsEnabled" <1742624799303732800>: false,
+                "IsError" <1742624799303732800>: true
+            },
+            "SupportedAutonomyLevel" <1742624799303732800>: "SAE_1",
+            "ESC": {
+                "IsError" <1742624799303732800>: false,
+                "IsEngaged" <1742624799303732800>: true,
+                "IsStrongCrossWindDetected" <1742624799303732800>: true,
+                "IsEnabled" <1742624799303732800>: true,
+                "RoadFriction": {
+                    "LowerBound" <1742624799303732800>: 0.6367891458293715,
+                    "UpperBound" <1742624799303732800>: 29.292560806259516,
+                    "MostProbable" <1742624799303732800>: 34.52548456124348
+                }
+            },
+            "EBA": {
+                "IsError" <1742624799303732800>: true,
+                "IsEngaged" <1742624799303732800>: false,
+                "IsEnabled" <1742624799303732800>: false
+            },
+            "EBD": {
+                "IsEnabled" <1742624799303732800>: true,
+                "IsEngaged" <1742624799303732800>: true,
+                "IsError" <1742624799303732800>: true
+            },
+            "ActiveAutonomyLevel" <1742624799303732800>: "SAE_0",
+            "CruiseControl": {
+                "IsActive" <1742624799303732800>: false,
+                "SpeedSet" <1742624799303732800>: 83.3563070070431,
+                "IsError" <1742624799303732800>: true,
+                "IsEnabled" <1742624799303732800>: false
+            },
+            "PowerOptimizeLevel" <1742624799303732800>: -41
+        },
+        "PowerOptimizeLevel" <1742624799303732800>: -58,
+        "AngularVelocity": {
+            "Pitch" <1742624799303732800>: 54.05052488191097,
+            "Roll" <1742624799303732800>: 34.82033512304235,
+            "Yaw" <1742624799303732800>: 81.59628379727721
+        },
+        "IsAutoPowerOptimize" <1742624799303732800>: true,
+        "Chassis": {
+            "Axle": {
+                "Row1": {
+                    "TrackWidth" <1742624799303732800>: -21,
+                    "WheelWidth" <1742624799303732800>: 85.46425583516447,
+                    "AxleWidth" <1742624799303732800>: -24,
+                    "TireWidth" <1742624799303732800>: 57,
+                    "WheelCount" <1742624799303732800>: 56,
+                    "TireDiameter" <1742624799303732800>: 80.60185070397687,
+                    "TreadWidth" <1742624799303732800>: 83,
+                    "SteeringAngle" <1742624799303732800>: 70.37909286269092,
+                    "Wheel": {
+                        "Right": {
+                            "Tire": {
+                                "Pressure" <1742624799303732800>: -28,
+                                "IsPressureLow" <1742624799303732800>: true,
+                                "Temperature" <1742624799303732800>: 18.023708061836142
+                            },
+                            "Brake": {
+                                "PadWear" <1742624799303732800>: 15,
+                                "FluidLevel" <1742624799303732800>: 21,
+                                "IsFluidLevelLow" <1742624799303732800>: true,
+                                "IsBrakesWorn" <1742624799303732800>: false
+                            },
+                            "Speed" <1742624799303732800>: 72.77870543777244,
+                            "AngularSpeed" <1742624799303732800>: 29.735606672792038
+                        },
+                        "Left": {
+                            "Brake": {
+                                "FluidLevel" <1742624799303732800>: -67,
+                                "IsFluidLevelLow" <1742624799303732800>: true,
+                                "PadWear" <1742624799303732800>: 61,
+                                "IsBrakesWorn" <1742624799303732800>: true
+                            },
+                            "Tire": {
+                                "Temperature" <1742624799303732800>: 96.1929524829214,
+                                "Pressure" <1742624799303732800>: 23,
+                                "IsPressureLow" <1742624799303732800>: false
+                            },
+                            "Speed" <1742624799303732800>: 79.92739829998273,
+                            "AngularSpeed" <1742624799303732800>: 59.2064642155072
+                        }
+                    },
+                    "TireAspectRatio" <1742624799303732800>: 3,
+                    "WheelDiameter" <1742624799303732800>: 18.954946709985656
+                },
+                "Row2": {
+                    "TrackWidth" <1742624799303732800>: -1,
+                    "Wheel": {
+                        "Right": {
+                            "Speed" <1742624799303732800>: 20.75143473088668,
+                            "Tire": {
+                                "Temperature" <1742624799303732800>: 20.982254125464213,
+                                "IsPressureLow" <1742624799303732800>: true,
+                                "Pressure" <1742624799303732800>: 47
+                            },
+                            "Brake": {
+                                "PadWear" <1742624799303732800>: -4,
+                                "FluidLevel" <1742624799303732800>: 66,
+                                "IsFluidLevelLow" <1742624799303732800>: false,
+                                "IsBrakesWorn" <1742624799303732800>: false
+                            },
+                            "AngularSpeed" <1742624799303732800>: 24.620690216019284
+                        },
+                        "Left": {
+                            "Tire": {
+                                "Temperature" <1742624799303732800>: 81.06533956131302,
+                                "IsPressureLow" <1742624799303732800>: false,
+                                "Pressure" <1742624799303732800>: 24
+                            },
+                            "Speed" <1742624799303732800>: 42.70036872982556,
+                            "AngularSpeed" <1742624799303732800>: 2.517841266698965,
+                            "Brake": {
+                                "FluidLevel" <1742624799303732800>: 18,
+                                "IsFluidLevelLow" <1742624799303732800>: true,
+                                "IsBrakesWorn" <1742624799303732800>: false,
+                                "PadWear" <1742624799303732800>: -97
+                            }
+                        }
+                    },
+                    "WheelCount" <1742624799303732800>: 15,
+                    "AxleWidth" <1742624799303732800>: 17,
+                    "SteeringAngle" <1742624799303732800>: 81.73976207006494,
+                    "WheelDiameter" <1742624799303732800>: 69.52882506077168,
+                    "TireWidth" <1742624799303732800>: 6,
+                    "TireAspectRatio" <1742624799303732800>: 26,
+                    "TireDiameter" <1742624799303732800>: 40.98891122354147,
+                    "WheelWidth" <1742624799303732800>: 72.55562406063946,
+                    "TreadWidth" <1742624799303732800>: 38
+                }
+            },
+            "SteeringWheel": {
+                "Extension" <1742624799303732800>: 52,
+                "Angle" <1742624799303732800>: 73,
+                "HeatingCooling" <1742624799303732800>: 28,
+                "Tilt" <1742624799303732800>: 9
+            },
+            "ParkingBrake": {
+                "IsEngaged" <1742624799303732800>: true,
+                "IsAutoApplyEnabled" <1742624799303732800>: true
+            },
+            "Wheelbase" <1742624799303732800>: 94,
+            "AxleCount" <1742624799303732800>: 84,
+            "Brake": {
+                "PedalPosition" <1742624799303732800>: 62,
+                "IsDriverEmergencyBrakingDetected" <1742624799303732800>: true
+            },
+            "Accelerator": {
+                "PedalPosition" <1742624799303732800>: -39
+            }
+        },
+        "WidthFoldedMirrors" <1742624799303732800>: 99,
+        "Acceleration": {
+            "Longitudinal" <1742624799303732800>: 29.423451095186948,
+            "Lateral" <1742624799303732800>: 76.36595707481965,
+            "Vertical" <1742624799303732800>: 15.97125578997364
+        },
+        "WidthIncludingMirrors" <1742624799303732800>: -48,
+        "CargoVolume" <1742624799303732800>: 81.00981743948338,
+        "Length" <1742624799303732800>: -41,
+        "VehicleIdentification": {
+            "DateVehicleFirstRegistered" <1742624799303732800>: "TEST_STRING_VALUE_11",
+            "ProductionDate" <1742624799303732800>: "TEST_STRING_VALUE_10",
+            "VehicleExteriorColor" <1742624799303732800>: "TEST_STRING_VALUE_4",
+            "VehicleInteriorColor" <1742624799303732800>: "TEST_STRING_VALUE_3",
+            "MeetsEmissionStandard" <1742624799303732800>: "TEST_STRING_VALUE_12",
+            "VehicleInteriorType" <1742624799303732800>: "TEST_STRING_VALUE_13",
+            "VehicleSeatingCapacity" <1742624799303732800>: 65,
+            "VehicleModelDate" <1742624799303732800>: "TEST_STRING_VALUE_19",
+            "VehicleConfiguration" <1742624799303732800>: "TEST_STRING_VALUE_15",
+            "BodyType" <1742624799303732800>: "TEST_STRING_VALUE_12",
+            "PurchaseDate" <1742624799303732800>: "TEST_STRING_VALUE_17",
+            "VehicleSpecialUsage" <1742624799303732800>: "TEST_STRING_VALUE_12",
+            "AcrissCode" <1742624799303732800>: "TEST_STRING_VALUE_6",
+            "OptionalExtras": [
+                <1742624799303732800> "TEST_STRING_VALUE_13",
+                <1742624799303732800> "TEST_STRING_VALUE_6"
+            ],
+            "LicensePlate" <1742624799303732800>: "TEST_STRING_VALUE_13",
+            "WMI" <1742624799303732800>: "TEST_STRING_VALUE_14",
+            "KnownVehicleDamages" <1742624799303732800>: "TEST_STRING_VALUE_20",
+            "Brand" <1742624799303732800>: "TEST_STRING_VALUE_18",
+            "Model" <1742624799303732800>: "TEST_STRING_VALUE_15",
+            "VIN" <1742624799303732800>: "TEST_STRING_VALUE_13",
+            "Year" <1742624799303732800>: -81
+        },
+        "VersionVSS": {
+            "Major" <1742624799303732800>: -10,
+            "Patch" <1742624799303732800>: 30,
+            "Minor" <1742624799303732800>: -3,
+            "Label" <1742624799303732800>: "TEST_STRING_VALUE_20"
+        },
+        "MaxTowBallWeight" <1742624799303732800>: 92,
+        "TraveledDistance" <1742624799303732800>: 14.211928787318534,
+        "Powertrain": {
+            "Transmission": {
+                "PerformanceMode" <1742624799303732800>: "TEST_STRING_VALUE_2",
+                "TravelledDistance" <1742624799303732800>: 21.0871714966702,
+                "ClutchEngagement" <1742624799303732800>: 26.569987276224843,
+                "Type" <1742624799303732800>: "SEQUENTIAL",
+                "Temperature" <1742624799303732800>: 59.63224717878577,
+                "TorqueDistribution" <1742624799303732800>: 37.49747270549115,
+                "IsElectricalPowertrainEngaged" <1742624799303732800>: false,
+                "SelectedGear" <1742624799303732800>: 56,
+                "GearChangeMode" <1742624799303732800>: "MANUAL",
+                "DiffLockRearEngagement" <1742624799303732800>: 51.790164442933914,
+                "CurrentGear" <1742624799303732800>: 57,
+                "GearCount" <1742624799303732800>: 23,
+                "IsLowRangeEngaged" <1742624799303732800>: true,
+                "DiffLockFrontEngagement" <1742624799303732800>: 93.6174984440695,
+                "ClutchWear" <1742624799303732800>: 29,
+                "IsParkLockEngaged" <1742624799303732800>: true,
+                "DriveType" <1742624799303732800>: "TEST_STRING_VALUE_14"
+            },
+            "Range" <1742624799303732800>: 6,
+            "AccumulatedBrakingEnergy" <1742624799303732800>: 47.33376871771569,
+            "IsAutoPowerOptimize" <1742624799303732800>: true,
+            "CombustionEngine": {
+                "EngineHours" <1742624799303732800>: 95.94546973175821,
+                "DieselExhaustFluid": {
+                    "Range" <1742624799303732800>: 18,
+                    "IsLevelLow" <1742624799303732800>: true,
+                    "Capacity" <1742624799303732800>: 17.476216822049867,
+                    "Level" <1742624799303732800>: 55
+                },
+                "OilLifeRemaining" <1742624799303732800>: 8,
+                "NumberOfCylinders" <1742624799303732800>: -48,
+                "TPS" <1742624799303732800>: 94,
+                "Torque" <1742624799303732800>: -11,
+                "EngineOil": {
+                    "Capacity" <1742624799303732800>: 28.159232284156456,
+                    "LifeRemaining" <1742624799303732800>: -73,
+                    "Level" <1742624799303732800>: "TEST_STRING_VALUE_2",
+                    "Temperature" <1742624799303732800>: 16.593524130913355
+                },
+                "EngineOilLevel" <1742624799303732800>: "TEST_STRING_VALUE_16",
+                "MAP" <1742624799303732800>: 40,
+                "NumberOfValvesPerCylinder" <1742624799303732800>: -6,
+                "EngineOilCapacity" <1742624799303732800>: 11.60460268945725,
+                "DieselParticulateFilter": {
+                    "OutletTemperature" <1742624799303732800>: 1.6535772724870705,
+                    "InletTemperature" <1742624799303732800>: 87.77859523954571,
+                    "DeltaPressure" <1742624799303732800>: 53.65116223045865
+                },
+                "Speed" <1742624799303732800>: 58,
+                "IsRunning" <1742624799303732800>: true,
+                "MAF" <1742624799303732800>: 66,
+                "EOP" <1742624799303732800>: 93,
+                "EngineCoolantCapacity" <1742624799303732800>: 66.87410988118341,
+                "Configuration" <1742624799303732800>: "X",
+                "IdleHours" <1742624799303732800>: 40.85974264768886,
+                "Displacement" <1742624799303732800>: -50,
+                "MaxPower" <1742624799303732800>: 24,
+                "AspirationType" <1742624799303732800>: "TEST_STRING_VALUE_12",
+                "ECT" <1742624799303732800>: 33.14892321309888,
+                "EngineCode" <1742624799303732800>: "TEST_STRING_VALUE_3",
+                "StrokeLength" <1742624799303732800>: 82.35899361741504,
+                "Power" <1742624799303732800>: 52,
+                "Bore" <1742624799303732800>: 2.534834198597406,
+                "EOT" <1742624799303732800>: 52.71677878278987,
+                "EngineCoolant": {
+                    "Temperature" <1742624799303732800>: 26.493164726526047,
+                    "Capacity" <1742624799303732800>: 15.495116912135973,
+                    "Level" <1742624799303732800>: "CRITICALLY_LOW",
+                    "LifeRemaining" <1742624799303732800>: 10
+                },
+                "CompressionRatio" <1742624799303732800>: "TEST_STRING_VALUE_15",
+                "MaxTorque" <1742624799303732800>: 47
+            },
+            "TractionBattery": {
+                "TimeRemaining" <1742624799303732800>: 57,
+                "BatteryConditioning": {
+                    "StartTime" <1742624799303732800>: "TEST_STRING_VALUE_10",
+                    "IsActive" <1742624799303732800>: true,
+                    "TargetTemperature" <1742624799303732800>: 73.99616146188266,
+                    "RequestedMode" <1742624799303732800>: "TEST_STRING_VALUE_7",
+                    "IsOngoing" <1742624799303732800>: true,
+                    "TargetTime" <1742624799303732800>: "TEST_STRING_VALUE_1"
+                },
+                "GrossCapacity" <1742624799303732800>: 39,
+                "NetCapacity" <1742624799303732800>: 53,
+                "AccumulatedChargedEnergy" <1742624799303732800>: 25.041277193364685,
+                "ProductionDate" <1742624799303732800>: "TEST_STRING_VALUE_3",
+                "CurrentVoltage" <1742624799303732800>: 42.98024025655221,
+                "DCDC": {
+                    "PowerLoss" <1742624799303732800>: 25.46497451041213,
+                    "Temperature" <1742624799303732800>: 39.14130477672734
+                },
+                "CellVoltage": {
+                    "Min" <1742624799303732800>: 93.0849012602782,
+                    "IdMax" <1742624799303732800>: 17,
+                    "Max" <1742624799303732800>: 75.43688749892362,
+                    "CellVoltages": [
+                        <1742624799303732800> 69.52992088022978,
+                        <1742624799303732800> 1.7018677410575427
+                    ],
+                    "IdMin" <1742624799303732800>: -81
+                },
+                "Range" <1742624799303732800>: 51,
+                "ErrorCodes": [
+                    <1742624799303732800> "TEST_STRING_VALUE_2",
+                    <1742624799303732800> "TEST_STRING_VALUE_12",
+                    <1742624799303732800> "TEST_STRING_VALUE_18",
+                    <1742624799303732800> "TEST_STRING_VALUE_17"
+                ],
+                "CurrentPower" <1742624799303732800>: 22.321784350646688,
+                "IsGroundConnected" <1742624799303732800>: true,
+                "PowerLoss" <1742624799303732800>: 68.41413390322572,
+                "MaxVoltage" <1742624799303732800>: 90,
+                "Id" <1742624799303732800>: "TEST_STRING_VALUE_2",
+                "AccumulatedConsumedEnergy" <1742624799303732800>: 12.287062809889344,
+                "Temperature": {
+                    "Min" <1742624799303732800>: 94.88624708694365,
+                    "CellTemperature": [
+                        <1742624799303732800> 52.32309154368846,
+                        <1742624799303732800> 33.06316156244628,
+                        <1742624799303732800> 26.068567178911078
+                    ],
+                    "Average" <1742624799303732800>: 2.4382602095021197,
+                    "Max" <1742624799303732800>: 69.35840785765673
+                },
+                "AccumulatedConsumedThroughput" <1742624799303732800>: 57.410860065613925,
+                "IsPowerConnected" <1742624799303732800>: true,
+                "CurrentCurrent" <1742624799303732800>: 29.75116980948292,
+                "Charging": {
+                    "IsDischarging" <1742624799303732800>: true,
+                    "PowerLoss" <1742624799303732800>: 95.37012703797741,
+                    "EvseId" <1742624799303732800>: "TEST_STRING_VALUE_5",
+                    "ChargeCurrent": {
+                        "Phase1" <1742624799303732800>: 14.656471421698903,
+                        "Phase3" <1742624799303732800>: 86.3342232264907,
+                        "DC" <1742624799303732800>: 52.47138084431059,
+                        "Phase2" <1742624799303732800>: 78.13161900681638
+                    },
+                    "StartStopCharging" <1742624799303732800>: "STOP",
+                    "ChargeVoltage": {
+                        "Phase3" <1742624799303732800>: 30.034432768040297,
+                        "Phase2" <1742624799303732800>: 69.37556000341263,
+                        "Phase1" <1742624799303732800>: 17.57570208195919,
+                        "DC" <1742624799303732800>: 95.98701889863567
+                    },
+                    "TimeToComplete" <1742624799303732800>: 40,
+                    "MaximumChargingCurrent": {
+                        "Phase3" <1742624799303732800>: 6.9718243825876325,
+                        "DC" <1742624799303732800>: 53.27055070929778,
+                        "Phase2" <1742624799303732800>: 17.391436809610937,
+                        "Phase1" <1742624799303732800>: 25.516377422720925
+                    },
+                    "ChargeRate" <1742624799303732800>: 2.037488543229076,
+                    "AveragePower" <1742624799303732800>: 97.08514183809356,
+                    "ChargingPort": {
+                        "RearLeft": {
+                            "IsChargingCableConnected" <1742624799303732800>: false,
+                            "IsChargingCableLocked" <1742624799303732800>: true,
+                            "IsFlapOpen" <1742624799303732800>: true,
+                            "SupportedInletTypes" <1742624799303732800>: "OTHER"
+                        },
+                        "FrontLeft": {
+                            "IsFlapOpen" <1742624799303732800>: false,
+                            "SupportedInletTypes" <1742624799303732800>: "IEC_TYPE_1_AC",
+                            "IsChargingCableConnected" <1742624799303732800>: false,
+                            "IsChargingCableLocked" <1742624799303732800>: false
+                        },
+                        "RearRight": {
+                            "SupportedInletTypes" <1742624799303732800>: "GBT_DC",
+                            "IsChargingCableLocked" <1742624799303732800>: false,
+                            "IsFlapOpen" <1742624799303732800>: false,
+                            "IsChargingCableConnected" <1742624799303732800>: true
+                        },
+                        "RearMiddle": {
+                            "IsChargingCableConnected" <1742624799303732800>: false,
+                            "SupportedInletTypes" <1742624799303732800>: "TESLA_HPWC",
+                            "IsFlapOpen" <1742624799303732800>: true,
+                            "IsChargingCableLocked" <1742624799303732800>: true
+                        },
+                        "FrontMiddle": {
+                            "IsChargingCableConnected" <1742624799303732800>: true,
+                            "SupportedInletTypes" <1742624799303732800>: "TEST_STRING_VALUE_5",
+                            "IsChargingCableLocked" <1742624799303732800>: true,
+                            "IsFlapOpen" <1742624799303732800>: true
+                        },
+                        "AnyPosition": {
+                            "SupportedInletTypes" <1742624799303732800>: "IEC_TYPE_2_AC",
+                            "IsChargingCableConnected" <1742624799303732800>: true,
+                            "IsChargingCableLocked" <1742624799303732800>: true,
+                            "IsFlapOpen" <1742624799303732800>: false
+                        },
+                        "FrontRight": {
+                            "IsFlapOpen" <1742624799303732800>: false,
+                            "IsChargingCableLocked" <1742624799303732800>: false,
+                            "IsChargingCableConnected" <1742624799303732800>: true,
+                            "SupportedInletTypes" <1742624799303732800>: "TEST_STRING_VALUE_10"
+                        }
+                    },
+                    "Timer": {
+                        "Mode" <1742624799303732800>: "TEST_STRING_VALUE_16",
+                        "Time" <1742624799303732800>: "TEST_STRING_VALUE_5"
+                    },
+                    "ChargeLimit" <1742624799303732800>: 34,
+                    "Temperature" <1742624799303732800>: 38.989559528090965,
+                    "MaxPower" <1742624799303732800>: 80.57803667492065,
+                    "Location": {
+                        "Latitude" <1742624799303732800>: 22.889024797523163,
+                        "Longitude" <1742624799303732800>: 97.89178825461626,
+                        "Altitude" <1742624799303732800>: 93.29136638853474
+                    },
+                    "IsCharging" <1742624799303732800>: true
+                },
+                "StateOfHealth" <1742624799303732800>: 43.25786911883765,
+                "NominalVoltage" <1742624799303732800>: 83,
+                "AccumulatedChargedThroughput" <1742624799303732800>: 64.9074339521678,
+                "StateOfCharge": {
+                    "CurrentEnergy" <1742624799303732800>: 91.79433426935981,
+                    "Current" <1742624799303732800>: 90.41491874901702,
+                    "Displayed" <1742624799303732800>: 64.13986412146265
+                }
+            },
+            "ElectricMotor": {
+                "Temperature" <1742624799303732800>: 56.63069029386693,
+                "EngineCoolant": {
+                    "LifeRemaining" <1742624799303732800>: -94,
+                    "Level" <1742624799303732800>: "LOW",
+                    "Temperature" <1742624799303732800>: 82.95289986202906,
+                    "Capacity" <1742624799303732800>: 30.76452985658566
+                },
+                "EngineCode" <1742624799303732800>: "TEST_STRING_VALUE_6",
+                "CoolantTemperature" <1742624799303732800>: 7.8520754037864595,
+                "Speed" <1742624799303732800>: -50,
+                "Torque" <1742624799303732800>: -14,
+                "MaxRegenPower" <1742624799303732800>: 11,
+                "Power" <1742624799303732800>: -87,
+                "MaxTorque" <1742624799303732800>: -54,
+                "MaxRegenTorque" <1742624799303732800>: 11,
+                "MaxPower" <1742624799303732800>: -53,
+                "TimeInUse" <1742624799303732800>: 70.85629708100467
+            },
+            "Type" <1742624799303732800>: "HYBRID",
+            "TimeRemaining" <1742624799303732800>: 82,
+            "PowerOptimizeLevel" <1742624799303732800>: 87,
+            "FuelSystem": {
+                "SupportedFuel" <1742624799303732800>: "LNG",
+                "IsFuelPortFlapOpen" <1742624799303732800>: false,
+                "SupportedFuelTypes" <1742624799303732800>: "TEST_STRING_VALUE_3",
+                "TimeRemaining" <1742624799303732800>: 72,
+                "AbsoluteLevel" <1742624799303732800>: 49.130403371608786,
+                "IsEngineStopStartEnabled" <1742624799303732800>: true,
+                "RefuelPortPosition" <1742624799303732800>: "FRONT_LEFT",
+                "ConsumptionSinceStart" <1742624799303732800>: 71.51696619816317,
+                "InstantConsumption" <1742624799303732800>: 7.413899239719927,
+                "IsFuelLevelLow" <1742624799303732800>: true,
+                "RelativeLevel" <1742624799303732800>: -9,
+                "AverageConsumption" <1742624799303732800>: 6.8093682334649746,
+                "TankCapacity" <1742624799303732800>: 33.88560651857826,
+                "Range" <1742624799303732800>: 55,
+                "HybridType" <1742624799303732800>: "STOP_START"
+            }
+        },
+        "StartTime" <1742624799303732800>: "TEST_STRING_VALUE_11",
+        "Driver": {
+            "IsEyesOnRoad" <1742624799303732800>: true,
+            "DistractionLevel" <1742624799303732800>: 22.159257826459434,
+            "FatigueLevel" <1742624799303732800>: 50.767499404840066,
+            "AttentiveProbability" <1742624799303732800>: 96.13337757218777,
+            "IsHandsOnWheel" <1742624799303732800>: true,
+            "HeartRate" <1742624799303732800>: 65,
+            "Identifier": {
+                "Subject" <1742624799303732800>: "TEST_STRING_VALUE_3",
+                "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_1"
+            }
+        },
+        "Height" <1742624799303732800>: 46,
+        "CurrentOverallWeight" <1742624799303732800>: 14,
+        "AverageSpeed" <1742624799303732800>: 70.26671871992245,
+        "EmissionsCO2" <1742624799303732800>: -14,
+        "RoofLoad" <1742624799303732800>: 54,
+        "Service": {
+            "TimeToService" <1742624799303732800>: -84,
+            "DistanceToService" <1742624799303732800>: 99.86065843238565,
+            "IsServiceDue" <1742624799303732800>: true
+        },
+        "TripMeterReading" <1742624799303732800>: 6.195010577478545,
+        "LowVoltageBattery": {
+            "NominalCapacity" <1742624799303732800>: 10,
+            "CurrentVoltage" <1742624799303732800>: 72.27203148428904,
+            "CurrentCurrent" <1742624799303732800>: 83.9733170910692,
+            "NominalVoltage" <1742624799303732800>: -85
+        },
+        "Trailer": {
+            "IsConnected" <1742624799303732800>: false
+        },
+        "Occupant": {
+            "Row2": {
+                "DriverSide": {
+                    "MidEyeGaze": {
+                        "Elevation" <1742624799303732800>: 80.65983661822847,
+                        "Azimuth" <1742624799303732800>: 80.6775969632815
+                    },
+                    "HeadPosition": {
+                        "Y" <1742624799303732800>: 40,
+                        "Yaw" <1742624799303732800>: 27.094406205505067,
+                        "X" <1742624799303732800>: 74,
+                        "Roll" <1742624799303732800>: 41.79467219723525,
+                        "Z" <1742624799303732800>: -32,
+                        "Pitch" <1742624799303732800>: 80.67231087337747
+                    },
+                    "Identifier": {
+                        "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_3",
+                        "Subject" <1742624799303732800>: "TEST_STRING_VALUE_16"
+                    }
+                },
+                "PassengerSide": {
+                    "Identifier": {
+                        "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_15",
+                        "Subject" <1742624799303732800>: "TEST_STRING_VALUE_1"
+                    },
+                    "HeadPosition": {
+                        "X" <1742624799303732800>: -85,
+                        "Pitch" <1742624799303732800>: 2.485877942054654,
+                        "Z" <1742624799303732800>: 30,
+                        "Yaw" <1742624799303732800>: 27.871442358458694,
+                        "Roll" <1742624799303732800>: 47.40673771037757,
+                        "Y" <1742624799303732800>: -74
+                    },
+                    "MidEyeGaze": {
+                        "Azimuth" <1742624799303732800>: 14.044080192111574,
+                        "Elevation" <1742624799303732800>: 45.12821324464414
+                    }
+                },
+                "Middle": {
+                    "Identifier": {
+                        "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_15",
+                        "Subject" <1742624799303732800>: "TEST_STRING_VALUE_19"
+                    },
+                    "HeadPosition": {
+                        "Roll" <1742624799303732800>: 59.96911327827209,
+                        "Y" <1742624799303732800>: -7,
+                        "Yaw" <1742624799303732800>: 41.77295013668222,
+                        "X" <1742624799303732800>: 9,
+                        "Z" <1742624799303732800>: -90,
+                        "Pitch" <1742624799303732800>: 8.156641512578036
+                    },
+                    "MidEyeGaze": {
+                        "Azimuth" <1742624799303732800>: 77.6288901982915,
+                        "Elevation" <1742624799303732800>: 76.03796696512902
+                    }
+                }
+            },
+            "Row1": {
+                "DriverSide": {
+                    "MidEyeGaze": {
+                        "Elevation" <1742624799303732800>: 19.398384824571504,
+                        "Azimuth" <1742624799303732800>: 71.83999574514371
+                    },
+                    "Identifier": {
+                        "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_14",
+                        "Subject" <1742624799303732800>: "TEST_STRING_VALUE_19"
+                    },
+                    "HeadPosition": {
+                        "Z" <1742624799303732800>: -3,
+                        "Y" <1742624799303732800>: 89,
+                        "Roll" <1742624799303732800>: 64.23566066088225,
+                        "Pitch" <1742624799303732800>: 15.3128731368156,
+                        "X" <1742624799303732800>: -95,
+                        "Yaw" <1742624799303732800>: 60.85287489794746
+                    }
+                },
+                "PassengerSide": {
+                    "HeadPosition": {
+                        "X" <1742624799303732800>: -76,
+                        "Pitch" <1742624799303732800>: 6.167318796552283,
+                        "Yaw" <1742624799303732800>: 97.2176458086194,
+                        "Y" <1742624799303732800>: -85,
+                        "Roll" <1742624799303732800>: 85.35269681901913,
+                        "Z" <1742624799303732800>: 38
+                    },
+                    "Identifier": {
+                        "Subject" <1742624799303732800>: "TEST_STRING_VALUE_4",
+                        "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_14"
+                    },
+                    "MidEyeGaze": {
+                        "Elevation" <1742624799303732800>: 81.89405794073403,
+                        "Azimuth" <1742624799303732800>: 83.59566888286298
+                    }
+                },
+                "Middle": {
+                    "MidEyeGaze": {
+                        "Azimuth" <1742624799303732800>: 78.18177860735402,
+                        "Elevation" <1742624799303732800>: 29.402855121406823
+                    },
+                    "HeadPosition": {
+                        "X" <1742624799303732800>: 67,
+                        "Pitch" <1742624799303732800>: 78.57991406940708,
+                        "Z" <1742624799303732800>: -57,
+                        "Y" <1742624799303732800>: 62,
+                        "Yaw" <1742624799303732800>: 18.40741791337254,
+                        "Roll" <1742624799303732800>: 45.60891320114435
+                    },
+                    "Identifier": {
+                        "Subject" <1742624799303732800>: "TEST_STRING_VALUE_10",
+                        "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_7"
+                    }
+                }
+            }
+        },
+        "WidthExcludingMirrors" <1742624799303732800>: 23,
+        "TraveledDistanceSinceStart" <1742624799303732800>: 23.82118243022729,
+        "GrossWeight" <1742624799303732800>: -86,
+        "TurningDiameter" <1742624799303732800>: -61,
+        "Connectivity": {
+            "IsConnectivityAvailable" <1742624799303732800>: true
+        },
+        "Speed" <1742624799303732800>: 84.3920998856898,
+        "Body": {
+            "Horn": {
+                "IsActive" <1742624799303732800>: true
+            },
+            "Trunk": {
+                "Rear": {
+                    "Switch" <1742624799303732800>: "CLOSE",
+                    "IsOpen" <1742624799303732800>: true,
+                    "IsLocked" <1742624799303732800>: false,
+                    "IsLightOn" <1742624799303732800>: true,
+                    "Position" <1742624799303732800>: -85
+                },
+                "Front": {
+                    "IsLocked" <1742624799303732800>: true,
+                    "IsLightOn" <1742624799303732800>: true,
+                    "Position" <1742624799303732800>: -78,
+                    "Switch" <1742624799303732800>: "TEST_STRING_VALUE_2",
+                    "IsOpen" <1742624799303732800>: true
+                }
+            },
+            "BodyType" <1742624799303732800>: "TEST_STRING_VALUE_19",
+            "Hood": {
+                "Switch" <1742624799303732800>: "TEST_STRING_VALUE_19",
+                "IsOpen" <1742624799303732800>: true,
+                "Position" <1742624799303732800>: -17
+            },
+            "Windshield": {
+                "Rear": {
+                    "IsHeatingOn" <1742624799303732800>: true,
+                    "WasherFluid": {
+                        "Level" <1742624799303732800>: 97,
+                        "IsLevelLow" <1742624799303732800>: true
+                    },
+                    "Wiping": {
+                        "System": {
+                            "DriveCurrent" <1742624799303732800>: 67.55716758012179,
+                            "IsEndingWipeCycle" <1742624799303732800>: true,
+                            "Frequency" <1742624799303732800>: 76,
+                            "ActualPosition" <1742624799303732800>: 30.163779203697814,
+                            "IsOverheated" <1742624799303732800>: false,
+                            "IsWiperError" <1742624799303732800>: false,
+                            "TargetPosition" <1742624799303732800>: 64.14908842715738,
+                            "IsWiping" <1742624799303732800>: true,
+                            "IsPositionReached" <1742624799303732800>: true,
+                            "IsBlocked" <1742624799303732800>: false,
+                            "Mode" <1742624799303732800>: "TEST_STRING_VALUE_14"
+                        },
+                        "WiperWear" <1742624799303732800>: -88,
+                        "IsWipersWorn" <1742624799303732800>: true,
+                        "Intensity" <1742624799303732800>: 83,
+                        "Mode" <1742624799303732800>: "TEST_STRING_VALUE_7"
+                    }
+                },
+                "Front": {
+                    "Wiping": {
+                        "WiperWear" <1742624799303732800>: -35,
+                        "Intensity" <1742624799303732800>: 70,
+                        "Mode" <1742624799303732800>: "TEST_STRING_VALUE_17",
+                        "IsWipersWorn" <1742624799303732800>: false,
+                        "System": {
+                            "Mode" <1742624799303732800>: "TEST_STRING_VALUE_1",
+                            "Frequency" <1742624799303732800>: 8,
+                            "IsPositionReached" <1742624799303732800>: false,
+                            "IsEndingWipeCycle" <1742624799303732800>: true,
+                            "IsWiperError" <1742624799303732800>: true,
+                            "DriveCurrent" <1742624799303732800>: 39.34296771959047,
+                            "IsOverheated" <1742624799303732800>: false,
+                            "IsWiping" <1742624799303732800>: true,
+                            "ActualPosition" <1742624799303732800>: 60.888327206049965,
+                            "IsBlocked" <1742624799303732800>: false,
+                            "TargetPosition" <1742624799303732800>: 15.163489263409053
+                        }
+                    },
+                    "WasherFluid": {
+                        "Level" <1742624799303732800>: 40,
+                        "IsLevelLow" <1742624799303732800>: true
+                    },
+                    "IsHeatingOn" <1742624799303732800>: false
+                }
+            },
+            "Mirrors": {
+                "DriverSide": {
+                    "IsHeatingOn" <1742624799303732800>: true,
+                    "Pan" <1742624799303732800>: -29,
+                    "IsLocked" <1742624799303732800>: true,
+                    "IsFolded" <1742624799303732800>: false,
+                    "Tilt" <1742624799303732800>: 43
+                },
+                "PassengerSide": {
+                    "Pan" <1742624799303732800>: -30,
+                    "IsHeatingOn" <1742624799303732800>: false,
+                    "Tilt" <1742624799303732800>: 27,
+                    "IsFolded" <1742624799303732800>: false,
+                    "IsLocked" <1742624799303732800>: false
+                }
+            },
+            "PowerOptimizeLevel" <1742624799303732800>: 27,
+            "IsAutoPowerOptimize" <1742624799303732800>: true,
+            "Raindetection": {
+                "Intensity" <1742624799303732800>: -26
+            },
+            "RearMainSpoilerPosition" <1742624799303732800>: 56.9308511261167,
+            "Lights": {
+                "Beam": {
+                    "High": {
+                        "IsOn" <1742624799303732800>: true,
+                        "IsDefect" <1742624799303732800>: false
+                    },
+                    "Low": {
+                        "IsOn" <1742624799303732800>: false,
+                        "IsDefect" <1742624799303732800>: false
+                    }
+                },
+                "LicensePlate": {
+                    "IsDefect" <1742624799303732800>: true,
+                    "IsOn" <1742624799303732800>: false
+                },
+                "Parking": {
+                    "IsOn" <1742624799303732800>: true,
+                    "IsDefect" <1742624799303732800>: false
+                },
+                "Running": {
+                    "IsOn" <1742624799303732800>: true,
+                    "IsDefect" <1742624799303732800>: true
+                },
+                "IsHighBeamSwitchOn" <1742624799303732800>: true,
+                "Hazard": {
+                    "IsDefect" <1742624799303732800>: false,
+                    "IsSignaling" <1742624799303732800>: false
+                },
+                "Backup": {
+                    "IsOn" <1742624799303732800>: true,
+                    "IsDefect" <1742624799303732800>: true
+                },
+                "Fog": {
+                    "Rear": {
+                        "IsOn" <1742624799303732800>: false,
+                        "IsDefect" <1742624799303732800>: true
+                    },
+                    "Front": {
+                        "IsDefect" <1742624799303732800>: true,
+                        "IsOn" <1742624799303732800>: false
+                    }
+                },
+                "LightSwitch" <1742624799303732800>: "TEST_STRING_VALUE_18",
+                "DirectionIndicator": {
+                    "Right": {
+                        "IsSignaling" <1742624799303732800>: false,
+                        "IsDefect" <1742624799303732800>: false
+                    },
+                    "Left": {
+                        "IsSignaling" <1742624799303732800>: false,
+                        "IsDefect" <1742624799303732800>: true
+                    }
+                },
+                "Brake": {
+                    "IsDefect" <1742624799303732800>: false,
+                    "IsActive" <1742624799303732800>: "INACTIVE"
+                }
+            }
+        },
+        "CurrentLocation": {
+            "Altitude" <1742624799303732800>: 54.87665564277717,
+            "Timestamp" <1742624799303732800>: "TEST_STRING_VALUE_16",
+            "HorizontalAccuracy" <1742624799303732800>: 55.24046269405696,
+            "VerticalAccuracy" <1742624799303732800>: 71.21001200260412,
+            "Longitude" <1742624799303732800>: 12.971955846143956,
+            "Heading" <1742624799303732800>: 13.776441311700562,
+            "GNSSReceiver": {
+                "MountingPosition": {
+                    "Z" <1742624799303732800>: 0,
+                    "X" <1742624799303732800>: 55,
+                    "Y" <1742624799303732800>: -56
+                },
+                "FixType" <1742624799303732800>: "TWO_D_SATELLITE_BASED_AUGMENTATION"
+            },
+            "Latitude" <1742624799303732800>: 83.01253027698206
+        },
+        "Diagnostics": {
+            "DTCList": [
+                <1742624799303732800> "TEST_STRING_VALUE_19"
+            ],
+            "DTCCount" <1742624799303732800>: 26
+        },
+        "TripDuration" <1742624799303732800>: 53.4437762476496,
+        "Exterior": {
+            "AirTemperature" <1742624799303732800>: 57.07966668804393,
+            "Humidity" <1742624799303732800>: 24.99995154700769,
+            "LightIntensity" <1742624799303732800>: 68.39698623743045
+        },
+        "IsMoving" <1742624799303732800>: true,
+        "IsBrokenDown" <1742624799303732800>: true,
+        "Cabin": {
+            "IsWindowChildLockEngaged" <1742624799303732800>: true,
+            "Sunroof": {
+                "Shade": {
+                    "Switch" <1742624799303732800>: "TEST_STRING_VALUE_18",
+                    "Position" <1742624799303732800>: 4,
+                    "IsOpen" <1742624799303732800>: true
+                },
+                "Position" <1742624799303732800>: 92,
+                "Switch" <1742624799303732800>: "INACTIVE"
+            },
+            "Convertible": {
+                "Status" <1742624799303732800>: "OPEN"
+            },
+            "IsAutoPowerOptimize" <1742624799303732800>: true,
+            "DriverPosition" <1742624799303732800>: "MIDDLE",
+            "SeatRowCount" <1742624799303732800>: 3,
+            "PowerOptimizeLevel" <1742624799303732800>: 71,
+            "RearviewMirror": {
+                "DimmingLevel" <1742624799303732800>: 29
+            },
+            "DoorCount" <1742624799303732800>: 52,
+            "Light": {
+                "PerceivedAmbientLight" <1742624799303732800>: -65,
+                "Spotlight": {
+                    "Row1": {
+                        "DriverSide": {
+                            "IsLightOn" <1742624799303732800>: false,
+                            "Intensity" <1742624799303732800>: 51,
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_3"
+                        },
+                        "PassengerSide": {
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_2",
+                            "Intensity" <1742624799303732800>: 37,
+                            "IsLightOn" <1742624799303732800>: true
+                        }
+                    },
+                    "Row2": {
+                        "DriverSide": {
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_12",
+                            "IsLightOn" <1742624799303732800>: true,
+                            "Intensity" <1742624799303732800>: 40
+                        },
+                        "PassengerSide": {
+                            "Intensity" <1742624799303732800>: -64,
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_16",
+                            "IsLightOn" <1742624799303732800>: true
+                        }
+                    },
+                    "Row3": {
+                        "DriverSide": {
+                            "Intensity" <1742624799303732800>: 64,
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_7",
+                            "IsLightOn" <1742624799303732800>: true
+                        },
+                        "PassengerSide": {
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_10",
+                            "Intensity" <1742624799303732800>: -52,
+                            "IsLightOn" <1742624799303732800>: false
+                        }
+                    },
+                    "Row4": {
+                        "DriverSide": {
+                            "IsLightOn" <1742624799303732800>: false,
+                            "Intensity" <1742624799303732800>: 60,
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_8"
+                        },
+                        "PassengerSide": {
+                            "IsLightOn" <1742624799303732800>: false,
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_14",
+                            "Intensity" <1742624799303732800>: 16
+                        }
+                    }
+                },
+                "IsGloveBoxOn" <1742624799303732800>: true,
+                "AmbientLight": {
+                    "Row2": {
+                        "PassengerSide": {
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_17",
+                            "IsLightOn" <1742624799303732800>: false,
+                            "Intensity" <1742624799303732800>: 38
+                        },
+                        "DriverSide": {
+                            "Intensity" <1742624799303732800>: 60,
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_12",
+                            "IsLightOn" <1742624799303732800>: false
+                        }
+                    },
+                    "Row1": {
+                        "DriverSide": {
+                            "IsLightOn" <1742624799303732800>: true,
+                            "Intensity" <1742624799303732800>: -65,
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_2"
+                        },
+                        "PassengerSide": {
+                            "Intensity" <1742624799303732800>: -95,
+                            "Color" <1742624799303732800>: "TEST_STRING_VALUE_14",
+                            "IsLightOn" <1742624799303732800>: true
+                        }
+                    }
+                },
+                "IsDomeOn" <1742624799303732800>: true,
+                "InteractiveLightBar": {
+                    "Effect" <1742624799303732800>: "TEST_STRING_VALUE_6",
+                    "Intensity" <1742624799303732800>: 58,
+                    "IsLightOn" <1742624799303732800>: true,
+                    "Color" <1742624799303732800>: "TEST_STRING_VALUE_20"
+                }
+            },
+            "Door": {
+                "Row1": {
+                    "DriverSide": {
+                        "Position" <1742624799303732800>: 51,
+                        "IsOpen" <1742624799303732800>: false,
+                        "Switch" <1742624799303732800>: "TEST_STRING_VALUE_18",
+                        "Window": {
+                            "Position" <1742624799303732800>: -42,
+                            "Switch" <1742624799303732800>: "TEST_STRING_VALUE_5",
+                            "IsOpen" <1742624799303732800>: false
+                        },
+                        "Shade": {
+                            "Switch" <1742624799303732800>: "OPEN",
+                            "Position" <1742624799303732800>: 83,
+                            "IsOpen" <1742624799303732800>: true
+                        },
+                        "IsLocked" <1742624799303732800>: false,
+                        "IsChildLockActive" <1742624799303732800>: false
+                    },
+                    "PassengerSide": {
+                        "Switch" <1742624799303732800>: "ONE_SHOT_OPEN",
+                        "Position" <1742624799303732800>: 66,
+                        "Window": {
+                            "Position" <1742624799303732800>: 46,
+                            "Switch" <1742624799303732800>: "TEST_STRING_VALUE_19",
+                            "IsOpen" <1742624799303732800>: false
+                        },
+                        "Shade": {
+                            "IsOpen" <1742624799303732800>: false,
+                            "Position" <1742624799303732800>: 37,
+                            "Switch" <1742624799303732800>: "ONE_SHOT_CLOSE"
+                        },
+                        "IsChildLockActive" <1742624799303732800>: true,
+                        "IsOpen" <1742624799303732800>: true,
+                        "IsLocked" <1742624799303732800>: true
+                    }
+                },
+                "Row2": {
+                    "PassengerSide": {
+                        "IsChildLockActive" <1742624799303732800>: false,
+                        "Position" <1742624799303732800>: -43,
+                        "Shade": {
+                            "Position" <1742624799303732800>: 74,
+                            "IsOpen" <1742624799303732800>: true,
+                            "Switch" <1742624799303732800>: "OPEN"
+                        },
+                        "IsLocked" <1742624799303732800>: false,
+                        "Switch" <1742624799303732800>: "TEST_STRING_VALUE_3",
+                        "Window": {
+                            "Switch" <1742624799303732800>: "OPEN",
+                            "IsOpen" <1742624799303732800>: true,
+                            "Position" <1742624799303732800>: -9
+                        },
+                        "IsOpen" <1742624799303732800>: false
+                    },
+                    "DriverSide": {
+                        "Position" <1742624799303732800>: -28,
+                        "Shade": {
+                            "IsOpen" <1742624799303732800>: false,
+                            "Switch" <1742624799303732800>: "TEST_STRING_VALUE_19",
+                            "Position" <1742624799303732800>: 56
+                        },
+                        "IsChildLockActive" <1742624799303732800>: true,
+                        "Window": {
+                            "Position" <1742624799303732800>: 74,
+                            "IsOpen" <1742624799303732800>: false,
+                            "Switch" <1742624799303732800>: "TEST_STRING_VALUE_4"
+                        },
+                        "IsLocked" <1742624799303732800>: false,
+                        "Switch" <1742624799303732800>: "TEST_STRING_VALUE_18",
+                        "IsOpen" <1742624799303732800>: true
+                    }
+                }
+            },
+            "Infotainment": {
+                "HMI": {
+                    "TirePressureUnit" <1742624799303732800>: "TEST_STRING_VALUE_17",
+                    "LastActionTime" <1742624799303732800>: "TEST_STRING_VALUE_1",
+                    "EVEconomyUnits" <1742624799303732800>: "TEST_STRING_VALUE_5",
+                    "FuelEconomyUnits" <1742624799303732800>: "TEST_STRING_VALUE_8",
+                    "Brightness" <1742624799303732800>: 63.35044988570374,
+                    "EVEnergyUnits" <1742624799303732800>: "TEST_STRING_VALUE_16",
+                    "DisplayOffDuration" <1742624799303732800>: 98,
+                    "FontSize" <1742624799303732800>: "TEST_STRING_VALUE_17",
+                    "DayNightMode" <1742624799303732800>: "TEST_STRING_VALUE_5",
+                    "TimeFormat" <1742624799303732800>: "HR_24",
+                    "SpeedUnit" <1742624799303732800>: "KILOMETERS_PER_HOUR",
+                    "DistanceUnit" <1742624799303732800>: "MILES",
+                    "IsScreenAlwaysOn" <1742624799303732800>: false,
+                    "FuelVolumeUnit" <1742624799303732800>: "LITER",
+                    "CurrentLanguage" <1742624799303732800>: "TEST_STRING_VALUE_8",
+                    "DateFormat" <1742624799303732800>: "MM_DD_YYYY",
+                    "TemperatureUnit" <1742624799303732800>: "F"
+                },
+                "Media": {
+                    "Volume" <1742624799303732800>: -98,
+                    "SelectedURI" <1742624799303732800>: "TEST_STRING_VALUE_10",
+                    "Action" <1742624799303732800>: "FAST_FORWARD",
+                    "DeclinedURI" <1742624799303732800>: "TEST_STRING_VALUE_5",
+                    "Played": {
+                        "Source" <1742624799303732800>: "DISK",
+                        "Album" <1742624799303732800>: "TEST_STRING_VALUE_8",
+                        "Artist" <1742624799303732800>: "TEST_STRING_VALUE_16",
+                        "PlaybackRate" <1742624799303732800>: 30.074213773928683,
+                        "URI" <1742624799303732800>: "TEST_STRING_VALUE_7",
+                        "Track" <1742624799303732800>: "TEST_STRING_VALUE_14"
+                    }
+                },
+                "SmartphoneScreenMirroring": {
+                    "Source" <1742624799303732800>: "TEST_STRING_VALUE_6",
+                    "Active" <1742624799303732800>: "INACTIVE"
+                },
+                "Navigation": {
+                    "GuidanceVoice" <1742624799303732800>: "STANDARD_FEMALE",
+                    "Volume" <1742624799303732800>: 54,
+                    "Map": {
+                        "IsAutoScaleModeUsed" <1742624799303732800>: false
+                    },
+                    "DestinationSet": {
+                        "Longitude" <1742624799303732800>: 57.94096454736963,
+                        "Latitude" <1742624799303732800>: 18.335988933512862
+                    },
+                    "Mute" <1742624799303732800>: "TEST_STRING_VALUE_17"
+                },
+                "SmartphoneProjection": {
+                    "SupportedMode" <1742624799303732800>: "MIRROR_LINK",
+                    "Active" <1742624799303732800>: "INACTIVE",
+                    "Source" <1742624799303732800>: "TEST_STRING_VALUE_15"
+                },
+                "IsAutoPowerOptimize" <1742624799303732800>: true,
+                "PowerOptimizeLevel" <1742624799303732800>: -96
+            },
+            "RearShade": {
+                "Position" <1742624799303732800>: 15,
+                "Switch" <1742624799303732800>: "OPEN",
+                "IsOpen" <1742624799303732800>: false
+            },
+            "Seat": {
+                "Row1": {
+                    "Middle": {
+                        "Backrest": {
+                            "Lumbar": {
+                                "Height" <1742624799303732800>: 8,
+                                "Support" <1742624799303732800>: 13.588956969525892
+                            },
+                            "SideBolster": {
+                                "Support" <1742624799303732800>: 76.08837764913166
+                            },
+                            "Recline" <1742624799303732800>: 95.05001078718672
+                        },
+                        "Switch": {
+                            "Massage": {
+                                "IsIncreaseEngaged" <1742624799303732800>: false,
+                                "IsDecreaseEngaged" <1742624799303732800>: true
+                            },
+                            "IsWarmerEngaged" <1742624799303732800>: false,
+                            "IsBackwardEngaged" <1742624799303732800>: false,
+                            "IsTiltForwardEngaged" <1742624799303732800>: false,
+                            "IsDownEngaged" <1742624799303732800>: false,
+                            "IsUpEngaged" <1742624799303732800>: false,
+                            "IsTiltBackwardEngaged" <1742624799303732800>: true,
+                            "Headrest": {
+                                "IsBackwardEngaged" <1742624799303732800>: false,
+                                "IsUpEngaged" <1742624799303732800>: true,
+                                "IsForwardEngaged" <1742624799303732800>: false,
+                                "IsDownEngaged" <1742624799303732800>: false
+                            },
+                            "Backrest": {
+                                "IsReclineBackwardEngaged" <1742624799303732800>: false,
+                                "SideBolster": {
+                                    "IsMoreSupportEngaged" <1742624799303732800>: true,
+                                    "IsLessSupportEngaged" <1742624799303732800>: false
+                                },
+                                "IsReclineForwardEngaged" <1742624799303732800>: true,
+                                "Lumbar": {
+                                    "IsDownEngaged" <1742624799303732800>: false,
+                                    "IsLessSupportEngaged" <1742624799303732800>: true,
+                                    "IsUpEngaged" <1742624799303732800>: true,
+                                    "IsMoreSupportEngaged" <1742624799303732800>: true
+                                }
+                            },
+                            "Seating": {
+                                "IsBackwardEngaged" <1742624799303732800>: false,
+                                "IsForwardEngaged" <1742624799303732800>: true
+                            },
+                            "IsForwardEngaged" <1742624799303732800>: true,
+                            "IsCoolerEngaged" <1742624799303732800>: true
+                        },
+                        "Massage" <1742624799303732800>: 78,
+                        "SeatBeltHeight" <1742624799303732800>: 95,
+                        "Height" <1742624799303732800>: 22,
+                        "Airbag": {
+                            "IsDeployed" <1742624799303732800>: true
+                        },
+                        "Occupant": {
+                            "Identifier": {
+                                "Subject" <1742624799303732800>: "TEST_STRING_VALUE_20",
+                                "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_19"
+                            }
+                        },
+                        "Headrest": {
+                            "Angle" <1742624799303732800>: 43.423728143461865,
+                            "Height" <1742624799303732800>: 81
+                        },
+                        "IsBelted" <1742624799303732800>: false,
+                        "Position" <1742624799303732800>: 44,
+                        "Seating": {
+                            "Length" <1742624799303732800>: 1
+                        },
+                        "IsOccupied" <1742624799303732800>: false,
+                        "HeatingCooling" <1742624799303732800>: 86,
+                        "Tilt" <1742624799303732800>: 75.58533977556218
+                    },
+                    "DriverSide": {
+                        "Headrest": {
+                            "Angle" <1742624799303732800>: 55.53437096549947,
+                            "Height" <1742624799303732800>: 69
+                        },
+                        "Tilt" <1742624799303732800>: 66.10388695501297,
+                        "IsBelted" <1742624799303732800>: true,
+                        "Height" <1742624799303732800>: 95,
+                        "Switch": {
+                            "Seating": {
+                                "IsForwardEngaged" <1742624799303732800>: false,
+                                "IsBackwardEngaged" <1742624799303732800>: true
+                            },
+                            "IsUpEngaged" <1742624799303732800>: false,
+                            "Headrest": {
+                                "IsUpEngaged" <1742624799303732800>: false,
+                                "IsBackwardEngaged" <1742624799303732800>: false,
+                                "IsForwardEngaged" <1742624799303732800>: true,
+                                "IsDownEngaged" <1742624799303732800>: false
+                            },
+                            "Massage": {
+                                "IsIncreaseEngaged" <1742624799303732800>: true,
+                                "IsDecreaseEngaged" <1742624799303732800>: true
+                            },
+                            "IsTiltBackwardEngaged" <1742624799303732800>: false,
+                            "Backrest": {
+                                "IsReclineBackwardEngaged" <1742624799303732800>: true,
+                                "Lumbar": {
+                                    "IsMoreSupportEngaged" <1742624799303732800>: false,
+                                    "IsUpEngaged" <1742624799303732800>: false,
+                                    "IsLessSupportEngaged" <1742624799303732800>: true,
+                                    "IsDownEngaged" <1742624799303732800>: false
+                                },
+                                "IsReclineForwardEngaged" <1742624799303732800>: true,
+                                "SideBolster": {
+                                    "IsMoreSupportEngaged" <1742624799303732800>: true,
+                                    "IsLessSupportEngaged" <1742624799303732800>: true
+                                }
+                            },
+                            "IsDownEngaged" <1742624799303732800>: false,
+                            "IsBackwardEngaged" <1742624799303732800>: true,
+                            "IsWarmerEngaged" <1742624799303732800>: false,
+                            "IsForwardEngaged" <1742624799303732800>: false,
+                            "IsTiltForwardEngaged" <1742624799303732800>: false,
+                            "IsCoolerEngaged" <1742624799303732800>: false
+                        },
+                        "Backrest": {
+                            "Lumbar": {
+                                "Height" <1742624799303732800>: -67,
+                                "Support" <1742624799303732800>: 48.07928699888978
+                            },
+                            "Recline" <1742624799303732800>: 3.041705977874262,
+                            "SideBolster": {
+                                "Support" <1742624799303732800>: 11.991720983786733
+                            }
+                        },
+                        "Massage" <1742624799303732800>: -67,
+                        "Seating": {
+                            "Length" <1742624799303732800>: 13
+                        },
+                        "HeatingCooling" <1742624799303732800>: 1,
+                        "Occupant": {
+                            "Identifier": {
+                                "Subject" <1742624799303732800>: "TEST_STRING_VALUE_19",
+                                "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_4"
+                            }
+                        },
+                        "SeatBeltHeight" <1742624799303732800>: 11,
+                        "Position" <1742624799303732800>: 34,
+                        "Airbag": {
+                            "IsDeployed" <1742624799303732800>: false
+                        },
+                        "IsOccupied" <1742624799303732800>: false
+                    },
+                    "PassengerSide": {
+                        "Switch": {
+                            "IsUpEngaged" <1742624799303732800>: false,
+                            "IsCoolerEngaged" <1742624799303732800>: true,
+                            "Seating": {
+                                "IsBackwardEngaged" <1742624799303732800>: true,
+                                "IsForwardEngaged" <1742624799303732800>: false
+                            },
+                            "Massage": {
+                                "IsIncreaseEngaged" <1742624799303732800>: false,
+                                "IsDecreaseEngaged" <1742624799303732800>: true
+                            },
+                            "IsWarmerEngaged" <1742624799303732800>: false,
+                            "IsTiltBackwardEngaged" <1742624799303732800>: false,
+                            "Backrest": {
+                                "SideBolster": {
+                                    "IsMoreSupportEngaged" <1742624799303732800>: true,
+                                    "IsLessSupportEngaged" <1742624799303732800>: true
+                                },
+                                "Lumbar": {
+                                    "IsMoreSupportEngaged" <1742624799303732800>: false,
+                                    "IsLessSupportEngaged" <1742624799303732800>: false,
+                                    "IsDownEngaged" <1742624799303732800>: false,
+                                    "IsUpEngaged" <1742624799303732800>: false
+                                },
+                                "IsReclineBackwardEngaged" <1742624799303732800>: true,
+                                "IsReclineForwardEngaged" <1742624799303732800>: false
+                            },
+                            "IsDownEngaged" <1742624799303732800>: false,
+                            "IsForwardEngaged" <1742624799303732800>: true,
+                            "Headrest": {
+                                "IsUpEngaged" <1742624799303732800>: false,
+                                "IsBackwardEngaged" <1742624799303732800>: false,
+                                "IsDownEngaged" <1742624799303732800>: false,
+                                "IsForwardEngaged" <1742624799303732800>: false
+                            },
+                            "IsTiltForwardEngaged" <1742624799303732800>: false,
+                            "IsBackwardEngaged" <1742624799303732800>: false
+                        },
+                        "SeatBeltHeight" <1742624799303732800>: 72,
+                        "IsBelted" <1742624799303732800>: false,
+                        "Position" <1742624799303732800>: 60,
+                        "IsOccupied" <1742624799303732800>: false,
+                        "Seating": {
+                            "Length" <1742624799303732800>: 10
+                        },
+                        "Massage" <1742624799303732800>: 90,
+                        "Headrest": {
+                            "Angle" <1742624799303732800>: 10.140519448668902,
+                            "Height" <1742624799303732800>: 30
+                        },
+                        "Backrest": {
+                            "SideBolster": {
+                                "Support" <1742624799303732800>: 4.8956110531165296
+                            },
+                            "Lumbar": {
+                                "Support" <1742624799303732800>: 54.031455849174726,
+                                "Height" <1742624799303732800>: 31
+                            },
+                            "Recline" <1742624799303732800>: 52.835894802898494
+                        },
+                        "Airbag": {
+                            "IsDeployed" <1742624799303732800>: false
+                        },
+                        "Tilt" <1742624799303732800>: 67.54455012637887,
+                        "Height" <1742624799303732800>: 71,
+                        "HeatingCooling" <1742624799303732800>: -15,
+                        "Occupant": {
+                            "Identifier": {
+                                "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_8",
+                                "Subject" <1742624799303732800>: "TEST_STRING_VALUE_14"
+                            }
+                        }
+                    }
+                },
+                "Row2": {
+                    "DriverSide": {
+                        "HeatingCooling" <1742624799303732800>: 85,
+                        "Switch": {
+                            "IsBackwardEngaged" <1742624799303732800>: true,
+                            "IsWarmerEngaged" <1742624799303732800>: false,
+                            "Seating": {
+                                "IsBackwardEngaged" <1742624799303732800>: false,
+                                "IsForwardEngaged" <1742624799303732800>: false
+                            },
+                            "IsTiltForwardEngaged" <1742624799303732800>: true,
+                            "IsDownEngaged" <1742624799303732800>: true,
+                            "Massage": {
+                                "IsIncreaseEngaged" <1742624799303732800>: false,
+                                "IsDecreaseEngaged" <1742624799303732800>: true
+                            },
+                            "IsTiltBackwardEngaged" <1742624799303732800>: true,
+                            "Backrest": {
+                                "IsReclineBackwardEngaged" <1742624799303732800>: true,
+                                "IsReclineForwardEngaged" <1742624799303732800>: false,
+                                "SideBolster": {
+                                    "IsLessSupportEngaged" <1742624799303732800>: false,
+                                    "IsMoreSupportEngaged" <1742624799303732800>: false
+                                },
+                                "Lumbar": {
+                                    "IsLessSupportEngaged" <1742624799303732800>: true,
+                                    "IsDownEngaged" <1742624799303732800>: false,
+                                    "IsUpEngaged" <1742624799303732800>: true,
+                                    "IsMoreSupportEngaged" <1742624799303732800>: false
+                                }
+                            },
+                            "IsForwardEngaged" <1742624799303732800>: true,
+                            "IsUpEngaged" <1742624799303732800>: true,
+                            "Headrest": {
+                                "IsUpEngaged" <1742624799303732800>: false,
+                                "IsDownEngaged" <1742624799303732800>: true,
+                                "IsForwardEngaged" <1742624799303732800>: false,
+                                "IsBackwardEngaged" <1742624799303732800>: false
+                            },
+                            "IsCoolerEngaged" <1742624799303732800>: false
+                        },
+                        "IsOccupied" <1742624799303732800>: false,
+                        "SeatBeltHeight" <1742624799303732800>: 5,
+                        "Headrest": {
+                            "Height" <1742624799303732800>: -21,
+                            "Angle" <1742624799303732800>: 55.765641179888405
+                        },
+                        "Seating": {
+                            "Length" <1742624799303732800>: 95
+                        },
+                        "Backrest": {
+                            "SideBolster": {
+                                "Support" <1742624799303732800>: 12.488361381001154
+                            },
+                            "Lumbar": {
+                                "Support" <1742624799303732800>: 83.75037346815061,
+                                "Height" <1742624799303732800>: 27
+                            },
+                            "Recline" <1742624799303732800>: 15.7818995820517
+                        },
+                        "IsBelted" <1742624799303732800>: false,
+                        "Tilt" <1742624799303732800>: 47.47210519746808,
+                        "Occupant": {
+                            "Identifier": {
+                                "Subject" <1742624799303732800>: "TEST_STRING_VALUE_6",
+                                "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_10"
+                            }
+                        },
+                        "Height" <1742624799303732800>: 70,
+                        "Massage" <1742624799303732800>: 85,
+                        "Position" <1742624799303732800>: 3,
+                        "Airbag": {
+                            "IsDeployed" <1742624799303732800>: false
+                        }
+                    },
+                    "PassengerSide": {
+                        "Height" <1742624799303732800>: -33,
+                        "SeatBeltHeight" <1742624799303732800>: -72,
+                        "Switch": {
+                            "IsUpEngaged" <1742624799303732800>: false,
+                            "Backrest": {
+                                "IsReclineForwardEngaged" <1742624799303732800>: true,
+                                "SideBolster": {
+                                    "IsLessSupportEngaged" <1742624799303732800>: true,
+                                    "IsMoreSupportEngaged" <1742624799303732800>: true
+                                },
+                                "IsReclineBackwardEngaged" <1742624799303732800>: false,
+                                "Lumbar": {
+                                    "IsLessSupportEngaged" <1742624799303732800>: true,
+                                    "IsUpEngaged" <1742624799303732800>: false,
+                                    "IsMoreSupportEngaged" <1742624799303732800>: false,
+                                    "IsDownEngaged" <1742624799303732800>: true
+                                }
+                            },
+                            "IsBackwardEngaged" <1742624799303732800>: false,
+                            "Massage": {
+                                "IsIncreaseEngaged" <1742624799303732800>: true,
+                                "IsDecreaseEngaged" <1742624799303732800>: true
+                            },
+                            "IsForwardEngaged" <1742624799303732800>: true,
+                            "Seating": {
+                                "IsForwardEngaged" <1742624799303732800>: false,
+                                "IsBackwardEngaged" <1742624799303732800>: true
+                            },
+                            "IsDownEngaged" <1742624799303732800>: false,
+                            "IsTiltBackwardEngaged" <1742624799303732800>: false,
+                            "IsTiltForwardEngaged" <1742624799303732800>: false,
+                            "IsCoolerEngaged" <1742624799303732800>: true,
+                            "IsWarmerEngaged" <1742624799303732800>: false,
+                            "Headrest": {
+                                "IsDownEngaged" <1742624799303732800>: true,
+                                "IsForwardEngaged" <1742624799303732800>: true,
+                                "IsUpEngaged" <1742624799303732800>: true,
+                                "IsBackwardEngaged" <1742624799303732800>: false
+                            }
+                        },
+                        "HeatingCooling" <1742624799303732800>: -65,
+                        "IsBelted" <1742624799303732800>: false,
+                        "Occupant": {
+                            "Identifier": {
+                                "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_11",
+                                "Subject" <1742624799303732800>: "TEST_STRING_VALUE_14"
+                            }
+                        },
+                        "Tilt" <1742624799303732800>: 65.58845906887505,
+                        "IsOccupied" <1742624799303732800>: false,
+                        "Massage" <1742624799303732800>: 24,
+                        "Position" <1742624799303732800>: 29,
+                        "Backrest": {
+                            "Recline" <1742624799303732800>: 5.018748775285038,
+                            "SideBolster": {
+                                "Support" <1742624799303732800>: 31.51818452046613
+                            },
+                            "Lumbar": {
+                                "Support" <1742624799303732800>: 63.79959646896998,
+                                "Height" <1742624799303732800>: -21
+                            }
+                        },
+                        "Headrest": {
+                            "Height" <1742624799303732800>: -34,
+                            "Angle" <1742624799303732800>: 9.264473678832557
+                        },
+                        "Seating": {
+                            "Length" <1742624799303732800>: -58
+                        },
+                        "Airbag": {
+                            "IsDeployed" <1742624799303732800>: true
+                        }
+                    },
+                    "Middle": {
+                        "Position" <1742624799303732800>: 59,
+                        "Height" <1742624799303732800>: -54,
+                        "Occupant": {
+                            "Identifier": {
+                                "Issuer" <1742624799303732800>: "TEST_STRING_VALUE_1",
+                                "Subject" <1742624799303732800>: "TEST_STRING_VALUE_20"
+                            }
+                        },
+                        "Headrest": {
+                            "Height" <1742624799303732800>: 65,
+                            "Angle" <1742624799303732800>: 46.31020523990529
+                        },
+                        "IsBelted" <1742624799303732800>: true,
+                        "IsOccupied" <1742624799303732800>: false,
+                        "Airbag": {
+                            "IsDeployed" <1742624799303732800>: true
+                        },
+                        "Backrest": {
+                            "SideBolster": {
+                                "Support" <1742624799303732800>: 24.921065897554882
+                            },
+                            "Recline" <1742624799303732800>: 14.102366143740447,
+                            "Lumbar": {
+                                "Height" <1742624799303732800>: 45,
+                                "Support" <1742624799303732800>: 4.13736697261128
+                            }
+                        },
+                        "Massage" <1742624799303732800>: -98,
+                        "Seating": {
+                            "Length" <1742624799303732800>: 18
+                        },
+                        "Tilt" <1742624799303732800>: 33.95153509429409,
+                        "Switch": {
+                            "IsDownEngaged" <1742624799303732800>: false,
+                            "IsForwardEngaged" <1742624799303732800>: false,
+                            "IsWarmerEngaged" <1742624799303732800>: false,
+                            "IsUpEngaged" <1742624799303732800>: false,
+                            "Backrest": {
+                                "SideBolster": {
+                                    "IsMoreSupportEngaged" <1742624799303732800>: true,
+                                    "IsLessSupportEngaged" <1742624799303732800>: true
+                                },
+                                "Lumbar": {
+                                    "IsMoreSupportEngaged" <1742624799303732800>: true,
+                                    "IsDownEngaged" <1742624799303732800>: true,
+                                    "IsLessSupportEngaged" <1742624799303732800>: true,
+                                    "IsUpEngaged" <1742624799303732800>: true
+                                },
+                                "IsReclineBackwardEngaged" <1742624799303732800>: false,
+                                "IsReclineForwardEngaged" <1742624799303732800>: true
+                            },
+                            "Massage": {
+                                "IsIncreaseEngaged" <1742624799303732800>: false,
+                                "IsDecreaseEngaged" <1742624799303732800>: true
+                            },
+                            "Headrest": {
+                                "IsDownEngaged" <1742624799303732800>: false,
+                                "IsBackwardEngaged" <1742624799303732800>: true,
+                                "IsForwardEngaged" <1742624799303732800>: true,
+                                "IsUpEngaged" <1742624799303732800>: false
+                            },
+                            "Seating": {
+                                "IsForwardEngaged" <1742624799303732800>: true,
+                                "IsBackwardEngaged" <1742624799303732800>: false
+                            },
+                            "IsTiltForwardEngaged" <1742624799303732800>: false,
+                            "IsTiltBackwardEngaged" <1742624799303732800>: true,
+                            "IsBackwardEngaged" <1742624799303732800>: false,
+                            "IsCoolerEngaged" <1742624799303732800>: false
+                        },
+                        "HeatingCooling" <1742624799303732800>: 100,
+                        "SeatBeltHeight" <1742624799303732800>: 58
+                    }
+                }
+            },
+            "SeatPosCount": [
+                <1742624799303732800> 13,
+                <1742624799303732800> 82
+            ],
+            "HVAC": {
+                "Station": {
+                    "Row4": {
+                        "Passenger": {
+                            "Temperature" <1742624799303732800>: 74.58504326391879,
+                            "AirDistribution" <1742624799303732800>: "MIDDLE",
+                            "FanSpeed" <1742624799303732800>: 93
+                        },
+                        "Driver": {
+                            "FanSpeed" <1742624799303732800>: 60,
+                            "Temperature" <1742624799303732800>: 93.15398281073598,
+                            "AirDistribution" <1742624799303732800>: "DOWN"
+                        }
+                    },
+                    "Row3": {
+                        "Driver": {
+                            "FanSpeed" <1742624799303732800>: 49,
+                            "Temperature" <1742624799303732800>: 18.135140928734604,
+                            "AirDistribution" <1742624799303732800>: "UP"
+                        },
+                        "Passenger": {
+                            "FanSpeed" <1742624799303732800>: -65,
+                            "AirDistribution" <1742624799303732800>: "TEST_STRING_VALUE_4",
+                            "Temperature" <1742624799303732800>: 7.1531451887195185
+                        }
+                    },
+                    "Row2": {
+                        "Driver": {
+                            "Temperature" <1742624799303732800>: 55.59122706883514,
+                            "FanSpeed" <1742624799303732800>: 5,
+                            "AirDistribution" <1742624799303732800>: "TEST_STRING_VALUE_3"
+                        },
+                        "Passenger": {
+                            "AirDistribution" <1742624799303732800>: "TEST_STRING_VALUE_2",
+                            "Temperature" <1742624799303732800>: 97.1285959590084,
+                            "FanSpeed" <1742624799303732800>: 47
+                        }
+                    },
+                    "Row1": {
+                        "Driver": {
+                            "AirDistribution" <1742624799303732800>: "MIDDLE",
+                            "Temperature" <1742624799303732800>: 44.87620584792729,
+                            "FanSpeed" <1742624799303732800>: -72
+                        },
+                        "Passenger": {
+                            "Temperature" <1742624799303732800>: 77.88429460594126,
+                            "FanSpeed" <1742624799303732800>: 17,
+                            "AirDistribution" <1742624799303732800>: "DOWN"
+                        }
+                    }
+                },
+                "IsRearDefrosterActive" <1742624799303732800>: false,
+                "PowerOptimizeLevel" <1742624799303732800>: 60,
+                "IsRecirculationActive" <1742624799303732800>: false,
+                "AmbientAirTemperature" <1742624799303732800>: 48.73559958185093,
+                "IsAirConditioningActive" <1742624799303732800>: true,
+                "IsAutoPowerOptimize" <1742624799303732800>: true,
+                "IsFrontDefrosterActive" <1742624799303732800>: false
+            }
+        },
+        "OBD": {
+            "FuelStatus" <1742624799303732800>: "TEST_STRING_VALUE_14",
+            "ShortTermFuelTrim2" <1742624799303732800>: 58.40597682382649,
+            "PidsC" <1742624799303732800>: "44",
+            "FuelRailPressureDirect" <1742624799303732800>: 91.4298864178769,
+            "EGRError" <1742624799303732800>: 42.83189400313678,
+            "DistanceSinceDTCClear" <1742624799303732800>: 31.616769652748612,
+            "AcceleratorPositionD" <1742624799303732800>: 77.81643809098394,
+            "TimeSinceDTCCleared" <1742624799303732800>: 60.81379488139022,
+            "CommandedEquivalenceRatio" <1742624799303732800>: 7.895236218958909,
+            "HybridBatteryRemaining" <1742624799303732800>: 1.8951771636990684,
+            "RunTime" <1742624799303732800>: 91.3654714614281,
+            "FuelRate" <1742624799303732800>: 3.8021287523507175,
+            "Speed" <1742624799303732800>: 28.88498697166607,
+            "RelativeAcceleratorPosition" <1742624799303732800>: 65.75245586350682,
+            "DriveCycleStatus": {
+                "IgnitionType" <1742624799303732800>: "TEST_STRING_VALUE_5",
+                "DTCCount" <1742624799303732800>: -31,
+                "IsMILOn" <1742624799303732800>: false
+            },
+            "FuelType" <1742624799303732800>: 60,
+            "WarmupsSinceDTCClear" <1742624799303732800>: 99,
+            "RunTimeMIL" <1742624799303732800>: 5.928269898495291,
+            "FuelLevel" <1742624799303732800>: 78.92531745823237,
+            "ShortTermO2Trim3" <1742624799303732800>: 32.34697996477544,
+            "MaxMAF" <1742624799303732800>: 3.479985433298255,
+            "ThrottlePosition" <1742624799303732800>: 75.618578809739,
+            "O2WR": {
+                "Sensor2": {
+                    "Voltage" <1742624799303732800>: 23.52669151326503,
+                    "Current" <1742624799303732800>: 46.180223663793655,
+                    "Lambda" <1742624799303732800>: 82.41188272983737
+                },
+                "Sensor1": {
+                    "Voltage" <1742624799303732800>: 24.725973994310856,
+                    "Current" <1742624799303732800>: 45.04316105621235,
+                    "Lambda" <1742624799303732800>: 81.4832494332412
+                },
+                "Sensor4": {
+                    "Voltage" <1742624799303732800>: 88.13640100663027,
+                    "Lambda" <1742624799303732800>: 25.1617283540987,
+                    "Current" <1742624799303732800>: 55.718629844882415
+                },
+                "Sensor7": {
+                    "Voltage" <1742624799303732800>: 17.32273871104265,
+                    "Lambda" <1742624799303732800>: 78.28203313466757,
+                    "Current" <1742624799303732800>: 62.77151649442939
+                },
+                "Sensor5": {
+                    "Current" <1742624799303732800>: 11.568988584793619,
+                    "Voltage" <1742624799303732800>: 3.5470193283519356,
+                    "Lambda" <1742624799303732800>: 24.671146186122364
+                },
+                "Sensor3": {
+                    "Lambda" <1742624799303732800>: 10.814410674580337,
+                    "Current" <1742624799303732800>: 32.26251203278962,
+                    "Voltage" <1742624799303732800>: 12.853453309434807
+                },
+                "Sensor8": {
+                    "Voltage" <1742624799303732800>: 19.628199113941687,
+                    "Lambda" <1742624799303732800>: 19.926171402415342,
+                    "Current" <1742624799303732800>: 92.12512167220677
+                },
+                "Sensor6": {
+                    "Current" <1742624799303732800>: 45.59519765585944,
+                    "Voltage" <1742624799303732800>: 27.26379986809766,
+                    "Lambda" <1742624799303732800>: 85.79934390195683
+                }
+            },
+            "OxygenSensorsIn2Banks" <1742624799303732800>: -92,
+            "OBDStandards" <1742624799303732800>: 9,
+            "CommandedEGR" <1742624799303732800>: 27.57867411194471,
+            "EVAPVaporPressureAbsolute" <1742624799303732800>: 5.258481434773909,
+            "IntakeTemp" <1742624799303732800>: 73.85192811007171,
+            "AirStatus" <1742624799303732800>: "TEST_STRING_VALUE_4",
+            "AbsoluteLoad" <1742624799303732800>: 86.96337619645068,
+            "FuelPressure" <1742624799303732800>: 18.332011895635787,
+            "BarometricPressure" <1742624799303732800>: 65.31309287050506,
+            "EngineLoad" <1742624799303732800>: 10.784631974983014,
+            "LongTermFuelTrim2" <1742624799303732800>: 7.423981678087903,
+            "FuelRailPressureVac" <1742624799303732800>: 98.77441384899483,
+            "MAF" <1742624799303732800>: 4.419601500417709,
+            "EVAPVaporPressure" <1742624799303732800>: 14.888553475988928,
+            "FuelInjectionTiming" <1742624799303732800>: 79.79006368157334,
+            "Catalyst": {
+                "Bank2": {
+                    "Temperature1" <1742624799303732800>: 52.08654361607642,
+                    "Temperature2" <1742624799303732800>: 70.252858498778
+                },
+                "Bank1": {
+                    "Temperature2" <1742624799303732800>: 12.496411493354518,
+                    "Temperature1" <1742624799303732800>: 64.29342204706171
+                }
+            },
+            "OxygenSensorsIn4Banks" <1742624799303732800>: -100,
+            "ThrottlePositionC" <1742624799303732800>: 30.375618700768612,
+            "LongTermO2Trim2" <1742624799303732800>: 15.562860155207895,
+            "ShortTermO2Trim4" <1742624799303732800>: 56.030674588528804,
+            "LongTermFuelTrim1" <1742624799303732800>: 77.22259552968167,
+            "OilTemperature" <1742624799303732800>: 38.37551355843312,
+            "AcceleratorPositionF" <1742624799303732800>: 91.09292447060582,
+            "CoolantTemperature" <1742624799303732800>: 96.221173683325,
+            "FuelRailPressureAbsolute" <1742624799303732800>: 7.5724563760661345,
+            "ShortTermO2Trim1" <1742624799303732800>: 70.2781230276175,
+            "RelativeThrottlePosition" <1742624799303732800>: 63.20033063454298,
+            "FreezeDTC" <1742624799303732800>: "TEST_STRING_VALUE_7",
+            "Status": {
+                "DTCCount" <1742624799303732800>: -85,
+                "IgnitionType" <1742624799303732800>: "TEST_STRING_VALUE_16",
+                "IsMILOn" <1742624799303732800>: false
+            },
+            "CommandedEVAP" <1742624799303732800>: 47.04640904402569,
+            "O2": {
+                "Sensor6": {
+                    "ShortTermFuelTrim" <1742624799303732800>: 71.28299230963678,
+                    "Voltage" <1742624799303732800>: 52.052883584937724
+                },
+                "Sensor8": {
+                    "Voltage" <1742624799303732800>: 69.61354708305947,
+                    "ShortTermFuelTrim" <1742624799303732800>: 81.38864750159904
+                },
+                "Sensor3": {
+                    "Voltage" <1742624799303732800>: 33.58737629523068,
+                    "ShortTermFuelTrim" <1742624799303732800>: 93.53430473598672
+                },
+                "Sensor4": {
+                    "Voltage" <1742624799303732800>: 46.58014011486217,
+                    "ShortTermFuelTrim" <1742624799303732800>: 41.77940705905282
+                },
+                "Sensor2": {
+                    "Voltage" <1742624799303732800>: 45.9913922351159,
+                    "ShortTermFuelTrim" <1742624799303732800>: 39.737217575695844
+                },
+                "Sensor1": {
+                    "Voltage" <1742624799303732800>: 63.701877819314014,
+                    "ShortTermFuelTrim" <1742624799303732800>: 50.25917374972476
+                },
+                "Sensor7": {
+                    "ShortTermFuelTrim" <1742624799303732800>: 96.87483333341692,
+                    "Voltage" <1742624799303732800>: 5.300730921563513
+                },
+                "Sensor5": {
+                    "Voltage" <1742624799303732800>: 8.726072577568376,
+                    "ShortTermFuelTrim" <1742624799303732800>: 10.71443177090569
+                }
+            },
+            "DistanceWithMIL" <1742624799303732800>: 52.33604758040291,
+            "TimingAdvance" <1742624799303732800>: 54.96028629918758,
+            "LongTermO2Trim4" <1742624799303732800>: 23.471496202426874,
+            "ThrottleActuator" <1742624799303732800>: 33.888628893167464,
+            "EngineSpeed" <1742624799303732800>: 6.442983479474397,
+            "ControlModuleVoltage" <1742624799303732800>: 79.70517917407528,
+            "ShortTermFuelTrim1" <1742624799303732800>: 86.49047863003466,
+            "DTCList": [
+                <1742624799303732800> "TEST_STRING_VALUE_19",
+                <1742624799303732800> "TEST_STRING_VALUE_10"
+            ],
+            "PidsA" <1742624799303732800>: "TEST_STRING_VALUE_14",
+            "MAP" <1742624799303732800>: 26.81885908525146,
+            "IsPTOActive" <1742624799303732800>: true,
+            "EthanolPercent" <1742624799303732800>: 25.614507205999086,
+            "LongTermO2Trim3" <1742624799303732800>: 41.87201984112732,
+            "LongTermO2Trim1" <1742624799303732800>: 49.83777373337798,
+            "AmbientAirTemperature" <1742624799303732800>: 5.534005214322972,
+            "PidsB" <1742624799303732800>: "3E",
+            "AcceleratorPositionE" <1742624799303732800>: 59.23440116934472,
+            "ShortTermO2Trim2" <1742624799303732800>: 28.74538795676,
+            "ThrottlePositionB" <1742624799303732800>: 93.39630980132554,
+            "EVAPVaporPressureAlternate" <1742624799303732800>: 37.84738764152345
+        },
+        "MaxTowWeight" <1742624799303732800>: 69,
+        "LowVoltageSystemState" <1742624799303732800>: "START"
+    }
+}
