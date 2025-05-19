@@ -129,17 +129,26 @@ func GeneratePatch(origin, modified tson.Tson) (Patch, error) {
 	return handleValues(origin, modified, "", Patch{})
 }
 
+// GeneratePatchWithTimestamp는 타임스탬프 변경도 감지하여 패치를 생성합니다.
+func GeneratePatchWithTimestamp(origin, modified tson.Tson) (Patch, error) {
+	// If the two TSON documents are equal, return an empty patch
+	if eq, err := tson.Equal(origin, modified); err != nil && eq {
+		return Patch{}, nil
+	}
+	return handleValuesWithTimestamp(origin, modified, "", Patch{})
+}
+
 // ApplyPatch applies a JSON patch to a TSON document
 func ApplyPatch(doc tson.Tson, patch Patch) (t tson.Tson, err error) {
 	for _, op := range patch {
-		if t, err = applyOperation(doc, op); err != nil {
+		if t, err = ApplyOperation(doc, op); err != nil {
 			return nil, err
 		}
 	}
 	return t, nil
 }
 
-func applyOperation(doc tson.Tson, op Operation) (t tson.Tson, err error) {
+func ApplyOperation(doc tson.Tson, op Operation) (t tson.Tson, err error) {
 	path := rfc6901Decoder.Replace(op.Path)
 
 	// Split the path into parts, ignoring the first empty string
@@ -156,9 +165,6 @@ func applyTraverse(doc tson.Tson, parts []string, op Operation) (t tson.Tson, er
 	if len(parts) == 0 { // If the path is empty, return
 		return doc, nil
 	}
-
-	// fmt.Printf("doc: %v\n", doc)
-	// fmt.Printf("parts: %v\n", parts)
 
 	switch doc.(type) { // If doc is a leaf node, return
 	case tson.Leaf[string], tson.Leaf[float64], tson.Leaf[bool]:
@@ -263,7 +269,7 @@ func makePath(path string, newPart any) string {
 }
 
 // diff returns the (recursive) difference between a and b.
-func diff(origin, modified tson.Object, path string, patch Patch) (Patch, error) {
+func diff(origin, modified tson.Object, path string, patch Patch, withTimestamp bool) (Patch, error) {
 	for key, modValue := range modified {
 		p := makePath(path, key)
 		origValue, ok := origin[key]
@@ -297,7 +303,11 @@ func diff(origin, modified tson.Object, path string, patch Patch) (Patch, error)
 		}
 		// Types are the same, compare values
 		var err error
-		patch, err = handleValues(origValue, modValue, p, patch)
+		if withTimestamp {
+			patch, err = handleValuesWithTimestamp(origValue, modValue, p, patch)
+		} else {
+			patch, err = handleValues(origValue, modValue, p, patch)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +358,7 @@ func handleValues(origValue, modValue tson.Value, path string, patch Patch) (Pat
 		}
 	case tson.Object:
 		modified := modValue.(tson.Object)
-		if patch, err = diff(origin, modified, path, patch); err != nil {
+		if patch, err = diff(origin, modified, path, patch, false); err != nil {
 			return nil, err
 		}
 	case tson.Array:
@@ -396,6 +406,95 @@ func handleValues(origValue, modValue tson.Value, path string, patch Patch) (Pat
 	default:
 		return nil, fmt.Errorf("handleValues(): Unknown type %T for origValue", origValue)
 	}
+	return patch, nil
+}
+
+// handleValuesWithTimestamp는 타임스탬프 변경도 감지하여 패치를 생성합니다.
+func handleValuesWithTimestamp(origValue, modValue tson.Value, path string, patch Patch) (Patch, error) {
+	var err error
+
+	// 타임스탬프 변경 감지
+	timestampChanged := !matchTimestamp(origValue, modValue)
+
+	switch origin := origValue.(type) {
+	case tson.Leaf[string]:
+		valuesEqual := matchesValue(origValue, modValue)
+		modified := modValue.(tson.Leaf[string])
+
+		// 값이 다르거나 타임스탬프가 다르면 패치 생성
+		if !valuesEqual || timestampChanged {
+			patch = append(patch, NewOperation(OpReplace, path, modified.Value, modified.Timestamp))
+		}
+
+	case tson.Leaf[float64]:
+		valuesEqual := matchesValue(origValue, modValue)
+		modified := modValue.(tson.Leaf[float64])
+
+		if !valuesEqual || timestampChanged {
+			patch = append(patch, NewOperation(OpReplace, path, modified.Value, modified.Timestamp))
+		}
+
+	case tson.Leaf[bool]:
+		valuesEqual := matchesValue(origValue, modValue)
+		modified := modValue.(tson.Leaf[bool])
+
+		if !valuesEqual || timestampChanged {
+			patch = append(patch, NewOperation(OpReplace, path, modified.Value, modified.Timestamp))
+		}
+
+	case tson.Object:
+		modified := modValue.(tson.Object)
+		if patch, err = diff(origin, modified, path, patch, true); err != nil {
+			return nil, err
+		}
+
+	case tson.Array:
+		modified, ok := modValue.(tson.Array)
+		if !ok { // tson.Array replaced by non-Array
+			var mod any = modValue
+			switch modLeaf := mod.(type) {
+			case tson.Leaf[string]:
+				patch = append(patch, NewOperation(OpReplace, path, modLeaf.Value, modLeaf.Timestamp))
+			case tson.Leaf[float64]:
+				patch = append(patch, NewOperation(OpReplace, path, modLeaf.Value, modLeaf.Timestamp))
+			case tson.Leaf[bool]:
+				patch = append(patch, NewOperation(OpReplace, path, modLeaf.Value, modLeaf.Timestamp))
+			default:
+				return nil, fmt.Errorf("handleValuesWithTimestamp(): Unknown type %T for modValue", modValue)
+			}
+		} else if len(origin) != len(modified) { // Different array lengths
+			patch = append(patch, compareArrayWithTimestamp(origin, modified, path)...)
+		} else { // Same length, compare elements
+			for i := range modified {
+				patch, err = handleValuesWithTimestamp(origin[i], modified[i], makePath(path, i), patch)
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
+	case nil:
+		switch modValue.(type) {
+		case nil:
+			// Both nil, fine.
+		default:
+			// Replace nil with value
+			var mod any = modValue
+			switch modLeaf := mod.(type) {
+			case tson.Leaf[string]:
+				patch = append(patch, NewOperation(OpAdd, path, modLeaf.Value, modLeaf.Timestamp))
+			case tson.Leaf[float64]:
+				patch = append(patch, NewOperation(OpAdd, path, modLeaf.Value, modLeaf.Timestamp))
+			case tson.Leaf[bool]:
+				patch = append(patch, NewOperation(OpAdd, path, modLeaf.Value, modLeaf.Timestamp))
+			default:
+				return nil, fmt.Errorf("handleValuesWithTimestamp(): Unknown type %T for modValue", modValue)
+			}
+		}
+	default:
+		return nil, fmt.Errorf("handleValuesWithTimestamp(): Unknown type %T for origValue", origValue)
+	}
+
 	return patch, nil
 }
 
@@ -451,6 +550,55 @@ func matchesValue(origin, modified tson.Value) bool {
 	return false
 }
 
+// matchTimestamp는 두 TSON 값의 타임스탬프가 동일한지 비교합니다.
+func matchTimestamp(origin, modified tson.Value) bool {
+	if reflect.TypeOf(origin) != reflect.TypeOf(modified) {
+		return false
+	}
+
+	switch org := origin.(type) {
+	case tson.Leaf[string]:
+		mod := modified.(tson.Leaf[string])
+		return org.Timestamp == mod.Timestamp
+	case tson.Leaf[float64]:
+		mod := modified.(tson.Leaf[float64])
+		return org.Timestamp == mod.Timestamp
+	case tson.Leaf[bool]:
+		mod := modified.(tson.Leaf[bool])
+		return org.Timestamp == mod.Timestamp
+	case tson.Object:
+		modObj := modified.(tson.Object)
+		for key := range org {
+			if !matchTimestamp(org[key], modObj[key]) {
+				return false
+			}
+		}
+		for key := range modObj {
+			if !matchTimestamp(org[key], modObj[key]) {
+				return false
+			}
+		}
+		return true
+	case tson.Array:
+		modArray := modified.(tson.Array)
+		if len(modArray) != len(org) {
+			return false
+		}
+		for key := range org {
+			if !matchTimestamp(org[key], modArray[key]) {
+				return false
+			}
+		}
+		for key := range modArray {
+			if !matchTimestamp(org[key], modArray[key]) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
 // compareArray generates remove and add operations
 func compareArray(origArr, modArr tson.Array, p string) (patch Patch) {
 	// Find elements that need to be removed
@@ -478,6 +626,55 @@ func compareArray(origArr, modArr tson.Array, p string) (patch Patch) {
 			panic(fmt.Sprintf("compareArray(): Unknown type %T for value", value))
 		}
 	})
+	return patch
+}
+
+// compareArrayWithTimestamp는 두 배열을 비교하여 패치를 생성합니다. 타임스탬프 변경도 감지합니다.
+func compareArrayWithTimestamp(origArr, modArr tson.Array, p string) (patch Patch) {
+	// Find elements that need to be removed
+	processArray(origArr, modArr, func(i int, _ any) {
+		// TODO: is there a way to calculate the timestamp?
+		patch = append(patch, NewOperation(OpRemove, makePath(p, i), nil, 0))
+	})
+
+	reversed := make(Patch, len(patch))
+	for i := 0; i < len(patch); i++ {
+		reversed[len(patch)-1-i] = patch[i]
+	}
+	patch = reversed
+
+	// Find elements that need to be added, or have changed values or timestamps
+	for i, value := range modArr {
+		// 원래 배열과 수정된 배열의 같은 인덱스에서 값 또는 타임스탬프 변경 확인
+		if i < len(origArr) {
+			valuesEqual := matchesValue(origArr[i], value)
+			timestampEqual := matchTimestamp(origArr[i], value)
+
+			if !valuesEqual || !timestampEqual {
+				switch leaf := value.(type) {
+				case tson.Leaf[string]:
+					patch = append(patch, NewOperation(OpReplace, makePath(p, i), leaf.Value, leaf.Timestamp))
+				case tson.Leaf[float64]:
+					patch = append(patch, NewOperation(OpReplace, makePath(p, i), leaf.Value, leaf.Timestamp))
+				case tson.Leaf[bool]:
+					patch = append(patch, NewOperation(OpReplace, makePath(p, i), leaf.Value, leaf.Timestamp))
+				}
+			}
+		} else {
+			// 새로 추가된 요소
+			switch leaf := value.(type) {
+			case tson.Leaf[string]:
+				patch = append(patch, NewOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
+			case tson.Leaf[float64]:
+				patch = append(patch, NewOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
+			case tson.Leaf[bool]:
+				patch = append(patch, NewOperation(OpAdd, makePath(p, i), leaf.Value, leaf.Timestamp))
+			default:
+				panic(fmt.Sprintf("compareArrayWithTimestamp(): Unknown type %T for value", value))
+			}
+		}
+	}
+
 	return patch
 }
 

@@ -72,11 +72,12 @@ func SaveMetadata(metadata map[string]any, dataFolder string) {
 // Generate generates the VSS dataset as TSON & JSON patch
 func Generate(metadata map[string]any, dataFolder string) {
 	var (
-		dataset    = metadata["dataset"].(string)
-		cars       = metadata["cars"].(int)
-		files      = metadata["files"].(int)
-		changeRate = metadata["change_rate"].(float64)
-		size       = metadata["size"].(float64)
+		dataset      = metadata["dataset"].(string)
+		cars         = metadata["cars"].(int)
+		files        = metadata["files"].(int)
+		changeRate   = metadata["change_rate"].(float64)
+		maintainRate = metadata["maintain_rate"].(float64)
+		size         = metadata["size"].(float64)
 	)
 
 	fmt.Printf("Generating %d cars with %d files each...\n", cars, files)
@@ -105,7 +106,7 @@ func Generate(metadata map[string]any, dataFolder string) {
 
 		// Generate the rest of the JSON files
 		for j := 2; j <= files; j++ {
-			data, patch := data.GenerateNext(changeRate, i, j)
+			data, patch := data.GenerateNext(changeRate, maintainRate, i, j)
 			data.Save(filepath.Join(carDir, fmt.Sprintf("%d_%d.tson", i, j)))
 			patch.Save(filepath.Join(patchDir, fmt.Sprintf("%d_%d.json", i, j)))
 			bar.Add(1)

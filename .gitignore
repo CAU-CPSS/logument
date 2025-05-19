@@ -180,5 +180,8 @@ Temporary Items
 dataset/
 dataset_old/
 
+# Results
+results/
+
 # Meeting
 meeting/

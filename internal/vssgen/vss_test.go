@@ -166,7 +166,7 @@ func TestGenerateNext(t *testing.T) {
 	_v := NewVssJson(file)
 	v := _v.Generate(1.0, 1)
 
-	j, patch := v.GenerateNext(0.5, 1, 2)
+	j, patch := v.GenerateNext(0.5, 0.0, 1, 2)
 	_ = j
 	patch.Print()
 }
@@ -175,7 +175,7 @@ func TestSave(t *testing.T) {
 	_v := NewVssJson(file)
 	v1 := _v.Generate(1.0, 1)
 
-	result, _ := v1.GenerateNext(0.5, 1, 2)
+	result, _ := v1.GenerateNext(0.5, 0.0, 1, 2)
 	result.Save("./test.tson")
 }
 

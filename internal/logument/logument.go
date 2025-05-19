@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/CAU-CPSS/logument/internal/tson"
 	"github.com/CAU-CPSS/logument/internal/tsonpatch"
@@ -24,6 +23,7 @@ type tsonPatches = tsonpatch.Patch // []jsonpatch.Operation
 // Logument
 type Logument struct {
 	Version   []uint64                // Version list
+	CurrentState tsonSnapshot
 	Snapshots map[uint64]tsonSnapshot // A map which contains an initial Snapshot (by `Create`) and Snapshots from `Snapshot` Function {version: Snapshot}
 	Patches   map[uint64]tsonPatches  // A map which contains Patches from `Append` Function {version: Patches}
 	PatchPool tsonPatches             // A pool of Patches from `Store` Function
@@ -52,6 +52,7 @@ func NewLogument(initialSnapshot any, initialPatches any) *Logument {
 
 	lgm := &Logument{
 		Version:   []uint64{0},
+		CurrentState: snapshot,
 		Snapshots: map[uint64]tsonSnapshot{0: snapshot},
 		Patches:   make(map[uint64]tsonPatches),
 		PatchPool: nil,
@@ -87,6 +88,17 @@ func (lgm *Logument) isContinuous() bool {
 	}
 
 	return true
+}
+
+func (lgm *Logument) isGrown() bool {
+	if len(lgm.Version) <= 1 {
+		return true
+	}
+
+	// 마지막 버전만 확인 (O(1) 작업)
+    // 버전이 항상 순서대로 추가된다고 가정
+    lastIdx := len(lgm.Version) - 1
+    return lgm.Version[lastIdx] == lgm.Version[lastIdx-1] + 1
 }
 
 func (lgm *Logument) Print() {
@@ -174,13 +186,20 @@ func (lgm *Logument) findLatest(targetVersion uint64) (latestVersion uint64, lat
 
 // Append Append the patch from PatchPool to the Patches
 func (lgm *Logument) Append() error {
-	if !lgm.isContinuous() {
-		return fmt.Errorf("versions are not continuous")
+	if !lgm.isGrown() {
+		return fmt.Errorf("versions are not grown")
 	}
+
+	if lgm.PatchPool == nil {
+		return nil
+	}
+
 	latestVersion := lgm.Version[len(lgm.Version)-1]
+
 	if _, exist := lgm.Patches[latestVersion+1]; exist {
 		return fmt.Errorf("the patch for the next version already exists")
 	}
+
 	lgm.Patches[latestVersion+1] = lgm.PatchPool
 	lgm.Version = append(lgm.Version, latestVersion+1)
 	lgm.PatchPool = nil
@@ -219,10 +238,6 @@ func (lgm *Logument) Snapshot(vk uint64) tsonSnapshot {
 }
 
 func (lgm *Logument) TemporalSnapshot(tsk int64) tsonSnapshot {
-	if !lgm.isContinuous() {
-		panic("Versions are not continuous.")
-	}
-
 	versions := lgm.getSortedVersions("snapshot")
 
 	// Find the latest timestamp before the target timestamp
@@ -481,77 +496,79 @@ func (lgm *Logument) TemporalTrack(tsi, tsj int64) map[uint64]tsonPatches {
 	return trackedPatches
 }
 
-func (lgm *Logument) Set(vk uint64, op tsonpatch.OpType, path string, value any) {
+func (lgm *Logument) Set(vk uint64, patch tsonpatch.Operation) {
 	// Set the value at the target path in the snapshot at the target version
-	if !lgm.isContinuous() {
-		panic("Versions are not continuous.")
-	}
+	// if !lgm.isContinuous() {
+	// 	panic("Versions are not continuous.")
+	// }
 
-	if op != tsonpatch.OpReplace && op != tsonpatch.OpAdd {
+	if patch.Op != tsonpatch.OpReplace && patch.Op != tsonpatch.OpAdd {
 		return
 	}
 
-	if _, exists := lgm.Snapshots[vk]; !exists {
-		s := lgm.Snapshot(vk)
-		lgm.Snapshots[vk] = s
+	var err error
+	lgm.CurrentState, err = tsonpatch.ApplyOperation(lgm.CurrentState, patch)
+	if err != nil {
+		panic(fmt.Sprintf("failed to apply patch: %v", err))
 	}
 
-	snapshot := lgm.Snapshots[vk]
-
-	patch := tsonpatch.Operation{
-		Op:        op,
-		Path:      path,
-		Value:     value,
-		Timestamp: time.Now().Unix(), //
-	}
-
-	lgm.Patches[vk] = append(lgm.Patches[vk], patch)
-
-	if next, exists := lgm.Snapshots[vk+1]; exists {
-		next_snapshot, err := tsonpatch.ApplyPatch(next, tsonPatches{patch})
-		if err != nil {
-			panic("Failed to make a snapshot with the given version. Error: " + err.Error())
-		}
-		lgm.Snapshots[vk+1] = next_snapshot
+	if lgm.PatchPool == nil {
+		lgm.PatchPool = tsonpatch.Patch{patch}
 	} else {
-		next_snapshot, err := tsonpatch.ApplyPatch(snapshot, tsonPatches{patch})
-		if err != nil {
-			panic("Failed to make a snapshot with the given version. Error: " + err.Error())
-		}
-		lgm.Snapshots[vk+1] = next_snapshot
+		lgm.PatchPool = append(lgm.PatchPool, patch)
 	}
 }
 
-func (lgm *Logument) TestSet(vk uint64, op tsonpatch.OpType, path string, value any) {
+func (lgm *Logument) TestSet(vk uint64, patch tsonpatch.Operation) {
 	// Set the value at the target path in the snapshot at the target timestamp
-	if !lgm.isContinuous() {
-		panic("Versions are not continuous.")
-	}
-
-	if op != tsonpatch.OpReplace && op != tsonpatch.OpAdd {
+	if patch.Op != tsonpatch.OpReplace && patch.Op != tsonpatch.OpAdd {
 		return
 	}
 
-	if op == tsonpatch.OpAdd {
-		lgm.Set(vk, op, path, value)
+	if patch.Op == tsonpatch.OpAdd {
+		lgm.Set(vk, patch)
+		return
 	}
 
-	if _, exists := lgm.Snapshots[vk]; !exists {
-		s := lgm.Snapshot(vk)
-		lgm.Snapshots[vk] = s
-	}
+	latesetSnapshot := lgm.Snapshots[lgm.Version[len(lgm.Version)-1]]
+	// if _, exists := lgm.Snapshots[vk]; !exists {
+	// 	s := lgm.Snapshot(vk)
+	// 	lgm.Snapshots[vk] = s
+	// }
 
-	exist_value, err := tson.GetValue(lgm.Snapshots[vk], path)
+	exist_value, err := tson.GetValue(latesetSnapshot, patch.Path)
 	if err != nil {
-		panic("Failed to get the value from the snapshot. Error: " + err.Error())
-	}
-
-	if exist_value == value {
+		lgm.Set(vk,
+			tsonpatch.Operation{
+				Op:        "add",
+				Path:      patch.Path,
+				Value:     patch.Value,
+				Timestamp: patch.Timestamp,
+			})
 		return
 	}
 
-	lgm.Set(vk, op, path, value)
+	if !leafCompareValue(exist_value, patch.Value) {
+		lgm.Set(vk, patch)
+	}
+}
 
+func leafCompareValue(leafValue tson.Value, value any) bool {
+	switch leaf := leafValue.(type) {
+	case tson.Leaf[string]:
+		if strVal, ok := value.(string); ok {
+			return leaf.Value == strVal
+		}
+	case tson.Leaf[float64]:
+		if floatVal, ok := value.(float64); ok {
+			return leaf.Value == floatVal
+		}
+	case tson.Leaf[bool]:
+		if boolVal, ok := value.(bool); ok {
+			return leaf.Value == boolVal
+		}
+	}
+	return false
 }
 
 func (lgm *Logument) Compact(targetPath string) {

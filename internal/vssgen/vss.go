@@ -263,7 +263,7 @@ func (vss VssJson) Generate(datasetSize float64, id int) *VssJson {
 }
 
 // Generate a new dataset based on the current dataset
-func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJson, *VssJson) {
+func (vss VssJson) GenerateNext(changeRate, maintainRate float64, id int, fileNo int) (*VssJson, *VssJson) {
 	if !vss.initialized {
 		panic("VssJson must be initialized with VssJson.Generate()")
 	}
@@ -302,36 +302,41 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 				continue
 			}
 
-			if rand.Float64() > changeRate {
+			r := rand.Float64()
+			if r < changeRate {
+				// 값이 실제로 변경되는 패치 생성
+				switch value.(map[string]any)[tsonValue].(type) {
+				case string:
+					new[node] = map[string]any{
+						tsonValue:     genRandomString(15),
+						tsonTimestamp: timestamp,
+					}
+				case bool:
+					v := value.(map[string]any)[tsonValue].(bool)
+					new[node] = map[string]any{
+						tsonValue:     !v,
+						tsonTimestamp: timestamp,
+					}
+				case int:
+					new[node] = map[string]any{
+						tsonValue:     rand.Intn(201) - 100,
+						tsonTimestamp: timestamp,
+					}
+				case float64:
+					new[node] = map[string]any{
+						tsonValue:     rand.Float64() * 100,
+						tsonTimestamp: timestamp,
+					}
+				}
+			} else if r < (changeRate + maintainRate) {
+				// 값은 변하지 않고 타임스탬프만 변경되는 패치 생성
 				new[node] = map[string]any{
 					tsonValue:     value.(map[string]any)[tsonValue],
 					tsonTimestamp: timestamp,
 				}
-				continue
-			}
-
-			switch value.(map[string]any)[tsonValue].(type) {
-			case string:
-				new[node] = map[string]any{
-					tsonValue:     genRandomString(15),
-					tsonTimestamp: timestamp,
-				}
-			case bool:
-				v := value.(map[string]any)[tsonValue].(bool)
-				new[node] = map[string]any{
-					tsonValue:     !v,
-					tsonTimestamp: timestamp,
-				}
-			case int:
-				new[node] = map[string]any{
-					tsonValue:     rand.Intn(201) - 100,
-					tsonTimestamp: timestamp,
-				}
-			case float64:
-				new[node] = map[string]any{
-					tsonValue:     rand.Float64() * 100,
-					tsonTimestamp: timestamp,
-				}
+			} else {
+				// 패치 생성되지 않음 (이전 값 유지)
+				new[node] = value
 			}
 		}
 	}
@@ -358,7 +363,7 @@ func (vss VssJson) GenerateNext(changeRate float64, id int, fileNo int) (*VssJso
 		panic(err)
 	}
 
-	ops, _ := tsonpatch.GeneratePatch(origin, modified)
+	ops, _ := tsonpatch.GeneratePatchWithTimestamp(origin, modified)
 
 	// Step 2. Convert the patch object to a []byte
 	bytes, _ := json.Marshal(ops)

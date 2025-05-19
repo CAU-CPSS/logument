@@ -217,7 +217,11 @@ func TestSet(t *testing.T) {
 	lgm.Store(patches[2])
 	lgm.Append()
 
-	lgm.Set(2, "replace", "/location/latitude", 43.9409)
+	lgm.Set(2, tsonpatch.Operation{
+		Op:    "replace",
+		Path:  "/location/latitude",
+		Value: 42.4242,
+	})
 	lgm.Print()
 }
 
@@ -231,7 +235,11 @@ func TestValidSet(t *testing.T) {
 	lgm.Store(patches[2])
 	lgm.Append()
 
-	lgm.TestSet(2, "replace", "/location/latitude", 42.4242)
+	lgm.TestSet(2, tsonpatch.Operation{
+		Op:    "replace",
+		Path:  "/location/latitude",
+		Value: 42.4242,
+	})
 	lgm.Print()
 }
 
@@ -262,4 +270,121 @@ func TestHistory(t *testing.T) {
 	// Show history of the "/location"
 	his := lgm.History("/location")
 	t.Log(spew.Sdump(his))
+}
+
+func TestSimpleCaseWithLogument(t *testing.T) {
+	// 간단한 초기 상태
+	initialState := tson.Object{
+		"value": tson.Leaf[float64]{Value: 10.0, Timestamp: 1000},
+	}
+
+	// 두 개의 패치: 하나는 값 변경, 하나는 타임스탬프만 변경
+	patches := []tsonpatch.Patch{
+		{
+			tsonpatch.Operation{Op: "replace", Path: "/value", Value: 20.0, Timestamp: 2000},
+		},
+		{
+			tsonpatch.Operation{Op: "replace", Path: "/value", Value: 20.0, Timestamp: 3000},
+		},
+		{
+			tsonpatch.Operation{Op: "replace", Path: "/value", Value: 40.0, Timestamp: 4000},
+		},
+	}
+
+	// Logument로 적용
+	lgm := logument.NewLogument(initialState, nil)
+
+	// 첫 번째 패치: 값 변경 (10.0 != 20.0)
+	for _, p := range patches[0] {
+		lgm.TestSet(uint64(len(lgm.Version)), p)
+	}
+	lgm.Snapshot(uint64(len(lgm.Patches)))
+
+	// 두 번째 패치: 타임스탬프만 변경 (20.0 == 20.0)
+	for _, p := range patches[1] {
+		lgm.TestSet(uint64(len(lgm.Version)), p)
+	}
+	lgm.Snapshot(uint64(len(lgm.Patches)))
+
+	// 세 번째 패치:  값 변경 (20.0 != 40.0)
+	for _, p := range patches[2] {
+		lgm.TestSet(uint64(len(lgm.Version)), p)
+	}
+	lgm.Snapshot(uint64(len(lgm.Patches)))
+
+
+	// 결과 확인
+	lgm.Print()
+	t.Logf("패치 수: %d\n", len(lgm.Patches))
+	for v, p := range lgm.Patches {
+		t.Logf("버전 %d: %d 작업\n", v, len(p))
+	}
+}
+
+func TestTsonReference(t *testing.T) {
+	// 초기 객체 생성
+	initialObj := tson.Object{
+		"value": tson.Leaf[float64]{Value: 10.0, Timestamp: 1000},
+	}
+
+	// 객체를 그대로 할당 (복사 없음)
+	objRef := initialObj
+
+	// 참조된 객체의 값 변경
+	if leaf, ok := objRef["value"].(tson.Leaf[float64]); ok {
+		leaf.Value = 20.0
+		objRef["value"] = leaf
+	}
+
+	// 원본 객체 확인
+	if leaf, ok := initialObj["value"].(tson.Leaf[float64]); ok {
+		t.Logf("원본 값: %v", leaf.Value) // 10.0이 나와야 함
+	}
+}
+
+func TestTsonMapReference(t *testing.T) {
+    // 초기 객체 생성
+    initialObj := tson.Object{
+        "value": tson.Leaf[float64]{Value: 10.0, Timestamp: 1000},
+    }
+    
+    // 맵을 그대로 할당 (얕은 복사)
+    objRef := initialObj
+    
+    // 참조된 맵에 직접 새 키 추가
+    objRef["newKey"] = tson.Leaf[string]{Value: "test", Timestamp: 1000}
+    
+    // 원본 맵 확인
+    t.Logf("원본 맵 키 수: %d", len(initialObj)) // 1이 나와야 하지만 2가 나올 것
+    t.Logf("원본 맵에 newKey 존재: %v", initialObj["newKey"] != nil) // false여야 하지만 true일 것
+}
+
+func TestLogumentSnapshotReference(t *testing.T) {
+    // 초기 상태 생성
+    initialState := tson.Object{
+        "value": tson.Leaf[float64]{Value: 10.0, Timestamp: 1000},
+    }
+    
+    // Logument 초기화
+    lgm := logument.NewLogument(initialState, nil)
+    
+    // 초기 스냅샷에 직접 접근
+    snapshot0 := lgm.Snapshots[0]
+    
+    // 스냅샷 내부 값 직접 변경 시도 (참조 테스트)
+    if obj, ok := snapshot0.(tson.Object); ok {
+        if leaf, ok := obj["value"].(tson.Leaf[float64]); ok {
+            // 값 변경
+            leaf.Value = 20.0
+            obj["value"] = leaf
+        }
+    }
+    
+    // 변경 후 다시 확인
+    updatedSnapshot0 := lgm.Snapshots[0]
+    if obj, ok := updatedSnapshot0.(tson.Object); ok {
+        if leaf, ok := obj["value"].(tson.Leaf[float64]); ok {
+            t.Logf("변경 후 값: %v", leaf.Value) // 10.0이 나와야 하지만 20.0이 나올 것
+        }
+    }
 }
