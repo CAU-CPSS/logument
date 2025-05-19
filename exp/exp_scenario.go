@@ -106,8 +106,8 @@ const (
 var drivingScenarios = []string{
 	"urban_traffic",    // 도심 교통
 	"highway_cruising", // 고속도로 주행
-	"parking_maneuver", // 주차 조작
-	"traffic_jam",      // 교통 체증
+	// "parking_maneuver", // 주차 조작
+	// "traffic_jam",      // 교통 체증
 	"battery_charging", // 배터리 충전
 }
 
@@ -259,12 +259,23 @@ func RealworldScenario() {
 func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (ExperimentResult, []TimingRecord) {
 	fmt.Printf("시나리오 '%s' 시뮬레이션 시작...\n", scenario)
 
+	// 이 시나리오에 대한 데이터 저장소 인스턴스 생성
+	dataStorage := NewDataStorage(outputDir, scenario)
+
 	// 1. 초기 데이터 생성
 	vehicle := createInitialVehicleData(scenario)
 
 	// 2. JSON 및 TSON 문서 초기화
 	jsonDoc := vehicleDataToJsonDoc(vehicle)
 	tsonDoc := vehicleDataToTsonDoc(vehicle)
+
+	// 초기 문서 저장
+	if err := dataStorage.SaveInitialJSON(jsonDoc); err != nil {
+		fmt.Printf("초기 JSON 저장 오류: %v\n", err)
+	}
+	if err := dataStorage.SaveInitialTSON(tsonDoc); err != nil {
+		fmt.Printf("초기 TSON 저장 오류: %v\n", err)
+	}
 
 	// 3. 시뮬레이션 결과 변수 초기화
 	result := ExperimentResult{
@@ -476,6 +487,22 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 	result.CumulativeTimeVec = timeVec
 	result.CumulativeJsonVec = jsonPatchesVec
 	result.CumulativeTsonVec = tsonPatchesVec
+
+	// 최종 문서 저장
+	if err := dataStorage.SaveFinalJSON(jsonDoc); err != nil {
+		fmt.Printf("최종 JSON 저장 오류: %v\n", err)
+	}
+	if err := dataStorage.SaveFinalTSON(tsonDoc); err != nil {
+		fmt.Printf("최종 TSON 저장 오류: %v\n", err)
+	}
+
+	// 모든 패치 저장
+	if err := dataStorage.SaveAllJSONPatches(jsonPatches); err != nil {
+		fmt.Printf("JSON 패치 저장 오류: %v\n", err)
+	}
+	if err := dataStorage.SaveAllTSONPatches(tsonPatches); err != nil {
+		fmt.Printf("TSON 패치 저장 오류: %v\n", err)
+	}
 
 	fmt.Printf("\n시뮬레이션 완료. 총 업데이트 수: %d, 값 변경: %d (%.1f%%)\n",
 		updateCounter, valueChangeCounter,
