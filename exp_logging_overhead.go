@@ -15,14 +15,6 @@ import (
 	"github.com/CAU-CPSS/logument/internal/vssgen"
 )
 
-const (
-	// defaultDataset = "internal/vssgen/vss.json"
-	carCount     = 1
-	stateChanges = 600 // 10분간 600번의 상태 변경
-	changeRate   = 0.2 // 실제 값이 변경되는 필드의 비율
-	maintainRate = 0.8 // 값은 변경되지 않지만 타임스탬프가 업데이트되는 필드의 비율
-)
-
 func LoggingOverhead() {
 	fmt.Println("Logument 성능 측정 실험 시작...")
 
