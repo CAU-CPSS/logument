@@ -253,11 +253,12 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 		return s.String(), nil
 
 	case []any:
-		s := "[\n"
+		var s strings.Builder
+		s.WriteString("[\n")
 		first := true
 		for _, elem := range t {
 			if !first {
-				s += ",\n"
+				s.WriteString(",\n")
 			}
 			first = false
 			if m, ok := elem.(map[string]any); ok {
@@ -266,11 +267,11 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 					if err != nil {
 						return "", err
 					}
-					s += currentIndent + indent
+					s.WriteString(currentIndent + indent)
 					if ts >= 0 {
-						s += fmt.Sprintf("<%d> %s", ts, primStr)
+						s.WriteString(fmt.Sprintf("<%d> %s", ts, primStr))
 					} else {
-						s += fmt.Sprintf("<> %s", primStr)
+						s.WriteString("<> " + primStr)
 					}
 					continue
 				}
@@ -279,10 +280,10 @@ func marshalIndentValue(v any, currentIndent, indent string, ctx int) (string, e
 			if err != nil {
 				return "", err
 			}
-			s += currentIndent + indent + elemStr
+			s.WriteString(currentIndent + indent + elemStr)
 		}
-		s += "\n" + currentIndent + "]"
-		return s, nil
+		s.WriteString("\n" + currentIndent + "]")
+		return s.String(), nil
 
 	case Object:
 		var s strings.Builder
