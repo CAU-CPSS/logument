@@ -101,6 +101,7 @@ _Sunghwan Park (Chung-Ang Univ.), Hyun-Gul Roh (42dot Corp.), Sunwoo Na (Chung-A
 There is a Visual Studio Code extension, which enables **_TSON_** syntax highlighting.  
 Please refer to [VSCode-TSON-Extension](https://github.com/CAU-CPSS/VSCode-TSON-Extension) repository, and [**_TSON_** extension on VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=rollingress.tson)
 
+For more detailed explanation about **_TSON_** and **_TSON Patch_**, please refer to [its README.md file](/internal/README.md).
 
 ---
 
