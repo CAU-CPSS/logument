@@ -102,7 +102,7 @@ func isEqual(v1, v2 interface{}) bool {
 	case float64:
 		// 부동소수점 비교 (작은 차이는 무시)
 		val2 := v2.(float64)
-		return math.Abs(val1-val2) < 0.1
+		return math.Abs(val1-val2) < 0.01
 	case int:
 		return val1 == v2.(int)
 	case bool:
