@@ -4,71 +4,71 @@ import (
 	"time"
 )
 
-// 센서 카테고리 정의
+// Sensor category definitions
 const (
-	SensorTypeHigh   = "high_frequency"   // 고빈도 센서 (10-50ms 업데이트)
-	SensorTypeMedium = "medium_frequency" // 중빈도 센서 (100-500ms 업데이트)
-	SensorTypeLow    = "low_frequency"    // 저빈도 센서 (1000ms+ 업데이트)
-	ActuatorTypeHigh = "high_variable"    // 높은 변동성 액추에이터
-	ActuatorTypeLow  = "low_variable"     // 낮은 변동성 액추에이터
-	AttributeType    = "attribute"        // 거의 변경되지 않는 속성값
+	SensorTypeHigh   = "high_frequency"   // High-frequency sensors (10-50ms updates)
+	SensorTypeMedium = "medium_frequency" // Medium-frequency sensors (100-500ms updates)
+	SensorTypeLow    = "low_frequency"    // Low-frequency sensors (1000ms+ updates)
+	ActuatorTypeHigh = "high_variable"    // High variability actuators
+	ActuatorTypeLow  = "low_variable"     // Low variability actuators
+	AttributeType    = "attribute"        // Attributes that rarely change
 )
 
 //=============================================================================
-// 시나리오 및 차량 데이터 구조체
+// Scenario and vehicle data structures
 //=============================================================================
 
-// VehicleData는 차량의 센서, 액추에이터, 속성 값을 저장합니다
+// VehicleData stores the sensor, actuator, and attribute values of a vehicle
 type VehicleData struct {
-	SensorsHighFreq  map[string]*SensorData // 고빈도 업데이트 센서 (GPS, 속도 등)
-	SensorsMedFreq   map[string]*SensorData // 중간 빈도 업데이트 센서 (온도, 배터리 등)
-	SensorsLowFreq   map[string]*SensorData // 저빈도 업데이트 센서 (연료, 타이어 압력 등)
-	ActuatorsHighVar map[string]*SensorData // 높은 변동성 액추에이터 (브레이크, 가속 등)
-	ActuatorsLowVar  map[string]*SensorData // 낮은 변동성 액추에이터 (창문, 도어 등)
-	Attributes       map[string]*SensorData // 거의 변경되지 않는 속성값 (차량 ID, 모델 등)
+	SensorsHighFreq  map[string]*SensorData // High-frequency update sensors (e.g., GPS, speed)
+	SensorsMedFreq   map[string]*SensorData // Medium-frequency update sensors (e.g., temperature, battery)
+	SensorsLowFreq   map[string]*SensorData // Low-frequency update sensors (e.g., fuel, tire pressure)
+	ActuatorsHighVar map[string]*SensorData // High variability actuators (e.g., brake, accelerator)
+	ActuatorsLowVar  map[string]*SensorData // Low variability actuators (e.g., windows, doors)
+	Attributes       map[string]*SensorData // Attributes that rarely change (e.g., vehicle ID, model)
 }
 
-// SensorData는 개별 센서/액추에이터 데이터를 저장합니다
+// SensorData stores individual sensor/actuator data
 type SensorData struct {
-	Path           string             // 센서 경로
-	Value          interface{}        // 현재 값
-	Type           string             // 값 타입 (number, string, boolean)
-	Timestamp      int64              // 마지막 업데이트 타임스탬프
-	UpdateInterval int                // 업데이트 간격 (밀리초)
-	ChangePattern  string             // 변경 패턴 (constant, linear, sinusoidal, random, triggered)
-	ChangeParams   map[string]float64 // 변경 패턴 파라미터
-	ChangeCounter  int                // 변경 카운터 (시간 경과 추적용)
+	Path           string             // Sensor path
+	Value          any                // Current value
+	Type           string             // Value type (number, string, boolean)
+	Timestamp      int64              // Last update timestamp
+	UpdateInterval int                // Update interval (milliseconds)
+	ChangePattern  string             // Change pattern (constant, linear, sinusoidal, random, triggered)
+	ChangeParams   map[string]float64 // Change pattern parameters
+	ChangeCounter  int                // Change counter (for tracking elapsed time)
 }
 
-// VSSSensor는 VSS 기반 차량 센서, 액추에이터 또는 속성을 정의합니다
+// VSSSensor defines a VSS-based vehicle sensor, actuator, or attribute
 type VSSSensor struct {
-	Path           string             // VSS 경로
-	DefaultValue   interface{}        // 기본값
-	Type           string             // 값 타입 (number, string, boolean)
-	Category       string             // 센서 카테고리 (high_frequency, medium_frequency, 등)
-	UpdateInterval int                // 업데이트 간격 (밀리초)
-	Description    string             // 설명
-	Unit           string             // 단위 (km/h, celsius 등)
-	Min            float64            // 최소값 (숫자 타입인 경우)
-	Max            float64            // 최대값 (숫자 타입인 경우)
-	ChangePatterns map[string]string  // 시나리오별 변경 패턴
-	ChangeParams   map[string]float64 // 변경 패턴 매개변수
+	Path           string             // VSS path
+	DefaultValue   any                // Default value
+	Type           string             // Value type (number, string, boolean)
+	Category       string             // Sensor category (high_frequency, medium_frequency, etc.)
+	UpdateInterval int                // Update interval (milliseconds)
+	Description    string             // Description
+	Unit           string             // Unit (e.g., km/h, celsius)
+	Min            float64            // Minimum value (for numeric types)
+	Max            float64            // Maximum value (for numeric types)
+	ChangePatterns map[string]string  // Change patterns for different scenarios
+	ChangeParams   map[string]float64 // Change pattern parameters
 }
 
 //=============================================================================
-// VSS 센서 정의
+// VSS Sensor Definitions
 //=============================================================================
 
-// VSSSensors는 차량 신호 표준(VSS) 기반 센서 정의 맵입니다
+// VSSSensors is a map defining sensors based on the Vehicle Signal Specification (VSS)
 var VSSSensors = map[string]*VSSSensor{
-	// 위치 센서 (고빈도)
+	// Location sensors (high frequency)
 	"Vehicle.CurrentLocation.Latitude": {
 		Path:           "Vehicle.CurrentLocation.Latitude",
 		DefaultValue:   37.7749,
 		Type:           "number",
 		Category:       SensorTypeHigh,
 		UpdateInterval: 50,
-		Description:    "차량의 현재 위도",
+		Description:    "Current latitude of the vehicle",
 		Unit:           "degrees",
 		Min:            -90.0,
 		Max:            90.0,
@@ -84,7 +84,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Type:           "number",
 		Category:       SensorTypeHigh,
 		UpdateInterval: 50,
-		Description:    "차량의 현재 경도",
+		Description:    "Current longitude of the vehicle",
 		Unit:           "degrees",
 		Min:            -180.0,
 		Max:            180.0,
@@ -100,7 +100,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Type:           "number",
 		Category:       SensorTypeHigh,
 		UpdateInterval: 100,
-		Description:    "차량의 현재 고도",
+		Description:    "Current altitude of the vehicle",
 		Unit:           "m",
 		Min:            -500.0,
 		Max:            9000.0,
@@ -111,14 +111,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 속도 센서 (고빈도)
+	// Speed sensor (high frequency)
 	"Vehicle.Speed": {
 		Path:           "Vehicle.Speed",
 		DefaultValue:   0.0,
 		Type:           "number",
 		Category:       SensorTypeHigh,
 		UpdateInterval: 20,
-		Description:    "차량의 현재 속도",
+		Description:    "Current speed of the vehicle",
 		Unit:           "km/h",
 		Min:            0.0,
 		Max:            220.0,
@@ -129,14 +129,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 가속도 센서 (고빈도)
+	// Acceleration sensors (high frequency)
 	"Vehicle.Acceleration.Longitudinal": {
 		Path:           "Vehicle.Acceleration.Longitudinal",
 		DefaultValue:   0.0,
 		Type:           "number",
 		Category:       SensorTypeHigh,
 		UpdateInterval: 20,
-		Description:    "차량의 종방향 가속도",
+		Description:    "Longitudinal acceleration of the vehicle",
 		Unit:           "m/s²",
 		Min:            -20.0,
 		Max:            20.0,
@@ -152,7 +152,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Type:           "number",
 		Category:       SensorTypeHigh,
 		UpdateInterval: 20,
-		Description:    "차량의 횡방향 가속도",
+		Description:    "Lateral acceleration of the vehicle",
 		Unit:           "m/s²",
 		Min:            -20.0,
 		Max:            20.0,
@@ -163,14 +163,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 조향각 센서 (고빈도)
+	// Steering angle sensor (high frequency)
 	"Vehicle.Chassis.SteeringWheel.Angle": {
 		Path:           "Vehicle.Chassis.SteeringWheel.Angle",
 		DefaultValue:   0.0,
 		Type:           "number",
 		Category:       SensorTypeHigh,
 		UpdateInterval: 25,
-		Description:    "현재 스티어링 휠 각도",
+		Description:    "Current steering wheel angle",
 		Unit:           "degrees",
 		Min:            -180.0,
 		Max:            180.0,
@@ -181,14 +181,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 엔진 속도 (중빈도)
+	// Engine speed (medium frequency)
 	"Vehicle.Powertrain.CombustionEngine.Speed": {
 		Path:           "Vehicle.Powertrain.CombustionEngine.Speed",
 		DefaultValue:   800.0,
 		Type:           "number",
 		Category:       SensorTypeMedium,
 		UpdateInterval: 100,
-		Description:    "엔진 회전 속도",
+		Description:    "Engine rotational speed",
 		Unit:           "rpm",
 		Min:            0.0,
 		Max:            8000.0,
@@ -199,14 +199,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 배터리 센서 (중빈도)
+	// Battery sensors (medium frequency)
 	"Vehicle.Powertrain.TractionBattery.StateOfCharge.Current": {
 		Path:           "Vehicle.Powertrain.TractionBattery.StateOfCharge.Current",
 		DefaultValue:   80.0,
 		Type:           "number",
 		Category:       SensorTypeMedium,
 		UpdateInterval: 200,
-		Description:    "배터리 충전 상태",
+		Description:    "Battery state of charge",
 		Unit:           "percent",
 		Min:            0.0,
 		Max:            100.0,
@@ -223,7 +223,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Type:           "number",
 		Category:       SensorTypeMedium,
 		UpdateInterval: 500,
-		Description:    "배터리 온도",
+		Description:    "Battery temperature",
 		Unit:           "celsius",
 		Min:            -20.0,
 		Max:            80.0,
@@ -234,14 +234,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 연료 상태 (저빈도)
+	// Fuel level (low frequency)
 	"Vehicle.Powertrain.FuelSystem.Level": {
 		Path:           "Vehicle.Powertrain.FuelSystem.Level",
 		DefaultValue:   80.0,
 		Type:           "number",
 		Category:       SensorTypeLow,
 		UpdateInterval: 5000,
-		Description:    "연료 탱크 레벨",
+		Description:    "Fuel tank level",
 		Unit:           "percent",
 		Min:            0.0,
 		Max:            100.0,
@@ -252,14 +252,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 타이어 센서 (저빈도)
+	// Tire sensors (low frequency)
 	"Vehicle.Chassis.Axle.Row1.Wheel.Left.Tire.Pressure": {
 		Path:           "Vehicle.Chassis.Axle.Row1.Wheel.Left.Tire.Pressure",
 		DefaultValue:   2.2,
 		Type:           "number",
 		Category:       SensorTypeLow,
 		UpdateInterval: 10000,
-		Description:    "왼쪽 앞바퀴 타이어 공기압",
+		Description:    "Left front tire pressure",
 		Unit:           "bar",
 		Min:            0.0,
 		Max:            4.0,
@@ -276,7 +276,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Type:           "number",
 		Category:       SensorTypeLow,
 		UpdateInterval: 10000,
-		Description:    "오른쪽 앞바퀴 타이어 공기압",
+		Description:    "Right front tire pressure",
 		Unit:           "bar",
 		Min:            0.0,
 		Max:            4.0,
@@ -287,14 +287,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 액추에이터 - 브레이크 (고변동성)
+	// Actuator - Brake pedal (high variability)
 	"Vehicle.Chassis.Brake.PedalPosition": {
 		Path:           "Vehicle.Chassis.Brake.PedalPosition",
 		DefaultValue:   0.0,
 		Type:           "number",
 		Category:       ActuatorTypeHigh,
 		UpdateInterval: 50,
-		Description:    "브레이크 페달 위치",
+		Description:    "Brake pedal position",
 		Unit:           "percent",
 		Min:            0.0,
 		Max:            100.0,
@@ -305,14 +305,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 액추에이터 - 가속 페달 (고변동성)
+	// Actuator - Accelerator pedal (high variability)
 	"Vehicle.Chassis.Accelerator.PedalPosition": {
 		Path:           "Vehicle.Chassis.Accelerator.PedalPosition",
 		DefaultValue:   0.0,
 		Type:           "number",
 		Category:       ActuatorTypeHigh,
 		UpdateInterval: 50,
-		Description:    "가속 페달 위치",
+		Description:    "Accelerator pedal position",
 		Unit:           "percent",
 		Min:            0.0,
 		Max:            100.0,
@@ -323,14 +323,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 액추에이터 - 헤드라이트 (저변동성)
+	// Actuator - Headlights (low variability)
 	"Vehicle.Body.Lights.Headlight.IsActive": {
 		Path:           "Vehicle.Body.Lights.Headlight.IsActive",
 		DefaultValue:   false,
 		Type:           "boolean",
 		Category:       ActuatorTypeLow,
 		UpdateInterval: 5000,
-		Description:    "헤드라이트 상태",
+		Description:    "Headlight status",
 		Unit:           "",
 		ChangePatterns: map[string]string{
 			"urban_traffic":    "toggle",
@@ -339,14 +339,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 액추에이터 - 방향지시등 (저변동성)
+	// Actuator - Turn signals (low variability)
 	"Vehicle.Body.Lights.TurnSignal.Left.IsActive": {
 		Path:           "Vehicle.Body.Lights.TurnSignal.Left.IsActive",
 		DefaultValue:   false,
 		Type:           "boolean",
 		Category:       ActuatorTypeLow,
 		UpdateInterval: 1000,
-		Description:    "왼쪽 방향지시등 상태",
+		Description:    "Left turn signal status",
 		Unit:           "",
 		ChangePatterns: map[string]string{
 			"urban_traffic":    "toggle",
@@ -360,7 +360,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Type:           "boolean",
 		Category:       ActuatorTypeLow,
 		UpdateInterval: 1000,
-		Description:    "오른쪽 방향지시등 상태",
+		Description:    "Right turn signal status",
 		Unit:           "",
 		ChangePatterns: map[string]string{
 			"urban_traffic":    "toggle",
@@ -369,14 +369,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 속성 - 차량 식별 정보
+	// Attributes - Vehicle identification
 	"Vehicle.VehicleIdentification.VIN": {
 		Path:           "Vehicle.VehicleIdentification.VIN",
 		DefaultValue:   "1HGCM82633A123456",
 		Type:           "string",
 		Category:       AttributeType,
-		UpdateInterval: 86400000, // 24시간
-		Description:    "차대 번호",
+		UpdateInterval: 86400000, // 24 hours
+		Description:    "Vehicle Identification Number (VIN)",
 		Unit:           "",
 		ChangePatterns: map[string]string{
 			"urban_traffic":    "constant",
@@ -389,8 +389,8 @@ var VSSSensors = map[string]*VSSSensor{
 		DefaultValue:   "Model X",
 		Type:           "string",
 		Category:       AttributeType,
-		UpdateInterval: 86400000, // 24시간
-		Description:    "차량 모델명",
+		UpdateInterval: 86400000, // 24 hours
+		Description:    "Vehicle model name",
 		Unit:           "",
 		ChangePatterns: map[string]string{
 			"urban_traffic":    "constant",
@@ -399,14 +399,14 @@ var VSSSensors = map[string]*VSSSensor{
 		},
 	},
 
-	// 충전 시나리오 특화 센서
+	// Charging scenario-specific sensors
 	"Vehicle.Powertrain.TractionBattery.Charging.IsCharging": {
 		Path:           "Vehicle.Powertrain.TractionBattery.Charging.IsCharging",
 		DefaultValue:   false,
 		Type:           "boolean",
 		Category:       SensorTypeMedium,
 		UpdateInterval: 1000,
-		Description:    "배터리 충전 중 여부",
+		Description:    "Battery charging status",
 		Unit:           "",
 		ChangePatterns: map[string]string{
 			"urban_traffic":    "constant",
@@ -420,7 +420,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Type:           "number",
 		Category:       SensorTypeMedium,
 		UpdateInterval: 500,
-		Description:    "배터리 충전 속도",
+		Description:    "Battery charging rate",
 		Unit:           "kW",
 		Min:            0.0,
 		Max:            350.0,
@@ -436,7 +436,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Type:           "number",
 		Category:       SensorTypeMedium,
 		UpdateInterval: 1000,
-		Description:    "충전 완료까지 남은 시간",
+		Description:    "Time remaining until charging is complete",
 		Unit:           "minutes",
 		Min:            0.0,
 		Max:            500.0,
@@ -449,10 +449,10 @@ var VSSSensors = map[string]*VSSSensor{
 }
 
 //=============================================================================
-// 차량 데이터 초기화 함수
+// Vehicle Data Initialization Function
 //=============================================================================
 
-// InitializeVehicleData는 지정된 시나리오에 맞게 차량 데이터를 초기화합니다
+// InitializeVehicleData initializes vehicle data according to the specified scenario
 func InitializeVehicleData(scenario string) *VehicleData {
 	vehicle := &VehicleData{
 		SensorsHighFreq:  make(map[string]*SensorData),
@@ -463,15 +463,15 @@ func InitializeVehicleData(scenario string) *VehicleData {
 		Attributes:       make(map[string]*SensorData),
 	}
 
-	// 모든 센서를 순회하며 초기화
+	// Iterate through all sensors and initialize
 	for path, vssSensor := range VSSSensors {
-		// 시나리오에 맞는 변경 패턴 선택
+		// Select change pattern according to the scenario
 		changePattern := "constant"
 		if pattern, exists := vssSensor.ChangePatterns[scenario]; exists {
 			changePattern = pattern
 		}
 
-		// 센서 데이터 생성
+		// Create sensor data
 		sensorData := &SensorData{
 			Path:           path,
 			Value:          vssSensor.DefaultValue,
@@ -482,7 +482,7 @@ func InitializeVehicleData(scenario string) *VehicleData {
 			ChangeParams:   make(map[string]float64),
 		}
 
-		// 패턴에 따른 기본 매개변수 설정
+		// Set default parameters based on the pattern
 		switch changePattern {
 		case "random_walk":
 			sensorData.ChangeParams["step_size"] = (vssSensor.Max - vssSensor.Min) * 0.01
@@ -490,11 +490,11 @@ func InitializeVehicleData(scenario string) *VehicleData {
 			sensorData.ChangeParams["max"] = vssSensor.Max
 		case "linear":
 			if scenario == "battery_charging" && path == "Vehicle.Powertrain.TractionBattery.StateOfCharge.Current" {
-				sensorData.ChangeParams["slope"] = 0.05 // 충전 중 배터리 증가
+				sensorData.ChangeParams["slope"] = 0.05 // Battery increase during charging
 			} else if scenario == "battery_charging" && path == "Vehicle.Powertrain.TractionBattery.Charging.TimeRemaining" {
-				sensorData.ChangeParams["slope"] = -0.5 // 충전 시간 감소
+				sensorData.ChangeParams["slope"] = -0.5 // Decrease charging time
 			} else {
-				sensorData.ChangeParams["slope"] = -0.04 // 기본 감소
+				sensorData.ChangeParams["slope"] = -0.04 // Default decrease
 			}
 			sensorData.ChangeParams["min"] = vssSensor.Min
 			sensorData.ChangeParams["max"] = vssSensor.Max
@@ -509,7 +509,7 @@ func InitializeVehicleData(scenario string) *VehicleData {
 			sensorData.ChangeParams["toggle_probability"] = 0.05
 		}
 
-		// 카테고리에 따라 적절한 맵에 추가
+		// Add to the appropriate map based on the category
 		switch vssSensor.Category {
 		case SensorTypeHigh:
 			vehicle.SensorsHighFreq[path] = sensorData
@@ -526,7 +526,7 @@ func InitializeVehicleData(scenario string) *VehicleData {
 		}
 	}
 
-	// 시나리오별 특화 설정 적용
+	// Apply scenario-specific settings
 	switch scenario {
 	case "urban_traffic":
 		applyUrbanTrafficSettings(vehicle)

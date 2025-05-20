@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// KeySensorPaths는 그래프 시각화를 위해 추적할 주요 센서 경로 목록입니다
+// KeySensorPaths is a list of key sensor paths to track for graph visualization
 var KeySensorPaths = []string{
 	"Vehicle.CurrentLocation.Latitude",
 	"Vehicle.CurrentLocation.Longitude",
@@ -16,21 +16,21 @@ var KeySensorPaths = []string{
 	"Vehicle.Powertrain.TractionBattery.StateOfCharge.Current",
 }
 
-// SensorDataRecorder는 주요 센서 데이터를 CSV로 기록합니다
+// SensorDataRecorder records key sensor data into CSV files
 type SensorDataRecorder struct {
-	OutputDir  string                 // 출력 디렉토리
-	Scenario   string                 // 시나리오 이름
-	CSVFiles   map[string]*os.File    // 센서별 파일
-	CSVWriters map[string]*csv.Writer // 센서별 CSV 작성자
-	StartTime  time.Time              // 실험 시작 시간
+	OutputDir  string                 // Output directory
+	Scenario   string                 // Scenario name
+	CSVFiles   map[string]*os.File    // Files for each sensor
+	CSVWriters map[string]*csv.Writer // CSV writers for each sensor
+	StartTime  time.Time              // Experiment start time
 }
 
-// NewSensorDataRecorder는 새 SensorDataRecorder 인스턴스를 생성합니다
+// NewSensorDataRecorder creates a new SensorDataRecorder instance
 func NewSensorDataRecorder(baseDir, scenario string) (*SensorDataRecorder, error) {
-	// 시나리오별 디렉토리 생성
+	// Create a directory for the scenario
 	sensorDataDir := filepath.Join(baseDir, scenario, "sensor_data")
 	if err := os.MkdirAll(sensorDataDir, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("센서 데이터 디렉토리 생성 실패: %v", err)
+		return nil, fmt.Errorf("Failed to create sensor data directory: %v", err)
 	}
 
 	recorder := &SensorDataRecorder{
@@ -41,24 +41,24 @@ func NewSensorDataRecorder(baseDir, scenario string) (*SensorDataRecorder, error
 		StartTime:  time.Now(),
 	}
 
-	// 주요 센서마다 CSV 파일 생성
+	// Create a CSV file for each key sensor
 	for _, path := range KeySensorPaths {
-		// 파일명에 사용할 경로의 마지막 부분 추출
+		// Extract the last part of the path to use as the file name
 		shortName := filepath.Base(path)
 		fileName := filepath.Join(sensorDataDir, shortName+".csv")
 
 		file, err := os.Create(fileName)
 		if err != nil {
-			// 에러 발생 시 열린 모든 파일 닫기
+			// Close all open files in case of an error
 			recorder.Close()
-			return nil, fmt.Errorf("CSV 파일 생성 실패 %s: %v", fileName, err)
+			return nil, fmt.Errorf("Failed to create CSV file %s: %v", fileName, err)
 		}
 
 		recorder.CSVFiles[path] = file
 		writer := csv.NewWriter(file)
 		recorder.CSVWriters[path] = writer
 
-		// 헤더 쓰기
+		// Write header
 		writer.Write([]string{"TimestampMs", "SimulationTimeMs", "Value"})
 		writer.Flush()
 	}
@@ -66,15 +66,15 @@ func NewSensorDataRecorder(baseDir, scenario string) (*SensorDataRecorder, error
 	return recorder, nil
 }
 
-// RecordSensorData는 센서 데이터 포인트를 기록합니다
+// RecordSensorData records a sensor data point
 func (r *SensorDataRecorder) RecordSensorData(simulationTimeMs int64, vehicle *VehicleData) error {
-	// 각 주요 센서에 대해
+	// For each key sensor
 	for _, path := range KeySensorPaths {
-		// 센서 값 추출
-		var sensorValue interface{}
+		// Extract sensor value
+		var sensorValue any
 		var found bool
 
-		// 센서가 속한 카테고리 확인 및 값 추출
+		// Check the category of the sensor and extract its value
 		if sensor, ok := vehicle.SensorsHighFreq[path]; ok {
 			sensorValue = sensor.Value
 			found = true
@@ -96,12 +96,12 @@ func (r *SensorDataRecorder) RecordSensorData(simulationTimeMs int64, vehicle *V
 		}
 
 		if !found {
-			continue // 센서를 찾지 못함
+			continue // Sensor not found
 		}
 
-		// CSV 기록
+		// Write to CSV
 		if writer, ok := r.CSVWriters[path]; ok {
-			// 타임스탬프, 시뮬레이션 시간, 값
+			// Timestamp, simulation time, value
 			now := time.Now()
 			elapsedMs := now.Sub(r.StartTime).Milliseconds()
 
@@ -111,7 +111,7 @@ func (r *SensorDataRecorder) RecordSensorData(simulationTimeMs int64, vehicle *V
 				fmt.Sprintf("%v", sensorValue),
 			})
 
-			// 주기적으로 버퍼 비우기
+			// Periodically flush the buffer
 			if simulationTimeMs%1000 == 0 {
 				writer.Flush()
 			}
@@ -121,17 +121,17 @@ func (r *SensorDataRecorder) RecordSensorData(simulationTimeMs int64, vehicle *V
 	return nil
 }
 
-// Close는 모든 CSV 파일을 닫습니다
+// Close closes all CSV files
 func (r *SensorDataRecorder) Close() {
-	// 모든 CSV 버퍼 비우기
+	// Flush all CSV buffers
 	for _, writer := range r.CSVWriters {
 		writer.Flush()
 	}
 
-	// 모든 파일 닫기
+	// Close all files
 	for _, file := range r.CSVFiles {
 		file.Close()
 	}
 
-	fmt.Printf("센서 데이터 기록 완료: %s\n", r.OutputDir)
+	fmt.Printf("Sensor data recording completed: %s\n", r.OutputDir)
 }

@@ -5,14 +5,14 @@ import (
 )
 
 //=============================================================================
-// 시나리오별 설정 함수
+// Scenario-specific configuration functions
 //=============================================================================
 
-// applyUrbanTrafficSettings은 도심 교통 시나리오에 맞는 설정을 적용합니다
+// applyUrbanTrafficSettings applies settings for the urban traffic scenario
 func applyUrbanTrafficSettings(vehicle *VehicleData) {
-	// 도심 교통 시나리오 - 불규칙한 속도, 잦은 방향 전환
+	// Urban traffic scenario - irregular speed, frequent direction changes
 
-	// 속도 설정 (중저속)
+	// Speed settings (low to medium speed)
 	if speedSensor, ok := vehicle.SensorsHighFreq["Vehicle.Speed"]; ok {
 		speedSensor.Value = 30.0 + rand.Float64()*20.0
 		speedSensor.ChangePattern = "random_walk"
@@ -21,7 +21,7 @@ func applyUrbanTrafficSettings(vehicle *VehicleData) {
 		speedSensor.ChangeParams["max"] = 70.0
 	}
 
-	// 스티어링 설정 (빈번한 방향 전환)
+	// Steering settings (frequent direction changes)
 	if steeringSensor, ok := vehicle.SensorsHighFreq["Vehicle.Chassis.SteeringWheel.Angle"]; ok {
 		steeringSensor.ChangePattern = "sinusoidal"
 		steeringSensor.ChangeParams["amplitude"] = 15.0
@@ -29,7 +29,7 @@ func applyUrbanTrafficSettings(vehicle *VehicleData) {
 		steeringSensor.ChangeParams["baseline"] = 0.0
 	}
 
-	// 가속도 설정 (불규칙한 가속/감속)
+	// Acceleration settings (irregular acceleration/deceleration)
 	if accelSensor, ok := vehicle.SensorsHighFreq["Vehicle.Acceleration.Longitudinal"]; ok {
 		accelSensor.ChangePattern = "random_walk"
 		accelSensor.ChangeParams["step_size"] = 0.5
@@ -37,7 +37,7 @@ func applyUrbanTrafficSettings(vehicle *VehicleData) {
 		accelSensor.ChangeParams["max"] = 2.0
 	}
 
-	// 브레이크 설정 (자주 사용)
+	// Brake settings (frequent use)
 	if brakeSensor, ok := vehicle.ActuatorsHighVar["Vehicle.Chassis.Brake.PedalPosition"]; ok {
 		brakeSensor.ChangePattern = "random_walk"
 		brakeSensor.ChangeParams["step_size"] = 5.0
@@ -45,7 +45,7 @@ func applyUrbanTrafficSettings(vehicle *VehicleData) {
 		brakeSensor.ChangeParams["max"] = 80.0
 	}
 
-	// 가속 페달 설정
+	// Accelerator pedal settings
 	if accelPedalSensor, ok := vehicle.ActuatorsHighVar["Vehicle.Chassis.Accelerator.PedalPosition"]; ok {
 		accelPedalSensor.ChangePattern = "random_walk"
 		accelPedalSensor.ChangeParams["step_size"] = 3.0
@@ -53,7 +53,7 @@ func applyUrbanTrafficSettings(vehicle *VehicleData) {
 		accelPedalSensor.ChangeParams["max"] = 60.0
 	}
 
-	// 배터리 방전 설정 (도심 주행 시 소모)
+	// Battery discharge settings (consumption during urban driving)
 	if batterySensor, ok := vehicle.SensorsMedFreq["Vehicle.Powertrain.TractionBattery.StateOfCharge.Current"]; ok {
 		batterySensor.ChangePattern = "linear"
 		batterySensor.ChangeParams["slope"] = -0.1
@@ -61,7 +61,7 @@ func applyUrbanTrafficSettings(vehicle *VehicleData) {
 		batterySensor.ChangeParams["max"] = 100.0
 	}
 
-	// 연료 소모 설정
+	// Fuel consumption settings
 	if fuelSensor, ok := vehicle.SensorsLowFreq["Vehicle.Powertrain.FuelSystem.Level"]; ok {
 		fuelSensor.ChangePattern = "linear"
 		fuelSensor.ChangeParams["slope"] = -0.001
@@ -69,7 +69,7 @@ func applyUrbanTrafficSettings(vehicle *VehicleData) {
 		fuelSensor.ChangeParams["max"] = 100.0
 	}
 
-	// 방향지시등 설정 (도심 환경에서 자주 사용)
+	// Turn signal settings (frequent use in urban environments)
 	if turnLeftSensor, ok := vehicle.ActuatorsLowVar["Vehicle.Body.Lights.TurnSignal.Left.IsActive"]; ok {
 		turnLeftSensor.ChangePattern = "toggle"
 		turnLeftSensor.ChangeParams["toggle_probability"] = 0.02
@@ -81,11 +81,11 @@ func applyUrbanTrafficSettings(vehicle *VehicleData) {
 	}
 }
 
-// applyHighwayCruisingSettings는 고속도로 주행 시나리오에 맞는 설정을 적용합니다
+// applyHighwayCruisingSettings applies settings for the highway cruising scenario
 func applyHighwayCruisingSettings(vehicle *VehicleData) {
-	// 고속도로 주행 시나리오 - 높은 속도, 일정한 방향
+	// Highway cruising scenario - high speed, steady direction
 
-	// 속도 설정 (고속)
+	// Speed settings (high speed)
 	if speedSensor, ok := vehicle.SensorsHighFreq["Vehicle.Speed"]; ok {
 		speedSensor.Value = 90.0 + rand.Float64()*20.0
 		speedSensor.ChangePattern = "constant_with_noise"
@@ -93,14 +93,14 @@ func applyHighwayCruisingSettings(vehicle *VehicleData) {
 		speedSensor.ChangeParams["noise"] = 0.5
 	}
 
-	// 스티어링 설정 (안정적)
+	// Steering settings (stable)
 	if steeringSensor, ok := vehicle.SensorsHighFreq["Vehicle.Chassis.SteeringWheel.Angle"]; ok {
 		steeringSensor.ChangePattern = "constant_with_noise"
 		steeringSensor.ChangeParams["baseline"] = 0.0
 		steeringSensor.ChangeParams["noise"] = 0.2
 	}
 
-	// 가속도 설정 (안정적)
+	// Acceleration settings (stable)
 	if accelSensor, ok := vehicle.SensorsHighFreq["Vehicle.Acceleration.Longitudinal"]; ok {
 		accelSensor.Value = 0.0
 		accelSensor.ChangePattern = "constant_with_noise"
@@ -108,17 +108,17 @@ func applyHighwayCruisingSettings(vehicle *VehicleData) {
 		accelSensor.ChangeParams["noise"] = 0.1
 	}
 
-	// 위치 센서 (거의 직선 경로)
+	// Location sensor (almost straight path)
 	if latSensor, ok := vehicle.SensorsHighFreq["Vehicle.CurrentLocation.Latitude"]; ok {
 		latSensor.ChangePattern = "linear"
-		latSensor.ChangeParams["slope"] = 0.1 // 매우 미세한 변화
+		latSensor.ChangeParams["slope"] = 0.1 // Very slight change
 		latSensor.ChangeParams["min"] = -180.0
 		latSensor.ChangeParams["max"] = 180.0
 	}
 
 	if lonSensor, ok := vehicle.SensorsHighFreq["Vehicle.CurrentLocation.Longitude"]; ok {
-		lonSensor.ChangePattern = "linear"    // 직선 경로
-		lonSensor.ChangeParams["slope"] = 0.1 // 매우 미세한 변화
+		lonSensor.ChangePattern = "linear"    // Straight path
+		lonSensor.ChangeParams["slope"] = 0.1 // Very slight change
 		lonSensor.ChangeParams["min"] = -180.0
 		lonSensor.ChangeParams["max"] = 180.0
 	}
@@ -129,7 +129,7 @@ func applyHighwayCruisingSettings(vehicle *VehicleData) {
 		brakePedalSensor.ChangeParams["toggle_probability"] = 0.01
 	}
 
-	// 가속 페달 설정 (일정하게 유지)
+	// Accelerator pedal settings (maintain constant)
 	if accelPedalSensor, ok := vehicle.ActuatorsHighVar["Vehicle.Chassis.Accelerator.PedalPosition"]; ok {
 		accelPedalSensor.Value = 25.0
 		accelPedalSensor.ChangePattern = "constant_with_noise"
@@ -137,7 +137,7 @@ func applyHighwayCruisingSettings(vehicle *VehicleData) {
 		accelPedalSensor.ChangeParams["noise"] = 0.5
 	}
 
-	// 배터리 방전 설정 (고속 주행 시 더 빠르게 소모)
+	// Battery discharge settings (faster consumption during high-speed driving)
 	if batterySensor, ok := vehicle.SensorsMedFreq["Vehicle.Powertrain.TractionBattery.StateOfCharge.Current"]; ok {
 		batterySensor.ChangePattern = "linear"
 		batterySensor.ChangeParams["slope"] = -0.2
@@ -145,7 +145,7 @@ func applyHighwayCruisingSettings(vehicle *VehicleData) {
 		batterySensor.ChangeParams["max"] = 100.0
 	}
 
-	// 연료 소모 설정 (고속 주행 시 더 빠르게 소모)
+	// Fuel consumption settings (faster consumption during high-speed driving)
 	if fuelSensor, ok := vehicle.SensorsLowFreq["Vehicle.Powertrain.FuelSystem.Level"]; ok {
 		fuelSensor.ChangePattern = "linear"
 		fuelSensor.ChangeParams["slope"] = -0.002
@@ -153,7 +153,7 @@ func applyHighwayCruisingSettings(vehicle *VehicleData) {
 		fuelSensor.ChangeParams["max"] = 100.0
 	}
 
-	// 방향지시등 설정 (고속도로에서 드물게 사용)
+	// Turn signal settings (rarely used on highways)
 	if turnLeftSensor, ok := vehicle.ActuatorsLowVar["Vehicle.Body.Lights.TurnSignal.Left.IsActive"]; ok {
 		turnLeftSensor.ChangePattern = "toggle"
 		turnLeftSensor.ChangeParams["toggle_probability"] = 0.005
@@ -165,29 +165,29 @@ func applyHighwayCruisingSettings(vehicle *VehicleData) {
 	}
 }
 
-// applyBatteryChargingSettings는 배터리 충전 시나리오에 맞는 설정을 적용합니다
+// applyBatteryChargingSettings applies settings for the battery charging scenario
 func applyBatteryChargingSettings(vehicle *VehicleData) {
-	// 배터리 충전 시나리오 - 차량 정지, 충전 진행중
+	// Battery charging scenario - vehicle stationary, charging in progress
 
-	// 속도 및 동작 센서 설정 (정지)
+	// Speed and motion sensor settings (stationary)
 	if speedSensor, ok := vehicle.SensorsHighFreq["Vehicle.Speed"]; ok {
 		speedSensor.Value = 0.0
 		speedSensor.ChangePattern = "constant"
 	}
 
-	// 스티어링 설정 (정지)
+	// Steering settings (stationary)
 	if steeringSensor, ok := vehicle.SensorsHighFreq["Vehicle.Chassis.SteeringWheel.Angle"]; ok {
 		steeringSensor.Value = 0.0
 		steeringSensor.ChangePattern = "constant"
 	}
 
-	// 가속도 설정 (정지)
+	// Acceleration settings (stationary)
 	if accelSensor, ok := vehicle.SensorsHighFreq["Vehicle.Acceleration.Longitudinal"]; ok {
 		accelSensor.Value = 0.0
 		accelSensor.ChangePattern = "constant"
 	}
 
-	// 브레이크 및 액셀 설정 (미사용)
+	// Brake and accelerator settings (not in use)
 	if brakeSensor, ok := vehicle.ActuatorsHighVar["Vehicle.Chassis.Brake.PedalPosition"]; ok {
 		brakeSensor.Value = 0.0
 		brakeSensor.ChangePattern = "constant"
@@ -198,16 +198,16 @@ func applyBatteryChargingSettings(vehicle *VehicleData) {
 		accelPedalSensor.ChangePattern = "constant"
 	}
 
-	// 배터리 충전 설정
+	// Battery charging settings
 	if batterySensor, ok := vehicle.SensorsMedFreq["Vehicle.Powertrain.TractionBattery.StateOfCharge.Current"]; ok {
-		batterySensor.Value = 20.0 + rand.Float64()*20.0 // 시작 충전 상태 20-40%
+		batterySensor.Value = 20.0 + rand.Float64()*20.0 // Initial charge state 20-40%
 		batterySensor.ChangePattern = "linear"
-		batterySensor.ChangeParams["slope"] = 0.4 // 점진적 증가
+		batterySensor.ChangeParams["slope"] = 0.4 // Gradual increase
 		batterySensor.ChangeParams["min"] = 0.0
 		batterySensor.ChangeParams["max"] = 100.0
 	}
 
-	// 배터리 온도 설정 (충전 중 소폭 상승)
+	// Battery temperature settings (slight increase during charging)
 	if tempSensor, ok := vehicle.SensorsMedFreq["Vehicle.Powertrain.TractionBattery.Temperature"]; ok {
 		tempSensor.ChangePattern = "linear"
 		tempSensor.ChangeParams["slope"] = 0.001
@@ -215,13 +215,13 @@ func applyBatteryChargingSettings(vehicle *VehicleData) {
 		tempSensor.ChangeParams["max"] = 45.0
 	}
 
-	// 충전 관련 센서 설정
+	// Charging-related sensor settings
 	if chargingSensor, ok := vehicle.SensorsMedFreq["Vehicle.Powertrain.TractionBattery.Charging.IsCharging"]; ok {
 		chargingSensor.Value = true
 	}
 
 	if ratesSensor, ok := vehicle.SensorsMedFreq["Vehicle.Powertrain.TractionBattery.Charging.ChargingRate"]; ok {
-		ratesSensor.Value = 11.0 + rand.Float64()*2.0 // 11-13kW 충전
+		ratesSensor.Value = 11.0 + rand.Float64()*2.0 // 11-13kW charging
 		ratesSensor.ChangePattern = "sinusoidal"
 		ratesSensor.ChangeParams["amplitude"] = 1.0
 		ratesSensor.ChangeParams["period"] = 15000.0
@@ -229,9 +229,9 @@ func applyBatteryChargingSettings(vehicle *VehicleData) {
 	}
 
 	if timeSensor, ok := vehicle.SensorsMedFreq["Vehicle.Powertrain.TractionBattery.Charging.TimeRemaining"]; ok {
-		timeSensor.Value = 120.0 + rand.Float64()*60.0 // 2-3시간
+		timeSensor.Value = 120.0 + rand.Float64()*60.0 // 2-3 hours
 		timeSensor.ChangePattern = "linear"
-		timeSensor.ChangeParams["slope"] = -0.05 // 시간 감소
+		timeSensor.ChangeParams["slope"] = -0.05 // Time decreases
 		timeSensor.ChangeParams["min"] = 0.0
 		timeSensor.ChangeParams["max"] = 180.0
 	}
