@@ -74,7 +74,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Max:            90.0,
 		ChangePatterns: map[string]string{
 			"urban_traffic":    "random_walk",
-			"highway_cruising": "random_walk",
+			"highway_cruising": "linear",
 			"battery_charging": "constant",
 		},
 	},
@@ -90,7 +90,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Max:            180.0,
 		ChangePatterns: map[string]string{
 			"urban_traffic":    "random_walk",
-			"highway_cruising": "random_walk",
+			"highway_cruising": "linear",
 			"battery_charging": "constant",
 		},
 	},
@@ -269,6 +269,7 @@ var VSSSensors = map[string]*VSSSensor{
 			"battery_charging": "constant",
 		},
 	},
+
 	"Vehicle.Chassis.Axle.Row1.Wheel.Right.Tire.Pressure": {
 		Path:           "Vehicle.Chassis.Axle.Row1.Wheel.Right.Tire.Pressure",
 		DefaultValue:   2.2,
@@ -299,7 +300,7 @@ var VSSSensors = map[string]*VSSSensor{
 		Max:            100.0,
 		ChangePatterns: map[string]string{
 			"urban_traffic":    "random_walk",
-			"highway_cruising": "constant_with_noise",
+			"highway_cruising": "toggle",
 			"battery_charging": "constant",
 		},
 	},
