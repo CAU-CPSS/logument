@@ -64,8 +64,10 @@ type ExperimentResult struct {
 	TimestampOnlyChanges int     // 타임스탬프만 변경된 횟수
 	JsonPatchCount       int     // JSON 패치 개수
 	TsonPatchCount       int     // TSON 패치 개수
+	SetTsonPatchCount    int     // set으로 생성된 TSON 패치 개수
 	JsonPatchSize        int     // JSON 패치 크기 (바이트)
 	TsonPatchSize        int     // TSON 패치 크기 (바이트)
+	SetTsonPatchSize     int     // set으로 생성된 TSON 패치 크기 (바이트)
 	JsonProcessingTimeNs int64   // JSON 처리 시간 (나노초)
 	TsonProcessingTimeNs int64   // TSON 처리 시간 (나노초)
 	JsonBandwidthUsage   float64 // JSON 대역폭 사용량 (KB/s)
@@ -122,8 +124,10 @@ func RealworldScenario() {
 			"TimestampOnlyChanges",
 			"JsonPatchCount",
 			"TsonPatchCount",
+			"SetTsonPatchCount",
 			"JsonPatchSize",
 			"TsonPatchSize",
+			"SetTsonPatchSize",
 			"JsonProcessingTimeNs",
 			"TsonProcessingTimeNs",
 			"JsonBandwidthUsage",
@@ -204,8 +208,10 @@ func RealworldScenario() {
 			fmt.Sprintf("%d", results.TimestampOnlyChanges),
 			fmt.Sprintf("%d", results.JsonPatchCount),
 			fmt.Sprintf("%d", results.TsonPatchCount),
+			fmt.Sprintf("%d", results.SetTsonPatchCount),
 			fmt.Sprintf("%d", results.JsonPatchSize),
 			fmt.Sprintf("%d", results.TsonPatchSize),
+			fmt.Sprintf("%d", results.SetTsonPatchSize),
 			fmt.Sprintf("%d", results.JsonProcessingTimeNs),
 			fmt.Sprintf("%d", results.TsonProcessingTimeNs),
 			fmt.Sprintf("%.2f", results.JsonBandwidthUsage),
@@ -272,6 +278,7 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 
 	jsonPatches := make([]JsonPatch, 0)
 	tsonPatches := make([]TsonPatch, 0)
+	setTsonPatches := make([]TsonPatch, 0)
 
 	// 타임스탬프 수집을 위한 벡터 초기화
 	timeVec := make([]int64, 0, simulationDurationSec*10) // 10초 간격으로 저장
@@ -373,6 +380,14 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 					jsonProcessingTime := time.Since(jsonStartTime).Nanoseconds()
 					jsonTotalProcessingTime += jsonProcessingTime
 
+					// TSON 패치 생성
+					setTsonPatches = append(setTsonPatches, TsonPatch{
+						Op:        "replace",
+						Path:      path,
+						Value:     newValue,
+						Timestamp: newTimestamp,
+					})
+
 					// TSON 처리 시작 시간
 					tsonStartTime := time.Now()
 
@@ -441,6 +456,9 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 	tsonPatchBytes, _ := json.Marshal(tsonPatches)
 	tsonPatchSize := len(tsonPatchBytes)
 
+	setTsonPatchBytes, _ := json.Marshal(setTsonPatches)
+	setTsonPatchSize := len(setTsonPatchBytes)
+
 	// 대역폭 사용량 계산 (KB/s)
 	simulationTimeSeconds := float64(simulationDurationSec)
 	jsonBandwidth := float64(jsonPatchSize) / simulationTimeSeconds / 1024
@@ -452,8 +470,10 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 	result.TimestampOnlyChanges = timestampChangeCounter
 	result.JsonPatchCount = len(jsonPatches)
 	result.TsonPatchCount = len(tsonPatches)
+	result.SetTsonPatchCount = len(setTsonPatches)
 	result.JsonPatchSize = jsonPatchSize
 	result.TsonPatchSize = tsonPatchSize
+	result.SetTsonPatchSize = setTsonPatchSize
 	result.JsonProcessingTimeNs = jsonTotalProcessingTime
 	result.TsonProcessingTimeNs = tsonTotalProcessingTime
 	result.JsonBandwidthUsage = jsonBandwidth
