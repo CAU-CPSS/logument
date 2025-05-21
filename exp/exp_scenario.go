@@ -238,6 +238,7 @@ func RealworldScenario() {
 
 	fmt.Println("\nAll experiments completed.")
 }
+
 // runRealisticExperiment performs an experiment for the given scenario
 func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (ExperimentResult, []TimingRecord) {
 	fmt.Printf("Starting simulation for scenario '%s'...\n", scenario)
@@ -380,6 +381,13 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 					jsonTotalProcessingTime += jsonProcessingTime
 
 					// TSON 패치 생성
+					setTsonPatches = append(setTsonPatches, TsonPatch{
+						Op:        "replace",
+						Path:      path,
+						Value:     newValue,
+						Timestamp: newTimestamp,
+					})
+
 					setTsonPatches = append(setTsonPatches, TsonPatch{
 						Op:        "replace",
 						Path:      path,
