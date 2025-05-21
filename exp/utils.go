@@ -37,28 +37,28 @@ func calculateExpectedUpdateCount(vehicle *VehicleData, durationSec int) int {
 }
 
 // updateJsonDoc은 JSON 문서에 센서 값과 타임스탬프를 업데이트합니다
-func updateJsonDoc(doc JsonDoc, path string, value interface{}, timestamp int64) {
+func updateJsonDoc(doc JsonDoc, path string, value any, timestamp int64) {
 	pathParts := strings.Split(path, ".")
 	current := doc
 
 	// 마지막 부분까지 경로 탐색
-	for i := 0; i < len(pathParts)-1; i++ {
-		if nextMap, ok := current[pathParts[i]].(map[string]interface{}); ok {
+	for i := range len(pathParts)-1 {
+		if nextMap, ok := current[pathParts[i]].(map[string]any); ok {
 			current = nextMap
 		} else {
 			// 중간 경로가 없으면 생성
-			current[pathParts[i]] = make(map[string]interface{})
-			current = current[pathParts[i]].(map[string]interface{})
+			current[pathParts[i]] = make(map[string]any)
+			current = current[pathParts[i]].(map[string]any)
 		}
 	}
 
 	// 마지막 부분 업데이트
 	lastPart := pathParts[len(pathParts)-1]
-	if valueMap, ok := current[lastPart].(map[string]interface{}); ok {
+	if valueMap, ok := current[lastPart].(map[string]any); ok {
 		valueMap["value"] = value
 		valueMap["timestamp"] = timestamp
 	} else {
-		current[lastPart] = map[string]interface{}{
+		current[lastPart] = map[string]any{
 			"value":     value,
 			"timestamp": timestamp,
 		}
@@ -66,32 +66,32 @@ func updateJsonDoc(doc JsonDoc, path string, value interface{}, timestamp int64)
 }
 
 // updateTsonDoc은 TSON 문서에 센서 값과 타임스탬프를 업데이트합니다
-func updateTsonDoc(doc TsonDoc, path string, value interface{}, timestamp int64) {
+func updateTsonDoc(doc TsonDoc, path string, value any, timestamp int64) {
 	pathParts := strings.Split(path, ".")
 	current := doc
 
 	// 마지막 부분까지 경로 탐색
-	for i := 0; i < len(pathParts)-1; i++ {
-		if nextMap, ok := current[pathParts[i]].(map[string]interface{}); ok {
+	for i := range len(pathParts)-1 {
+		if nextMap, ok := current[pathParts[i]].(map[string]any); ok {
 			current = nextMap
 		} else {
 			// 중간 경로가 없으면 생성
-			current[pathParts[i]] = make(map[string]interface{})
-			current = current[pathParts[i]].(map[string]interface{})
+			current[pathParts[i]] = make(map[string]any)
+			current = current[pathParts[i]].(map[string]any)
 		}
 	}
 
 	// 마지막 부분 업데이트
 	lastPart := pathParts[len(pathParts)-1]
 	// TSON에서는 값과 타임스탬프가 구분되어 저장됨
-	current[lastPart] = map[string]interface{}{
+	current[lastPart] = map[string]any{
 		"value": value,
 		"_ts":   timestamp, // 타임스탬프는 메타데이터로 저장
 	}
 }
 
 // isEqual은 두 값이 동일한지 비교합니다
-func isEqual(v1, v2 interface{}) bool {
+func isEqual(v1, v2 any) bool {
 	// 타입이 다르면 다른 값
 	if reflect.TypeOf(v1) != reflect.TypeOf(v2) {
 		return false
@@ -116,8 +116,8 @@ func isEqual(v1, v2 interface{}) bool {
 }
 
 // vehicleDataToJsonDoc은 VehicleData를 JSON 문서로 변환합니다
-func vehicleDataToJsonDoc(vehicle *VehicleData) map[string]interface{} {
-	doc := make(map[string]interface{})
+func vehicleDataToJsonDoc(vehicle *VehicleData) map[string]any {
+	doc := make(map[string]any)
 
 	// 센서 그룹 반복
 	for _, sensorMap := range []map[string]*SensorData{
@@ -138,8 +138,8 @@ func vehicleDataToJsonDoc(vehicle *VehicleData) map[string]interface{} {
 }
 
 // vehicleDataToTsonDoc은 VehicleData를 TSON 문서로 변환합니다
-func vehicleDataToTsonDoc(vehicle *VehicleData) map[string]interface{} {
-	doc := make(map[string]interface{})
+func vehicleDataToTsonDoc(vehicle *VehicleData) map[string]any {
+	doc := make(map[string]any)
 
 	// 센서 그룹 반복
 	for _, sensorMap := range []map[string]*SensorData{
@@ -160,26 +160,26 @@ func vehicleDataToTsonDoc(vehicle *VehicleData) map[string]interface{} {
 }
 
 // addPathToJsonDoc은 JSON 문서에 경로를 추가합니다 (JSON 형식)
-func addPathToJsonDoc(doc map[string]interface{}, path string, value interface{}, timestamp int64) {
+func addPathToJsonDoc(doc map[string]any, path string, value any, timestamp int64) {
 	pathParts := strings.Split(path, ".")
 	current := doc
 
 	// 마지막 노드 전까지 경로 탐색
-	for i := 0; i < len(pathParts)-1; i++ {
+	for i := range len(pathParts)-1 {
 		part := pathParts[i]
 
 		// 중간 노드가 없으면 생성
 		if _, exists := current[part]; !exists {
-			current[part] = make(map[string]interface{})
+			current[part] = make(map[string]any)
 		}
 
 		// 다음 레벨로 이동
-		current = current[part].(map[string]interface{})
+		current = current[part].(map[string]any)
 	}
 
 	// 마지막 노드 추가
 	lastPart := pathParts[len(pathParts)-1]
-	valueObj := map[string]interface{}{
+	valueObj := map[string]any{
 		"value":     value,
 		"timestamp": timestamp,
 	}
@@ -187,28 +187,28 @@ func addPathToJsonDoc(doc map[string]interface{}, path string, value interface{}
 }
 
 // addPathToTsonDoc은 TSON 문서에 경로를 추가합니다 (TSON 형식)
-func addPathToTsonDoc(doc map[string]interface{}, path string, value interface{}, timestamp int64) {
+func addPathToTsonDoc(doc map[string]any, path string, value any, timestamp int64) {
 	pathParts := strings.Split(path, ".")
 	current := doc
 
 	// 마지막 노드 전까지 경로 탐색
-	for i := 0; i < len(pathParts)-1; i++ {
+	for i := range len(pathParts)-1 {
 		part := pathParts[i]
 
 		// 중간 노드가 없으면 생성
 		if _, exists := current[part]; !exists {
-			current[part] = make(map[string]interface{})
+			current[part] = make(map[string]any)
 		}
 
 		// 다음 레벨로 이동
-		current = current[part].(map[string]interface{})
+		current = current[part].(map[string]any)
 	}
 
 	// 마지막 노드 추가
 	lastPart := pathParts[len(pathParts)-1]
 
 	// TSON에서는 값과 메타데이터 타임스탬프 분리
-	valueObj := map[string]interface{}{
+	valueObj := map[string]any{
 		"value": value,
 		"_ts":   timestamp, // 메타데이터로 타임스탬프 저장
 	}
@@ -220,7 +220,7 @@ func addPathToTsonDoc(doc map[string]interface{}, path string, value interface{}
 //=============================================================================
 
 // calculateNewValue는 센서 패턴에 따라 새 값을 계산합니다
-func calculateNewValue(sensor *SensorData, currentTimeMs int64, scenario string) interface{} {
+func calculateNewValue(sensor *SensorData, currentTimeMs int64, scenario string) any {
 	// 센서 카운터 증가
 	sensor.ChangeCounter++
 
@@ -239,7 +239,7 @@ func calculateNewValue(sensor *SensorData, currentTimeMs int64, scenario string)
 }
 
 // calculateNewNumberValue는 숫자형 센서에 대한 새 값을 계산합니다
-func calculateNewNumberValue(sensor *SensorData, currentTimeMs int64, scenario string) interface{} {
+func calculateNewNumberValue(sensor *SensorData, currentTimeMs int64, scenario string) any {
 	currValue, ok := sensor.Value.(float64)
 	if !ok {
 		// 값이 숫자가 아니면 0으로 초기화
@@ -368,7 +368,7 @@ func calculateNewNumberValue(sensor *SensorData, currentTimeMs int64, scenario s
 }
 
 // calculateNewBooleanValue는 불리언 타입 센서에 대한 새 값을 계산합니다
-func calculateNewBooleanValue(sensor *SensorData, currentTimeMs int64, scenario string) interface{} {
+func calculateNewBooleanValue(sensor *SensorData, currentTimeMs int64, scenario string) any {
 	currValue, ok := sensor.Value.(bool)
 	if !ok {
 		// 값이 불리언이 아니면 false로 초기화
@@ -410,7 +410,7 @@ func calculateNewBooleanValue(sensor *SensorData, currentTimeMs int64, scenario 
 }
 
 // calculateNewStringValue는 문자열 타입 센서에 대한 새 값을 계산합니다
-func calculateNewStringValue(sensor *SensorData, currentTimeMs int64, scenario string) interface{} {
+func calculateNewStringValue(sensor *SensorData, currentTimeMs int64, scenario string) any {
 	currValue, ok := sensor.Value.(string)
 	if !ok {
 		// 값이 문자열이 아니면 기본값으로 초기화
