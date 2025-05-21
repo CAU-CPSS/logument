@@ -30,7 +30,7 @@ func NewSensorDataRecorder(baseDir, scenario string) (*SensorDataRecorder, error
 	// Create a directory for the scenario
 	sensorDataDir := filepath.Join(baseDir, scenario, "sensor_data")
 	if err := os.MkdirAll(sensorDataDir, os.ModePerm); err != nil {
-		return nil, fmt.Errorf("Failed to create sensor data directory: %v", err)
+		return nil, fmt.Errorf("failed to create sensor data directory: %v", err)
 	}
 
 	recorder := &SensorDataRecorder{
@@ -51,7 +51,7 @@ func NewSensorDataRecorder(baseDir, scenario string) (*SensorDataRecorder, error
 		if err != nil {
 			// Close all open files in case of an error
 			recorder.Close()
-			return nil, fmt.Errorf("Failed to create CSV file %s: %v", fileName, err)
+			return nil, fmt.Errorf("failed to create CSV file %s: %v", fileName, err)
 		}
 
 		recorder.CSVFiles[path] = file

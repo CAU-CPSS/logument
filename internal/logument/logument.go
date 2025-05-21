@@ -22,11 +22,11 @@ type tsonPatches = tsonpatch.Patch // []jsonpatch.Operation
 
 // Logument
 type Logument struct {
-	Version   []uint64                // Version list
+	Version      []uint64 // Version list
 	CurrentState tsonSnapshot
-	Snapshots map[uint64]tsonSnapshot // A map which contains an initial Snapshot (by `Create`) and Snapshots from `Snapshot` Function {version: Snapshot}
-	Patches   map[uint64]tsonPatches  // A map which contains Patches from `Append` Function {version: Patches}
-	PatchPool tsonPatches             // A pool of Patches from `Store` Function
+	Snapshots    map[uint64]tsonSnapshot // A map which contains an initial Snapshot (by `Create`) and Snapshots from `Snapshot` Function {version: Snapshot}
+	Patches      map[uint64]tsonPatches  // A map which contains Patches from `Append` Function {version: Patches}
+	PatchPool    tsonPatches             // A pool of Patches from `Store` Function
 }
 
 func NewLogument(initialSnapshot any, initialPatches any) *Logument {
@@ -51,11 +51,11 @@ func NewLogument(initialSnapshot any, initialPatches any) *Logument {
 	}
 
 	lgm := &Logument{
-		Version:   []uint64{0},
+		Version:      []uint64{0},
 		CurrentState: snapshot,
-		Snapshots: map[uint64]tsonSnapshot{0: snapshot},
-		Patches:   make(map[uint64]tsonPatches),
-		PatchPool: nil,
+		Snapshots:    map[uint64]tsonSnapshot{0: snapshot},
+		Patches:      make(map[uint64]tsonPatches),
+		PatchPool:    nil,
 	}
 
 	if initialPatches != nil {
@@ -96,9 +96,9 @@ func (lgm *Logument) isGrown() bool {
 	}
 
 	// 마지막 버전만 확인 (O(1) 작업)
-    // 버전이 항상 순서대로 추가된다고 가정
-    lastIdx := len(lgm.Version) - 1
-    return lgm.Version[lastIdx] == lgm.Version[lastIdx-1] + 1
+	// 버전이 항상 순서대로 추가된다고 가정
+	lastIdx := len(lgm.Version) - 1
+	return lgm.Version[lastIdx] == lgm.Version[lastIdx-1]+1
 }
 
 func (lgm *Logument) Print() {
@@ -151,6 +151,10 @@ func (lgm *Logument) Store(inputPatches any) {
 			tempPatches = append(tempPatches, patch...)
 		}
 		patches = tempPatches
+	case tsonpatch.Operation:
+		patches = tsonpatch.Patch{inputPatches}
+	case []tsonpatch.Operation:
+		patches = tsonpatch.Patch(inputPatches)
 	default:
 		panic("Invalid type for initialPatches. Must be Patch or []Patch.")
 	}
@@ -255,7 +259,7 @@ func (lgm *Logument) TemporalSnapshot(tsk int64) tsonSnapshot {
 	// Get the latest snapshot
 	latestSnapshot := lgm.Snapshots[latestVersion]
 
-	if latestVersion > lgm.Version[len(lgm.Version)-1] {
+	if latestVersion >= lgm.Version[len(lgm.Version)-1] {
 		if lgm.PatchPool != nil {
 			lgm.Append()
 		} else {
@@ -263,11 +267,27 @@ func (lgm *Logument) TemporalSnapshot(tsk int64) tsonSnapshot {
 		}
 	}
 
-	var latestPatches tsonPatches
+	// Create a map to store the most recent patch for each path
+	latestPatchMap := make(map[string]tsonpatch.Operation)
+
+	// Iterate through the patches and keep only the most recent one for each path
+	sort.Slice(lgm.Patches[latestVersion+1], func(i, j int) bool {
+		return lgm.Patches[latestVersion+1][i].Timestamp < lgm.Patches[latestVersion+1][j].Timestamp
+	})
+
 	for _, p := range lgm.Patches[latestVersion+1] {
 		if p.Timestamp <= tsk {
-			latestPatches = append(latestPatches, p)
+			// Check if we've seen this path before and if this patch is more recent
+			if existing, exists := latestPatchMap[p.Path]; !exists || p.Timestamp > existing.Timestamp {
+				latestPatchMap[p.Path] = p
+			}
 		}
+	}
+
+	// Convert the map to a slice
+	var latestPatches tsonpatch.Patch
+	for _, patch := range latestPatchMap {
+		latestPatches = append(latestPatches, patch)
 	}
 
 	// Apply patches
@@ -275,6 +295,8 @@ func (lgm *Logument) TemporalSnapshot(tsk int64) tsonSnapshot {
 	if err != nil {
 		panic("Failed to make a snapshot with the given version. Error: " + err.Error())
 	}
+
+	// lgm.Snapshots[latestVersion+1] = timedSnapshot
 
 	return timedSnapshot
 }
@@ -454,9 +476,9 @@ func (lgm *Logument) Track(vi, vj uint64) map[uint64]tsonPatches {
 }
 
 func (lgm *Logument) TemporalTrack(tsi, tsj int64) map[uint64]tsonPatches {
-	if !lgm.isContinuous() {
-		panic("Versions are not continuous.")
-	}
+	// if !lgm.isContinuous() {
+	// 	panic("Versions are not continuous.")
+	// }
 
 	if tsi > tsj {
 		panic("Start timestamp tsi should be smaller than or equal to end timestamp tsj." +

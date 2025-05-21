@@ -16,7 +16,7 @@ import (
 // Simulation parameters
 const (
 	outputDir             = "./results/patch_experiment"
-	simulationDurationSec = 300 // 5-minute simulation
+	simulationDurationSec = 3600 // 5-minute simulation
 	simulationTimeStepMs  = 100 // Update every 100ms
 	numHighFreqSensors    = 10  // Number of high-frequency sensors
 	numMedFreqSensors     = 15  // Number of medium-frequency sensors
@@ -293,7 +293,7 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 	fmt.Printf("Estimated number of updates: approximately %d\n", totalExpectedUpdates)
 
 	// 4. Run the simulation
-	simulationStart := time.Now()
+	// simulationStart := time.Now()
 	jsonTotalProcessingTime := int64(0)
 	tsonTotalProcessingTime := int64(0)
 
@@ -339,7 +339,8 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 
 					// Calculate new value and timestamp
 					newValue := calculateNewValue(sensor, currentTimeMs, scenario)
-					newTimestamp := simulationStart.UnixNano() + currentTimeMs*1000000 // ms -> ns
+					// newTimestamp := simulationStart.UnixNano() + currentTimeMs*1000000 // ms -> ns
+					newTimestamp := currentTimeMs // * 1000000 // ms -> ns, 0부터 시작
 
 					// Check if the value has changed
 					valueChanged := !isEqual(sensor.Value, newValue)

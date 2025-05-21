@@ -14,9 +14,9 @@ func applyUrbanTrafficSettings(vehicle *VehicleData) {
 
 	// Speed settings (low to medium speed)
 	if speedSensor, ok := vehicle.SensorsHighFreq["Vehicle.Speed"]; ok {
-		speedSensor.Value = 30.0 + rand.Float64()*20.0
+		speedSensor.Value = 40.0 + rand.Float64()*20.0
 		speedSensor.ChangePattern = "random_walk"
-		speedSensor.ChangeParams["step_size"] = 2.0
+		speedSensor.ChangeParams["step_size"] = 4.0
 		speedSensor.ChangeParams["min"] = 0.0
 		speedSensor.ChangeParams["max"] = 70.0
 	}

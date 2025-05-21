@@ -152,7 +152,8 @@ func ApplyOperation(doc tson.Tson, op Operation) (t tson.Tson, err error) {
 	path := rfc6901Decoder.Replace(op.Path)
 
 	// Split the path into parts, ignoring the first empty string
-	parts := strings.Split(path, "/")[1:]
+	path = strings.ReplaceAll(path, ".", "/")
+	parts := strings.Split(path, "/")
 
 	// Traverse the TSON document
 	if t, err = applyTraverse(doc, parts, op); err != nil {
@@ -161,6 +162,7 @@ func ApplyOperation(doc tson.Tson, op Operation) (t tson.Tson, err error) {
 	return t, nil
 }
 
+// applyTraverse 함수 수정
 func applyTraverse(doc tson.Tson, parts []string, op Operation) (t tson.Tson, err error) {
 	if len(parts) == 0 { // If the path is empty, return
 		return doc, nil
@@ -176,15 +178,24 @@ func applyTraverse(doc tson.Tson, parts []string, op Operation) (t tson.Tson, er
 		if len(parts) == 1 { // Only a single part of path left
 			switch op.Op { // switch by operation type
 			case OpAdd, OpReplace:
-				switch j[part].(type) {
-				case tson.Leaf[string]:
-					j[part] = tson.Leaf[string]{Value: op.Value.(string), Timestamp: op.Timestamp}
-				case tson.Leaf[float64]:
-					j[part] = tson.Leaf[float64]{Value: op.Value.(float64), Timestamp: op.Timestamp}
-				case tson.Leaf[bool]:
-					j[part] = tson.Leaf[bool]{Value: op.Value.(bool), Timestamp: op.Timestamp}
+				// 타입 변환 로직 개선
+				switch value := op.Value.(type) {
+				case string:
+					j[part] = tson.Leaf[string]{Value: value, Timestamp: op.Timestamp}
+				case float64:
+					j[part] = tson.Leaf[float64]{Value: value, Timestamp: op.Timestamp}
+				case int:
+					// int를 float64로 변환
+					j[part] = tson.Leaf[float64]{Value: float64(value), Timestamp: op.Timestamp}
+				case bool:
+					j[part] = tson.Leaf[bool]{Value: value, Timestamp: op.Timestamp}
+				case nil:
+					// nil 값 처리 (필요한 경우)
+					// 예: j[part] = tson.Leaf[string]{Value: "", Timestamp: op.Timestamp}
+					return nil, fmt.Errorf("applyTraverse(): Nil value not supported")
 				default:
-					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for op.Value", op.Value)
+					// 다른 타입 처리 (예: map, slice 등)
+					return nil, fmt.Errorf("applyTraverse(): Unsupported value type %T: %v", op.Value, op.Value)
 				}
 			case OpRemove:
 				delete(j, part)
@@ -211,38 +222,207 @@ func applyTraverse(doc tson.Tson, parts []string, op Operation) (t tson.Tson, er
 
 			switch op.Op {
 			case OpAdd, OpReplace:
-				switch elem := value[idx].(type) {
-				// If leaf
-				case tson.Leaf[string]:
-					value[idx] = tson.Leaf[string]{Value: op.Value.(string), Timestamp: op.Timestamp}
-				case tson.Leaf[float64]:
-					value[idx] = tson.Leaf[float64]{Value: op.Value.(float64), Timestamp: op.Timestamp}
-				case tson.Leaf[bool]:
-					value[idx] = tson.Leaf[bool]{Value: op.Value.(bool), Timestamp: op.Timestamp}
-				case tson.Object, tson.Array:
-					if j[part], err = applyTraverse(value[idx], parts[1:], op); err != nil {
-						return nil, err
-					}
+				if idx >= len(value) {
+					// 배열 크기가 충분하지 않은 경우 확장
+					newArray := make(tson.Array, idx+1)
+					copy(newArray, value)
+					value = newArray
+					j[part] = value
+				}
+
+				// 타입 변환 로직 개선
+				switch opValue := op.Value.(type) {
+				case string:
+					value[idx] = tson.Leaf[string]{Value: opValue, Timestamp: op.Timestamp}
+				case float64:
+					value[idx] = tson.Leaf[float64]{Value: opValue, Timestamp: op.Timestamp}
+				case int:
+					value[idx] = tson.Leaf[float64]{Value: float64(opValue), Timestamp: op.Timestamp}
+				case bool:
+					value[idx] = tson.Leaf[bool]{Value: opValue, Timestamp: op.Timestamp}
+				case nil:
+					return nil, fmt.Errorf("applyTraverse(): Nil value not supported for array element")
 				default:
-					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for elem", elem)
+					if elem, ok := value[idx].(tson.Object); ok || elem == nil {
+						// 객체나 nil인 경우 재귀적으로 처리
+						if j[part], err = applyTraverse(value[idx], parts[1:], op); err != nil {
+							return nil, err
+						}
+					} else {
+						return nil, fmt.Errorf("applyTraverse(): Unsupported array element type %T", op.Value)
+					}
 				}
 			case OpRemove:
 				j[part] = append(value[:idx], value[idx+1:]...)
 			default:
 				return nil, fmt.Errorf("applyTraverse(): Unknown operation %s", op.Op)
 			}
-
+		case nil:
+			// 경로가 없는 경우 새로 생성
+			if op.Op == OpAdd || op.Op == OpReplace {
+				// 다음 부분이 숫자면 배열, 아니면 객체 생성
+				_, err := getIndex(parts[1])
+				if err == nil {
+					// 배열 생성
+					newArray := make(tson.Array, 0)
+					j[part] = newArray
+					if j[part], err = applyTraverse(newArray, parts[1:], op); err != nil {
+						return nil, err
+					}
+				} else {
+					// 객체 생성
+					newObj := make(tson.Object)
+					j[part] = newObj
+					if j[part], err = applyTraverse(newObj, parts[1:], op); err != nil {
+						return nil, err
+					}
+				}
+			} else {
+				return nil, fmt.Errorf("applyTraverse(): Cannot %s on nil value at %s", op.Op, part)
+			}
 		default:
 			return nil, fmt.Errorf("traverse(): Unknown type %T for value", value)
 		}
 
 		return j, nil
 	case tson.Array:
-		panic("applyTraverse(): Array is not implemented")
+		// 배열 처리 로직...
+		idx, err := getIndex(part)
+		if err != nil {
+			return nil, err
+		}
+
+		// 배열 인덱스 범위 체크 및 확장
+		if idx >= len(j) {
+			if op.Op == OpAdd || op.Op == OpReplace {
+				// 배열 확장
+				newArray := make(tson.Array, idx+1)
+				copy(newArray, j)
+				j = newArray
+			} else {
+				return nil, fmt.Errorf("applyTraverse(): Index %d out of range for array of length %d", idx, len(j))
+			}
+		}
+
+		if len(parts) == 1 {
+			// 마지막 부분이면 직접 값 설정
+			switch op.Op {
+			case OpAdd, OpReplace:
+				// 타입 변환 로직
+				switch value := op.Value.(type) {
+				case string:
+					j[idx] = tson.Leaf[string]{Value: value, Timestamp: op.Timestamp}
+				case float64:
+					j[idx] = tson.Leaf[float64]{Value: value, Timestamp: op.Timestamp}
+				case int:
+					j[idx] = tson.Leaf[float64]{Value: float64(value), Timestamp: op.Timestamp}
+				case bool:
+					j[idx] = tson.Leaf[bool]{Value: value, Timestamp: op.Timestamp}
+				default:
+					return nil, fmt.Errorf("applyTraverse(): Unsupported value type %T for array element", op.Value)
+				}
+			case OpRemove:
+				j = append(j[:idx], j[idx+1:]...)
+			default:
+				return nil, fmt.Errorf("applyTraverse(): Unknown operation %s", op.Op)
+			}
+		} else {
+			// 중간 부분이면 재귀 호출
+			if j[idx], err = applyTraverse(j[idx], parts[1:], op); err != nil {
+				return nil, err
+			}
+		}
+
+		return j, nil
 	default:
 		return nil, fmt.Errorf("applyTraverse(): Unknown type %T for doc", doc)
 	}
 }
+
+// func applyTraverse(doc tson.Tson, parts []string, op Operation) (t tson.Tson, err error) {
+// 	if len(parts) == 0 { // If the path is empty, return
+// 		return doc, nil
+// 	}
+
+// 	fmt.Printf("doc type: %T\n", doc)
+
+// 	switch doc.(type) { // If doc is a leaf node, return
+// 	case tson.Leaf[string], tson.Leaf[float64], tson.Leaf[bool]:
+// 		return doc, nil
+// 	}
+
+// 	switch part := parts[0]; j := doc.(type) {
+// 	case tson.Object:
+// 		if len(parts) == 1 { // Only a single part of path left
+// 			switch op.Op { // switch by operation type
+// 			case OpAdd, OpReplace:
+// 				switch j[part].(type) {
+// 				case tson.Leaf[string]:
+// 					j[part] = tson.Leaf[string]{Value: op.Value.(string), Timestamp: op.Timestamp}
+// 				case tson.Leaf[float64]:
+// 					j[part] = tson.Leaf[float64]{Value: op.Value.(float64), Timestamp: op.Timestamp}
+// 				case tson.Leaf[bool]:
+// 					j[part] = tson.Leaf[bool]{Value: op.Value.(bool), Timestamp: op.Timestamp}
+// 				default:
+// 					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for op.Value", op.Value)
+// 				}
+// 			case OpRemove:
+// 				delete(j, part)
+// 			case OpMove, OpCopy, OpTest:
+// 				panic(fmt.Sprintf("applyTraverse(): Operation %s not implemented", op.Op))
+// 			default:
+// 				return nil, fmt.Errorf("applyTraverse(): Unknown operation %s", op.Op)
+// 			}
+// 			return j, nil
+// 		}
+
+// 		switch value := j[part].(type) { // Recursively traverse the TSON document
+// 		case tson.Leaf[string], tson.Leaf[float64], tson.Leaf[bool]:
+// 			panic("applyTraverse(): Leaf[T] should not be here")
+// 		case tson.Object:
+// 			if j[part], err = applyTraverse(value, parts[1:], op); err != nil {
+// 				return nil, err
+// 			}
+// 		case tson.Array:
+// 			idx, err := getIndex(parts[1])
+// 			if err != nil {
+// 				return nil, err
+// 			}
+
+// 			switch op.Op {
+// 			case OpAdd, OpReplace:
+// 				switch elem := value[idx].(type) {
+// 				// If leaf
+// 				case tson.Leaf[string]:
+// 					value[idx] = tson.Leaf[string]{Value: op.Value.(string), Timestamp: op.Timestamp}
+// 				case tson.Leaf[float64]:
+// 					value[idx] = tson.Leaf[float64]{Value: op.Value.(float64), Timestamp: op.Timestamp}
+// 				case tson.Leaf[bool]:
+// 					value[idx] = tson.Leaf[bool]{Value: op.Value.(bool), Timestamp: op.Timestamp}
+// 				case tson.Object, tson.Array:
+// 					if j[part], err = applyTraverse(value[idx], parts[1:], op); err != nil {
+// 						return nil, err
+// 					}
+// 				default:
+// 					return nil, fmt.Errorf("applyTraverse(): Unknown type %T for elem", elem)
+// 				}
+// 			case OpRemove:
+// 				j[part] = append(value[:idx], value[idx+1:]...)
+// 			default:
+// 				return nil, fmt.Errorf("applyTraverse(): Unknown operation %s", op.Op)
+// 			}
+
+// 		default:
+// 			return nil, fmt.Errorf("traverse(): Unknown type %T for value", value)
+// 		}
+
+// 		return j, nil
+// 	case tson.Array:
+// 		panic("applyTraverse(): Array is not implemented")
+// 	default:
+// 		return nil, fmt.Errorf("applyTraverse(): Unknown type %T for doc", doc)
+// 	}
+// }
 
 func getIndex(part string) (idx int, err error) {
 	if idx, err = strconv.Atoi(part); err != nil {
