@@ -85,7 +85,9 @@ func NewTemporalQueryExperiment(inputDir, baseOutDir, scenario string, tsonPatch
 	}
 
 	// Create Logument document
-	lgm := createLogumentFromPatches(inputDir, tsonPatches)
+	lgm := createLogumentFromPatches(initialJsonPath, tsonPatches)
+
+	// CreateSnapshot(initialJsonPath, tsonPatches)
 
 	return &TemporalQueryExperiment{
 		OutputDir:         outputDir,
@@ -109,6 +111,7 @@ func (e *TemporalQueryExperiment) RunTemporalSnapshotExperiment(timestamps []int
 			Parameter: fmt.Sprintf("%d", ts),
 		}
 
+		// Logument temporal snapshot
 		// Run Logument temporal snapshot
 		lgmStart := time.Now()
 		lgmSnapshot := e.LogumentDoc.TemporalSnapshot(ts)
@@ -346,10 +349,9 @@ func (e *TemporalQueryExperiment) SaveResults(results []TemporalQueryResult, fil
 }
 
 // Helper function to create a Logument document from TSON patches
-func createLogumentFromPatches(patchesDir string, patches []TsonPatch) *logument.Logument {
+func createLogumentFromPatches(path string, patches []TsonPatch) *logument.Logument {
 	// 1. initial_json.json 파일 로드
-	initialJsonPath := filepath.Join(filepath.Join(patchesDir), "initial_json.json")
-	initialJsonBytes, err := os.ReadFile(initialJsonPath)
+	initialJsonBytes, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
@@ -370,9 +372,6 @@ func createLogumentFromPatches(patchesDir string, patches []TsonPatch) *logument
 	if err := tson.FromJson(initialData, &initialTson); err != nil {
 		panic(err)
 	}
-
-	// // Create an initial empty TSON
-	// var initialTson tson.Tson = tson.Object{}
 
 	// Convert TsonPatch array to tsonpatch.Patch
 	tsonPatches := make([]tsonpatch.Operation, 0, len(patches))
@@ -439,40 +438,6 @@ func transformJsonStructure(data interface{}) interface{} {
 		return v
 	}
 }
-
-// // transformJsonStructure은 JSON 구조를 변환: {timestamp:..., value:...} 형태를 값만 있는 형태로 변환
-// func transformJsonStructure(data interface{}) interface{} {
-// 	switch v := data.(type) {
-// 	case map[string]interface{}:
-// 		// timestamp와 value 키가 있는지 확인
-// 		if _, hasTs := v["timestamp"]; hasTs {
-// 			if value, hasValue := v["value"]; hasValue {
-// 				// 이 노드는 {timestamp:..., value:...} 형태이므로 값만 반환
-// 				// fmt.Printf("Found leaf node with timestamp %v and value %v\n", timestamp, value)
-// 				return value
-// 			}
-// 		}
-
-// 		// 일반 객체인 경우 각 필드를 재귀적으로 처리
-// 		result := make(map[string]interface{})
-// 		for key, val := range v {
-// 			result[key] = transformJsonStructure(val)
-// 		}
-// 		return result
-
-// 	case []interface{}:
-// 		// 배열인 경우 각 요소를 재귀적으로 처리
-// 		result := make([]interface{}, len(v))
-// 		for i, val := range v {
-// 			result[i] = transformJsonStructure(val)
-// 		}
-// 		return result
-
-// 	default:
-// 		// 기본 값 타입은 그대로 반환
-// 		return v
-// 	}
-// }
 
 // Helper function to filter Logument track results by path
 func filterTrackByPath(track map[uint64]tsonpatch.Patch, path string) map[uint64][]tsonpatch.Operation {
@@ -644,5 +609,63 @@ func isPrimitive(value interface{}) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+// 패치 하나당 하나의 스냅샷을 생성하는 함수
+// 해당 함수는 initial_json.json 파일을 기반으로 tson.Tson을 생성하고,
+// 시간에 따라 정렬된 tsonpatch.Patch 배열을 기반으로 하나의 패치가 적용될 때마다 하나의 스냅샷을 생성합니다.
+func CreateSnapshot(path string, patches []TsonPatch) {
+	// 1. initial_json.json 파일 로드
+	initialJsonBytes, err := os.ReadFile(path)
+	if err != nil {
+		panic(fmt.Sprintf("failed to read initial JSON file: %v", err))
+	}
+
+	// 2. JSON 파싱
+	var initialJsonData map[string]interface{}
+	if err := json.Unmarshal(initialJsonBytes, &initialJsonData); err != nil {
+		panic(fmt.Sprintf("failed to parse initial JSON: %v", err))
+	}
+
+	fmt.Printf("Loaded initial JSON with %d top-level keys\n", len(initialJsonData))
+
+	// 3. 구조 변환: {timestamp:..., value:...} 형태를 값만 있는 형태로 변환
+	initialData := transformJsonStructure(initialJsonData)
+
+	// 4. TSON으로 변환
+	var initialTson tson.Tson
+	if err := tson.FromJson(initialData, &initialTson); err != nil {
+		panic(fmt.Sprintf("failed to convert to TSON: %v", err))
+	}
+
+	err = os.MkdirAll("./results/snapshots", os.ModePerm)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create snapshots directory: %v", err))
+	}
+
+	_, err = saveResultToFile("./results/snapshots", "snapshot_0.json", initialTson)
+	if err != nil {
+		fmt.Printf("Warning: Failed to save Logument snapshot result: %v\n", err)
+	}
+
+	tempSnapshot := initialTson
+	for i, p := range patches {
+		snapshot, err := tsonpatch.ApplyPatch(tempSnapshot, []tsonpatch.Operation{
+			{Op: tsonpatch.OpType(p.Op),
+				Path:      p.Path,
+				Value:     p.Value,
+				Timestamp: p.Timestamp,
+			}})
+		if err != nil {
+			panic("Failed to make a snapshot with the given version. Error: " + err.Error())
+		}
+		tempSnapshot = snapshot
+
+		snapFilename := fmt.Sprintf("snapshot_%d.json", i+1)
+		_, err = saveResultToFile("./results/snapshots", snapFilename, snapshot)
+		if err != nil {
+			fmt.Printf("Warning: Failed to save Logument snapshot result: %v\n", err)
+		}
 	}
 }

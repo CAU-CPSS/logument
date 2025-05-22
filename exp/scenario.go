@@ -2,7 +2,99 @@ package exp
 
 import (
 	"math/rand"
+	"time"
 )
+
+//=============================================================================
+// Vehicle Data Initialization Function
+//=============================================================================
+
+// InitializeVehicleData initializes vehicle data according to the specified scenario
+func InitializeVehicleData(scenario string) *VehicleData {
+	vehicle := &VehicleData{
+		SensorsHighFreq:  make(map[string]*SensorData),
+		SensorsMedFreq:   make(map[string]*SensorData),
+		SensorsLowFreq:   make(map[string]*SensorData),
+		ActuatorsHighVar: make(map[string]*SensorData),
+		ActuatorsLowVar:  make(map[string]*SensorData),
+		Attributes:       make(map[string]*SensorData),
+	}
+
+	// Iterate through all sensors and initialize
+	for path, vssSensor := range VSSSensors {
+		// Select change pattern according to the scenario
+		changePattern := "constant"
+		if pattern, exists := vssSensor.ChangePatterns[scenario]; exists {
+			changePattern = pattern
+		}
+
+		// Create sensor data
+		sensorData := &SensorData{
+			Path:           path,
+			Value:          vssSensor.DefaultValue,
+			Type:           vssSensor.Type,
+			Timestamp:      time.Now().UnixNano(),
+			UpdateInterval: vssSensor.UpdateInterval,
+			ChangePattern:  changePattern,
+			ChangeParams:   make(map[string]float64),
+		}
+
+		// Set default parameters based on the pattern
+		switch changePattern {
+		case "random_walk":
+			sensorData.ChangeParams["step_size"] = (vssSensor.Max - vssSensor.Min) * 0.01
+			sensorData.ChangeParams["min"] = vssSensor.Min
+			sensorData.ChangeParams["max"] = vssSensor.Max
+		case "linear":
+			if scenario == "battery_charging" && path == "Vehicle.Powertrain.TractionBattery.StateOfCharge.Current" {
+				sensorData.ChangeParams["slope"] = 0.05 // Battery increase during charging
+			} else if scenario == "battery_charging" && path == "Vehicle.Powertrain.TractionBattery.Charging.TimeRemaining" {
+				sensorData.ChangeParams["slope"] = -0.5 // Decrease charging time
+			} else {
+				sensorData.ChangeParams["slope"] = -0.04 // Default decrease
+			}
+			sensorData.ChangeParams["min"] = vssSensor.Min
+			sensorData.ChangeParams["max"] = vssSensor.Max
+		case "sinusoidal":
+			sensorData.ChangeParams["amplitude"] = (vssSensor.Max - vssSensor.Min) * 0.1
+			sensorData.ChangeParams["period"] = 5000.0
+			sensorData.ChangeParams["baseline"] = (vssSensor.Min + vssSensor.Max) * 0.5
+		case "constant_with_noise":
+			sensorData.ChangeParams["baseline"] = vssSensor.DefaultValue.(float64)
+			sensorData.ChangeParams["noise"] = (vssSensor.Max - vssSensor.Min) * 0.01
+		case "toggle":
+			sensorData.ChangeParams["toggle_probability"] = 0.05
+		}
+
+		// Add to the appropriate map based on the category
+		switch vssSensor.Category {
+		case SensorTypeHigh:
+			vehicle.SensorsHighFreq[path] = sensorData
+		case SensorTypeMedium:
+			vehicle.SensorsMedFreq[path] = sensorData
+		case SensorTypeLow:
+			vehicle.SensorsLowFreq[path] = sensorData
+		case ActuatorTypeHigh:
+			vehicle.ActuatorsHighVar[path] = sensorData
+		case ActuatorTypeLow:
+			vehicle.ActuatorsLowVar[path] = sensorData
+		case AttributeType:
+			vehicle.Attributes[path] = sensorData
+		}
+	}
+
+	// Apply scenario-specific settings
+	switch scenario {
+	case "urban_traffic":
+		applyUrbanTrafficSettings(vehicle)
+	case "highway_cruising":
+		applyHighwayCruisingSettings(vehicle)
+	case "battery_charging":
+		applyBatteryChargingSettings(vehicle)
+	}
+
+	return vehicle
+}
 
 //=============================================================================
 // Scenario-specific configuration functions
