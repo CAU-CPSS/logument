@@ -16,14 +16,14 @@ import (
 // Simulation parameters
 const (
 	outputDir             = "./results/patch_experiment"
-	simulationDurationSec = 3600 // 5-minute simulation
-	simulationTimeStepMs  = 100 // Update every 100ms
-	numHighFreqSensors    = 10  // Number of high-frequency sensors
-	numMedFreqSensors     = 15  // Number of medium-frequency sensors
-	numLowFreqSensors     = 20  // Number of low-frequency sensors
-	numHighVarActuators   = 5   // Number of high-variability actuators
-	numLowVarActuators    = 10  // Number of low-variability actuators
-	numAttributes         = 8   // Number of attributes
+	simulationDurationSec = 300 // 60-minute simulation
+	simulationTimeStepMs  = 100  // Update every 100ms
+	numHighFreqSensors    = 5   // Number of high-frequency sensors 10
+	numMedFreqSensors     = 10   // Number of medium-frequency sensors 15
+	numLowFreqSensors     = 15   // Number of low-frequency sensors 20
+	numHighVarActuators   = 20    // Number of high-variability actuators 5
+	numLowVarActuators    = 30   // Number of low-variability actuators 10
+	numAttributes         = 20    // Number of attributes 8
 )
 
 // Scenario types
@@ -31,6 +31,8 @@ var scenarios = []string{
 	"urban_traffic",    // Urban traffic
 	"highway_cruising", // Highway cruising
 	"battery_charging", // Battery charging
+	//"mixed_scenario",   // Mixed scenario (all three combined)
+
 }
 
 // JSON document (value-timestamp structure)
@@ -54,6 +56,15 @@ type TsonPatch struct {
 	Timestamp int64       `json:"timestamp"`
 }
 
+// Scenario transition record for mixed scenario
+type ScenarioTransition struct {
+	Timestamp       int64   `json:"timestamp"`
+	FromScenario    string  `json:"from_scenario"`
+	ToScenario      string  `json:"to_scenario"`
+	BatteryLevel    float64 `json:"battery_level"`
+	TransitionCount int     `json:"transition_count"`
+}
+
 // Experiment result
 type ExperimentResult struct {
 	Timestamp            int64   // Experiment timestamp
@@ -75,6 +86,8 @@ type ExperimentResult struct {
 	CumulativeTimeVec    []int64 // Cumulative time vector
 	CumulativeJsonVec    []int   // Cumulative JSON patch count vector
 	CumulativeTsonVec    []int   // Cumulative TSON patch count vector
+	// Additional fields for mixed scenario
+	ScenarioTransitions []ScenarioTransition `json:"scenario_transitions,omitempty"`
 }
 
 // Timing record
@@ -166,7 +179,7 @@ func RealworldScenario() {
 		defer timingWriter.Flush()
 
 		// Timing data headers
-		timingWriter.Write([]string{
+		timingHeaders := []string{
 			"UpdateIndex",
 			"TimeMs",
 			"SensorPath",
@@ -174,7 +187,14 @@ func RealworldScenario() {
 			"TsonProcessingTimeNs",
 			"ValueChanged",
 			"ProcessingTimeDiffPct",
-		})
+		}
+
+		// Add current scenario column for mixed scenario
+		if scenario == "mixed_scenario" {
+			timingHeaders = append(timingHeaders, "CurrentScenario")
+		}
+
+		timingWriter.Write(timingHeaders)
 
 		// Run the experiment
 		results, timingData := runRealisticExperiment(scenario, timingWriter)
@@ -196,6 +216,23 @@ func RealworldScenario() {
 		fmt.Printf("TSON processing time: %.2f ms\n", float64(results.TsonProcessingTimeNs)/1e6)
 		fmt.Printf("Processing time difference: %.1f%%\n",
 			(1-float64(results.TsonProcessingTimeNs)/float64(results.JsonProcessingTimeNs))*100)
+
+		// For mixed scenario, print transition statistics
+		if scenario == "mixed_scenario" && len(results.ScenarioTransitions) > 0 {
+			fmt.Printf("Scenario transitions: %d\n", len(results.ScenarioTransitions))
+
+			// Count transitions by type
+			transitionCounts := make(map[string]int)
+			for _, transition := range results.ScenarioTransitions {
+				key := fmt.Sprintf("%s->%s", transition.FromScenario, transition.ToScenario)
+				transitionCounts[key]++
+			}
+
+			fmt.Printf("Transition breakdown:\n")
+			for key, count := range transitionCounts {
+				fmt.Printf("  %s: %d times\n", key, count)
+			}
+		}
 
 		// Save results to CSV
 		reductionRate := (1 - float64(results.TsonPatchCount)/float64(results.JsonPatchCount)) * 100
@@ -230,10 +267,44 @@ func RealworldScenario() {
 			})
 		}
 
+		// Save scenario transitions for mixed scenario
+		if scenario == "mixed_scenario" && len(results.ScenarioTransitions) > 0 {
+			transitionsFile, err := os.Create(filepath.Join(scenarioDir, "transitions.csv"))
+			if err != nil {
+				fmt.Printf("Error creating transitions file: %v\n", err)
+			} else {
+				defer transitionsFile.Close()
+				transWriter := csv.NewWriter(transitionsFile)
+				defer transWriter.Flush()
+
+				// Transitions headers
+				transWriter.Write([]string{
+					"Timestamp",
+					"FromScenario",
+					"ToScenario",
+					"BatteryLevel",
+					"TransitionCount",
+				})
+
+				for _, transition := range results.ScenarioTransitions {
+					transWriter.Write([]string{
+						fmt.Sprintf("%d", transition.Timestamp),
+						transition.FromScenario,
+						transition.ToScenario,
+						fmt.Sprintf("%.2f", transition.BatteryLevel),
+						fmt.Sprintf("%d", transition.TransitionCount),
+					})
+				}
+			}
+		}
+
 		fmt.Printf("\nExperiment for scenario %s completed. Results saved:\n", scenario)
 		fmt.Printf("- Summary results: %s\n", filepath.Join(scenarioDir, "results.csv"))
 		fmt.Printf("- Cumulative patches: %s\n", filepath.Join(scenarioDir, "cumulative.csv"))
 		fmt.Printf("- Timing data: %s\n", filepath.Join(scenarioDir, "timing.csv"))
+		if scenario == "mixed_scenario" {
+			fmt.Printf("- Scenario transitions: %s\n", filepath.Join(scenarioDir, "transitions.csv"))
+		}
 	}
 
 	fmt.Println("\nAll experiments completed.")
@@ -254,10 +325,25 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 		defer sensorRecorder.Close()
 	}
 
-	// 1. Generate initial data based on VSS
+	// Generate initial data based on VSS
 	vehicle := InitializeVehicleData(scenario)
 
-	// 2. Initialize JSON and TSON documents
+	// Initialize scenario state for mixed scenario
+	var scenarioState *ScenarioState
+	var transitions []ScenarioTransition
+	transitionCounter := 0
+
+	if scenario == "mixed_scenario" {
+		// Start with urban_traffic and initial battery level
+		initialBatteryLevel := 60.0 // Start with 50% battery
+		if batterySensor, ok := vehicle.SensorsMedFreq["Vehicle.Powertrain.TractionBattery.StateOfCharge.Current"]; ok {
+			batterySensor.Value = initialBatteryLevel
+		}
+		scenarioState = NewScenarioState("urban_traffic", initialBatteryLevel)
+		fmt.Printf("Mixed scenario initialized with urban_traffic and %.1f%% battery\n", initialBatteryLevel)
+	}
+
+	// Initialize JSON and TSON documents
 	jsonDoc := vehicleDataToJsonDoc(vehicle)
 	tsonDoc := vehicleDataToTsonDoc(vehicle)
 
@@ -269,7 +355,7 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 		fmt.Printf("Error saving initial TSON: %v\n", err)
 	}
 
-	// 3. Initialize variables for simulation results
+	// Initialize variables for simulation results
 	result := ExperimentResult{
 		Timestamp:        time.Now().Unix(),
 		Scenario:         scenario,
@@ -292,7 +378,7 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 	totalExpectedUpdates := calculateExpectedUpdateCount(vehicle, simulationDurationSec)
 	fmt.Printf("Estimated number of updates: approximately %d\n", totalExpectedUpdates)
 
-	// 4. Run the simulation
+	// Run the simulation
 	// simulationStart := time.Now()
 	jsonTotalProcessingTime := int64(0)
 	tsonTotalProcessingTime := int64(0)
@@ -304,6 +390,28 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 
 	// Simulation time step (ms)
 	for currentTimeMs := int64(0); currentTimeMs < simulationDurationSec*1000; currentTimeMs += simulationTimeStepMs {
+		// For mixed scenario, check for scenario transitions
+		currentScenarioName := scenario
+
+		if scenario == "mixed_scenario" && scenarioState != nil {
+			if scenarioState.UpdateScenarioState(vehicle, currentTimeMs) {
+				transitionCounter++
+				transition := ScenarioTransition{
+					Timestamp:       currentTimeMs,
+					FromScenario:    scenarioState.PreviousScenario,
+					ToScenario:      scenarioState.CurrentScenario,
+					BatteryLevel:    scenarioState.BatteryLevel,
+					TransitionCount: transitionCounter,
+				}
+				transitions = append(transitions, transition)
+
+				fmt.Printf("[%d ms] Scenario transition #%d: %s -> %s (Battery: %.1f%%)\n",
+					currentTimeMs, transitionCounter, transition.FromScenario,
+					transition.ToScenario, transition.BatteryLevel)
+			}
+			currentScenarioName = scenarioState.CurrentScenario
+		}
+
 		// Update timestamp vector (every 10 seconds)
 		if currentTimeMs%(10*1000) == 0 {
 			timeVec = append(timeVec, currentTimeMs)
@@ -314,8 +422,13 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 		// Display progress (every 10%)
 		if currentTimeMs%(simulationDurationSec*100) == 0 {
 			progressPct := float64(currentTimeMs) / float64(simulationDurationSec*1000) * 100
-			fmt.Printf("\rSimulation progress: %.1f%% (time: %d ms, updates: %d, changes: %d)",
-				progressPct, currentTimeMs, updateCounter, valueChangeCounter)
+			if scenario == "mixed_scenario" {
+				fmt.Printf("\rSimulation progress: %.1f%% (time: %d ms, updates: %d, changes: %d, scenario: %s)",
+					progressPct, currentTimeMs, updateCounter, valueChangeCounter, currentScenarioName)
+			} else {
+				fmt.Printf("\rSimulation progress: %.1f%% (time: %d ms, updates: %d, changes: %d)",
+					progressPct, currentTimeMs, updateCounter, valueChangeCounter)
+			}
 		}
 
 		// Record major sensor data
@@ -381,14 +494,7 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 					jsonProcessingTime := time.Since(jsonStartTime).Nanoseconds()
 					jsonTotalProcessingTime += jsonProcessingTime
 
-					// TSON 패치 생성
-					setTsonPatches = append(setTsonPatches, TsonPatch{
-						Op:        "replace",
-						Path:      path,
-						Value:     newValue,
-						Timestamp: newTimestamp,
-					})
-
+					// Generate TSON patch ()
 					setTsonPatches = append(setTsonPatches, TsonPatch{
 						Op:        "replace",
 						Path:      path,
@@ -434,7 +540,7 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 						timingDiffPct = (1.0 - float64(tsonProcessingTime)/float64(jsonProcessingTime)) * 100.0
 					}
 
-					timingWriter.Write([]string{
+					timingRow := []string{
 						fmt.Sprintf("%d", updateCounter),
 						fmt.Sprintf("%d", currentTimeMs),
 						path,
@@ -442,7 +548,14 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 						fmt.Sprintf("%d", tsonProcessingTime),
 						fmt.Sprintf("%t", valueChanged),
 						fmt.Sprintf("%.2f", timingDiffPct),
-					})
+					}
+
+					// Add current scenario for mixed scenario
+					if scenario == "mixed_scenario" {
+						timingRow = append(timingRow, currentScenarioName)
+					}
+
+					timingWriter.Write(timingRow)
 
 					// Flush buffer periodically
 					if updateCounter%100 == 0 {
@@ -489,6 +602,7 @@ func runRealisticExperiment(scenario string, timingWriter *csv.Writer) (Experime
 	result.CumulativeTimeVec = timeVec
 	result.CumulativeJsonVec = jsonPatchesVec
 	result.CumulativeTsonVec = tsonPatchesVec
+	result.ScenarioTransitions = transitions
 
 	// At the end of the simulation:
 	// Save final documents

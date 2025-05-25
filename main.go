@@ -34,8 +34,8 @@ const (
 
 func main() {
 	rand.New(rand.NewSource(42))
-	// ScenarioExperiment()
-	TemporalQueryExperiment()
+	ScenarioExperiment()
+	// TemporalQueryExperiment()
 }
 
 func ScenarioExperiment() {

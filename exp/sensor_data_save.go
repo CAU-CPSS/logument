@@ -14,6 +14,7 @@ var KeySensorPaths = []string{
 	"Vehicle.CurrentLocation.Longitude",
 	"Vehicle.Speed",
 	"Vehicle.Powertrain.TractionBattery.StateOfCharge.Current",
+	"Vehicle.Body.Lights.TurnSignal.Left.IsActive",
 }
 
 // SensorDataRecorder records key sensor data into CSV files
@@ -105,10 +106,17 @@ func (r *SensorDataRecorder) RecordSensorData(simulationTimeMs int64, vehicle *V
 			now := time.Now()
 			elapsedMs := now.Sub(r.StartTime).Milliseconds()
 
+			var valueStr string
+			if v, ok := sensorValue.(float64); ok {
+				valueStr = fmt.Sprintf("%.4f", v)
+			} else {
+				valueStr = fmt.Sprintf("%v", sensorValue)
+			}
+
 			writer.Write([]string{
 				fmt.Sprintf("%d", elapsedMs),
 				fmt.Sprintf("%d", simulationTimeMs),
-				fmt.Sprintf("%v", sensorValue),
+				valueStr,
 			})
 
 			// Periodically flush the buffer

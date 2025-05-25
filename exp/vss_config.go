@@ -60,7 +60,7 @@ var VSSSensors = map[string]*VSSSensor{
 	// Location sensors (high frequency)
 	"Vehicle.CurrentLocation.Latitude": {
 		Path:           "Vehicle.CurrentLocation.Latitude",
-		DefaultValue:   37.7749,
+		DefaultValue:   37.5503,
 		Type:           "number",
 		Category:       SensorTypeHigh,
 		UpdateInterval: 50,
@@ -76,7 +76,7 @@ var VSSSensors = map[string]*VSSSensor{
 	},
 	"Vehicle.CurrentLocation.Longitude": {
 		Path:           "Vehicle.CurrentLocation.Longitude",
-		DefaultValue:   -122.4194,
+		DefaultValue:   126.9971,
 		Type:           "number",
 		Category:       SensorTypeHigh,
 		UpdateInterval: 50,

@@ -9,7 +9,7 @@ import (
 )
 
 //=============================================================================
-// 유틸리티 함수
+// Utility functions
 //=============================================================================
 
 // calculateExpectedUpdateCount는 예상 업데이트 횟수를 계산합니다
@@ -102,7 +102,7 @@ func isEqual(v1, v2 any) bool {
 	case float64:
 		// 부동소수점 비교 (작은 차이는 무시)
 		val2 := v2.(float64)
-		return math.Abs(val1-val2) < 0.01
+		return math.Abs(val1-val2) < 0.005
 	case int:
 		return val1 == v2.(int)
 	case bool:
@@ -224,14 +224,22 @@ func calculateNewValue(sensor *SensorData, currentTimeMs int64, scenario string)
 	// 센서 카운터 증가
 	sensor.ChangeCounter++
 
+	// Mixed scenario인 경우, 실제 시나리오에 따라 다른 패턴 적용
+	actualScenario := scenario
+	if scenario == "mixed_scenario" {
+		// mixed_scenario의 경우 실제 현재 시나리오에 맞는 패턴 사용
+		// 하지만 여기서는 센서 패턴이 이미 설정되어 있으므로 그대로 사용
+		actualScenario = scenario
+	}
+
 	// 센서 타입에 따른 처리
 	switch sensor.Type {
 	case "number":
-		return calculateNewNumberValue(sensor, currentTimeMs, scenario)
+		return calculateNewNumberValue(sensor, currentTimeMs, actualScenario)
 	case "boolean":
-		return calculateNewBooleanValue(sensor, currentTimeMs, scenario)
+		return calculateNewBooleanValue(sensor, currentTimeMs, actualScenario)
 	case "string":
-		return calculateNewStringValue(sensor, currentTimeMs, scenario)
+		return calculateNewStringValue(sensor, currentTimeMs, actualScenario)
 	default:
 		// 알 수 없는 타입은 현재 값 유지
 		return sensor.Value
